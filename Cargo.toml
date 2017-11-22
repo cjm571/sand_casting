@@ -1,0 +1,7 @@
+[package]
+name = "iron_sandboxide"
+version = "0.1.0"
+authors = ["CJ McAllister <cjm571@gmail.com>"]
+
+[dependencies]
+cast_iron = { path = "../cast_iron" }
