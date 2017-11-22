@@ -1,4 +1,11 @@
 [root]
 name = "iron_sandboxide"
 version = "0.1.0"
+dependencies = [
+ "cast_iron 0.1.0",
+]
+
+[[package]]
+name = "cast_iron"
+version = "0.1.0"
 
