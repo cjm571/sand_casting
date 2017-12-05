@@ -1,25 +1,38 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
 // Filename : actor.rs
-// Author   : CJ McAllister
-// Created  : 22-11-2017
-// License  : TODO: Add license info
+
+Copyright (C) 2017 CJ McAllister
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software Foundation,
+    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+\* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+use std::f64::consts::*;
 
 extern crate cast_iron;
-
 use cast_iron::actor::Actor;
 use cast_iron::ability::Ability;
 use cast_iron::ability::aspect::*;
-
+use cast_iron::environment::coords::Coords;
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Functions and Methods
 ///////////////////////////////////////////////////////////////////////////////
 
-// Outputs the stats of the given player to the terminal
-fn print_stats(actor: Actor) {
+// Outputs the stats of the given actor to the terminal
+fn print_stats(actor: &Actor) {
     println!("BEGIN Stats for actor {}", actor.get_name());
 
     let pos = actor.get_pos();
-    println!("Position: ({}, {}, {})", pos[0], pos[1], pos[2]);
+    println!("Position: {:?}", pos);
 
     println!("Fatigue: Current: {}", actor.get_cur_fatigue());
 
@@ -33,6 +46,11 @@ fn print_stats(actor: Actor) {
     }
 
     println!("END Stats for actor {}", actor.get_name());
+}
+
+// Outputs the current position of the given actor to the terminal
+fn print_pos(actor: &Actor) {
+    println!("Position: {:?}", actor.get_pos());
 }
 
 fn main() {
@@ -59,6 +77,26 @@ fn main() {
     player_one.add_ability(blood_drain);
     player_one.add_ability(null_abil);
 
-    print_stats(player_one);
+    print_stats(&player_one);
+
+    //TODO: This should be a test in lib.rs
+    println!("\nMovement Testing:");
+    println!("Start     [ 0, 0, 0]");
+    print_pos(&player_one);
+    player_one.move_vec(3, 0.0);
+    println!("3 East    [ 3,-3, 0]");
+    print_pos(&player_one);
+    player_one.move_vec(4, FRAC_PI_2);
+    println!("4 North   [ 5,-1,-4]");
+    print_pos(&player_one);
+    player_one.move_vec(6, PI);
+    println!("6 West    [-1, 5,-4]");
+    print_pos(&player_one);
+    player_one.move_vec(4, 3.0*FRAC_PI_2);
+    println!("4 South   [-3, 3, 0]");
+    print_pos(&player_one);
+    println!("Return    [ 0, 0, 0]");
+    player_one.move_vec(3, 0.0);
+    print_pos(&player_one);
 }
 
