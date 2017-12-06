@@ -21,13 +21,10 @@ Changelog:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use std::f64::consts::*;
-
 extern crate cast_iron;
 use cast_iron::actor::Actor;
 use cast_iron::ability::Ability;
 use cast_iron::ability::aspect::*;
-use cast_iron::environment::coords::Coords;
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Functions and Methods
@@ -84,25 +81,5 @@ fn main() {
     player_one.add_ability(null_abil);
 
     print_stats(&player_one);
-
-    //TODO: This should be a test in lib.rs
-    println!("\nMovement Testing:");
-    println!("Start     [ 0, 0, 0]");
-    print_pos(&player_one);
-    player_one.move_vec(3, 0.0);
-    println!("3 East    [ 3,-3, 0]");
-    print_pos(&player_one);
-    player_one.move_vec(4, FRAC_PI_2);
-    println!("4 North   [ 5,-1,-4]");
-    print_pos(&player_one);
-    player_one.move_vec(6, PI);
-    println!("6 West    [-1, 5,-4]");
-    print_pos(&player_one);
-    player_one.move_vec(4, 3.0*FRAC_PI_2);
-    println!("4 South   [-3, 3, 0]");
-    print_pos(&player_one);
-    println!("Return    [ 0, 0, 0]");
-    player_one.move_vec(3, 0.0);
-    print_pos(&player_one);
 }
 
