@@ -5,3 +5,4 @@ authors = ["CJ McAllister <cjm571@gmail.com>"]
 
 [dependencies]
 cast_iron = { path = "../cast_iron", version = "0.1.0" }
+ggez = "0.3"

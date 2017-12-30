@@ -25,6 +25,7 @@ extern crate cast_iron;
 use cast_iron::actor::Actor;
 use cast_iron::ability::Ability;
 use cast_iron::ability::aspect::*;
+use cast_iron::environment::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Functions and Methods
