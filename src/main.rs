@@ -18,14 +18,17 @@ Purpose:
     //TODO: purpose writeup for main
 
 Changelog:
-
+    CJ McAllister   22 Nov 2017     File created
+    CJ McAllister   18 Jan 2018     Added main loop, weather
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 extern crate cast_iron;
 use cast_iron::actor::Actor;
 use cast_iron::ability::Ability;
 use cast_iron::ability::aspect::*;
-use cast_iron::environment::*;
+use cast_iron::environment::Element;
+use cast_iron::environment::weather::Weather;
+use cast_iron::polyfunc::PolyFunc;
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Functions and Methods
@@ -52,12 +55,8 @@ fn print_stats(actor: &Actor) {
     println!("END Stats for actor {}", actor.get_name());
 }
 
-// Outputs the current position of the given actor to the terminal
-fn print_pos(actor: &Actor) {
-    println!("Position: {:?}", actor.get_pos());
-}
-
 fn main() {
+    // Initialize Abilities
     let null_abil: Ability = Ability::new("Null");
 
     let mut lightning_bolt: Ability = Ability::new("Lightning Bolt");
@@ -76,11 +75,29 @@ fn main() {
     blood_drain.set_morality(Morality::Evil);
     blood_drain.set_school(School::Destruction);
 
+    // Intialize Actor
     let mut player_one: Actor = Actor::new("CJ McAllister");
     player_one.add_ability(lightning_bolt);
     player_one.add_ability(blood_drain);
     player_one.add_ability(null_abil);
 
+    // Intialize Weather
+    let thunder_func: PolyFunc = PolyFunc::from(8, 10);
+    let thunderstorm: Weather = Weather::from(Element::Electric, thunder_func);
+
     print_stats(&player_one);
+
+    ///////////////
+    // Main Loop //
+    ///////////////
+    
+    const MAX_TICKS: u32 = 31;
+    let mut tick: u32 = 0;
+
+    while tick <= MAX_TICKS {
+        println!("Tick {} Weather: {:?}", tick, thunderstorm.get_intensity(tick));
+
+        tick = tick + 1;
+    }
 }
 
