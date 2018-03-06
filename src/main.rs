@@ -36,23 +36,23 @@ use cast_iron::polyfunc::PolyFunc;
 
 // Outputs the stats of the given actor to the terminal
 fn print_stats(actor: &Actor) {
-    println!("BEGIN Stats for actor {}", actor.get_name());
+    println!("BEGIN Stats for actor {}", actor.name());
 
-    let pos = actor.get_pos();
+    let pos = actor.pos();
     println!("Position: {:?}", pos);
 
-    println!("Fatigue: Current: {}", actor.get_cur_fatigue());
+    println!("Fatigue: Current: {}", actor.cur_fatigue());
 
     println!("Abilities:");
     let mut i = 1;
-    for abil in actor.get_abilities() {
-        println!("{}: Name:    {}", i, abil.get_name());
-        println!("   Potency: {}", abil.get_potency());
-        println!("   {:?}", abil.get_aspects());
+    for abil in actor.abilities() {
+        println!("{}: Name:    {}", i, abil.name());
+        println!("   Potency: {}", abil.potency());
+        println!("   {:?}", abil.aspects());
         i = i + 1;
     }
 
-    println!("END Stats for actor {}", actor.get_name());
+    println!("END Stats for actor {}", actor.name());
 }
 
 fn main() {
@@ -95,7 +95,7 @@ fn main() {
     let mut tick: u32 = 0;
 
     while tick <= MAX_TICKS {
-        println!("Tick {} Weather: {:?}", tick, thunderstorm.get_intensity(tick));
+        println!("Tick {} Weather: {:?}", tick, thunderstorm.intensity(tick));
 
         tick = tick + 1;
     }
