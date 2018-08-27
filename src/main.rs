@@ -82,7 +82,7 @@ fn main() {
     player_one.add_ability(null_abil);
 
     // Intialize Weather
-    let thunder_func: PolyFunc = PolyFunc::from(8, 10);
+    let thunder_func: PolyFunc = PolyFunc::from(150, 10, 15);
     let thunderstorm: Weather = Weather::from(Element::Electric, thunder_func);
 
     print_stats(&player_one);
