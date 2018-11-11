@@ -15,11 +15,12 @@ Copyright (C) 2017 CJ McAllister
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 
 Purpose:
-    //TODO: purpose writeup for main
+    Main loop for the CastIron sample game.
 
 Changelog:
     CJ McAllister   22 Nov 2017     File created
-    CJ McAllister   18 Jan 2018     Added main loop, weather
+    CJ McAllister   18 Jan 2018     Add main loop, weather
+    CJ Mcallister   02 Sep 2018     Add basic ggez graphics
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 extern crate cast_iron;
@@ -30,30 +31,57 @@ use cast_iron::environment::Element;
 use cast_iron::environment::weather::Weather;
 use cast_iron::polyfunc::PolyFunc;
 
+extern crate piston;
+extern crate graphics;
+extern crate glutin_window;
+extern crate opengl_graphics;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//  Data Structures
+///////////////////////////////////////////////////////////////////////////////
+/* GGEZ STUFF
+// ggez game state object
+struct MainState {
+    text:   graphics::Text,
+    frames: usize,
+}
+impl MainState {
+    // Constructor
+    fn new(ctx: &mut Context) -> GameResult<MainState> {
+        let font = graphics::Font::new(ctx, "/DejaVuSerif.ttf", 48)?;
+        let text = graphics::Text::new(ctx, "Hello World!", &font)?;
+
+        let s = MainState {text, frames: 0};
+        Ok(s)
+    }
+}
+impl event::EventHandler for MainState {
+    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+        Ok(())
+    }
+
+    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        graphics::clear(ctx);
+
+        // Drawables are drawn from their top-left corner
+        let dest_point = graphics::Point2::new(10.0, 10.0);
+        graphics::draw(ctx, &self.text, dest_point, 0.0)?;
+        graphics::present(ctx);
+
+        self.frames += 1;
+        if (self.frames % 100) == 0 {
+            println!("FPS: {}", ggez::timer::get_fps(ctx));
+        }
+
+        Ok(())
+    }
+}
+
+ */
 ///////////////////////////////////////////////////////////////////////////////
 //  Functions and Methods
 ///////////////////////////////////////////////////////////////////////////////
-
-// Outputs the stats of the given actor to the terminal
-fn print_stats(actor: &Actor) {
-    println!("BEGIN Stats for actor {}", actor.name());
-
-    let pos = actor.pos();
-    println!("Position: {:?}", pos);
-
-    println!("Fatigue: Current: {}", actor.cur_fatigue());
-
-    println!("Abilities:");
-    let mut i = 1;
-    for abil in actor.abilities() {
-        println!("{}: Name:    {}", i, abil.name());
-        println!("   Potency: {}", abil.potency());
-        println!("   {:?}", abil.aspects());
-        i = i + 1;
-    }
-
-    println!("END Stats for actor {}", actor.name());
-}
 
 fn main() {
     // Initialize Abilities
@@ -84,9 +112,25 @@ fn main() {
     // Intialize Weather
     let thunder_func: PolyFunc = PolyFunc::from(150, 10, 15);
     let thunderstorm: Weather = Weather::from(Element::Electric, thunder_func);
+/* GGEZ STUFF
+    // Set up ggez frame
+    let c = conf::Conf::new();
+    let ctx = &mut Context::load_from_conf("helloworld", "ggez", c).unwrap();
 
-    print_stats(&player_one);
+    // Add CARGO_MANIFEST_DIR/resources to path so ggez will look in our cargo project
+    // directory for files
+    let mut path = path::PathBuf::from("C:\\Users\\cjm57\\Documents\\Rust_Projects\\iron_sandboxide\\");
+    path.push("resources");
+    ctx.filesystem.mount(&path, true);
 
+    let state = &mut MainState::new(ctx).unwrap();
+    if let Err(e) = event::run(ctx, state) {
+        println!("Error encountered: {}", e);
+    } else {
+        println!("Game exited cleanly.");
+    }
+ */
+    
     ///////////////
     // Main Loop //
     ///////////////
