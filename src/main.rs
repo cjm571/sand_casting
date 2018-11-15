@@ -46,6 +46,9 @@ use std::thread;
 use std::time::Duration;
 
 
+const WINDOW_X: u32 = 800;
+const WINDOW_Y: u32 = 600;
+
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
@@ -59,22 +62,63 @@ impl App {
     fn render(&mut self, args: &RenderArgs) {
         use graphics::*;
 
-        const GREEN:    [f32; 4] = [0.0, 1.0, 0.0, 1.0];
+        const BLACK:    [f32; 4] = [0.0, 0.0, 0.0, 1.0];
+        const WHITE:    [f32; 4] = [1.0, 1.0, 1.0, 1.0];
         const RED:      [f32; 4] = [1.0, 0.0, 0.0, 1.0];
+        const GREEN:    [f32; 4] = [0.0, 1.0, 0.0, 1.0];
+        const BLUE:     [f32; 4] = [0.0, 0.0, 1.0, 1.0];
+        const YELLOW:   [f32; 4] = [1.0, 1.0, 0.0, 1.0];
+        const CYAN:     [f32; 4] = [0.0, 1.0, 1.0, 1.0];
+        const PURPLE:   [f32; 4] = [1.0, 0.0, 1.0, 1.0];
+        const GREY:     [f32; 4] = [0.5, 0.5, 0.5, 1.0];
 
-        let square = rectangle::square(0.0, 0.0, 50.0);
-        let rotation = self.rotation;
+        const LINE_LENGTH: f64 = 100.0;
+        
         let (x, y) = ((args.width / 2) as f64,
-                      (args.height / 2) as f64);
+                      (args.height / 2) as f64); 
 
         self.gl.draw(args.viewport(), |c, gl| {
-            clear(GREEN, gl);
+            clear(BLACK, gl);
 
-            let transform = c.transform.trans(x,y)
-                                       .rot_rad(rotation)
-                                       .trans(-25.0, -25.0);
+            let my_line = [x, y,
+                           x, y-LINE_LENGTH];
 
-            rectangle(RED, square, transform, gl);
+            line(WHITE, 1.0, my_line, c.transform, gl);
+
+            let mut my_transform = c.transform.trans(x, y-LINE_LENGTH)
+                                     .rot_deg(45.0)
+                                     .trans(-x, -y);
+            line(RED, 1.0, my_line, my_transform, gl);
+
+            my_transform = my_transform.trans(x, y-LINE_LENGTH)
+                                          .rot_deg(45.0)
+                                          .trans(-x, -y);
+            line(GREEN, 1.0, my_line, my_transform, gl);
+
+            my_transform = my_transform.trans(x, y-LINE_LENGTH)
+                                          .rot_deg(45.0)
+                                          .trans(-x, -y);
+            line(BLUE, 1.0, my_line, my_transform, gl);
+
+            my_transform = my_transform.trans(x, y-LINE_LENGTH)
+                                          .rot_deg(45.0)
+                                          .trans(-x, -y);
+            line(YELLOW, 1.0, my_line, my_transform, gl);
+
+            my_transform = my_transform.trans(x, y-LINE_LENGTH)
+                                          .rot_deg(45.0)
+                                          .trans(-x, -y);
+            line(CYAN, 1.0, my_line, my_transform, gl);
+
+            my_transform = my_transform.trans(x, y-LINE_LENGTH)
+                                          .rot_deg(45.0)
+                                          .trans(-x, -y);
+            line(PURPLE, 1.0, my_line, my_transform, gl);
+
+            my_transform = my_transform.trans(x, y-LINE_LENGTH)
+                                          .rot_deg(45.0)
+                                          .trans(-x, -y);
+            line(GREY, 1.0, my_line, my_transform, gl);
         });
     }
 
@@ -122,8 +166,8 @@ fn main() {
     let opengl = OpenGL::V3_2;
 
     let mut window: Window = WindowSettings::new(
-            "spinning square",
-            [200, 200]
+            "Cast(Iron) Sandb(Oxide)",
+            [WINDOW_X, WINDOW_Y]
         )
         .opengl(opengl)
         .exit_on_esc(true)
@@ -136,16 +180,16 @@ fn main() {
         rotation: 0.0
     };
     
-    /////////////////
-    // Timing Loop //
-    /////////////////
+    /*  *  *  *  *  *  *  *  *  *  *\
+     *    T I M I N G   L O O P    *
+    \*  *  *  *  *  *  *  *  *  *  */
      
-    thread::spawn( || {
+    thread::spawn(move || {
         const MAX_TICKS: u32 = 31;
         let mut tick: u32 = 0;
         
         while tick <= MAX_TICKS {
-            println!("Tick {}", tick);
+            println!("Tick {}: Weather: {:?}", tick, thunderstorm.intensity(tick));
 
             tick = tick + 1;
             thread::sleep(Duration::from_secs(1));
