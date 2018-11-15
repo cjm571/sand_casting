@@ -36,49 +36,54 @@ extern crate graphics;
 extern crate glutin_window;
 extern crate opengl_graphics;
 
+use piston::window::WindowSettings;
+use piston::event_loop::*;
+use piston::input::*;
+use glutin_window::GlutinWindow as Window;
+use opengl_graphics::{ GlGraphics, OpenGL };
+
+use std::thread;
+use std::time::Duration;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
-/* GGEZ STUFF
-// ggez game state object
-struct MainState {
-    text:   graphics::Text,
-    frames: usize,
+
+pub struct App {
+    gl: GlGraphics,         // OpenGL drawing backend
+    rotation: f64,          // Rotation for the square
 }
-impl MainState {
-    // Constructor
-    fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let font = graphics::Font::new(ctx, "/DejaVuSerif.ttf", 48)?;
-        let text = graphics::Text::new(ctx, "Hello World!", &font)?;
 
-        let s = MainState {text, frames: 0};
-        Ok(s)
+impl App {
+    fn render(&mut self, args: &RenderArgs) {
+        use graphics::*;
+
+        const GREEN:    [f32; 4] = [0.0, 1.0, 0.0, 1.0];
+        const RED:      [f32; 4] = [1.0, 0.0, 0.0, 1.0];
+
+        let square = rectangle::square(0.0, 0.0, 50.0);
+        let rotation = self.rotation;
+        let (x, y) = ((args.width / 2) as f64,
+                      (args.height / 2) as f64);
+
+        self.gl.draw(args.viewport(), |c, gl| {
+            clear(GREEN, gl);
+
+            let transform = c.transform.trans(x,y)
+                                       .rot_rad(rotation)
+                                       .trans(-25.0, -25.0);
+
+            rectangle(RED, square, transform, gl);
+        });
     }
-}
-impl event::EventHandler for MainState {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
-        Ok(())
-    }
 
-    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx);
-
-        // Drawables are drawn from their top-left corner
-        let dest_point = graphics::Point2::new(10.0, 10.0);
-        graphics::draw(ctx, &self.text, dest_point, 0.0)?;
-        graphics::present(ctx);
-
-        self.frames += 1;
-        if (self.frames % 100) == 0 {
-            println!("FPS: {}", ggez::timer::get_fps(ctx));
-        }
-
-        Ok(())
+    fn update (&mut self, args: &UpdateArgs) {
+        // Rotate 2rad/s
+        self.rotation += 2.0 * args.dt;
     }
 }
 
- */
 ///////////////////////////////////////////////////////////////////////////////
 //  Functions and Methods
 ///////////////////////////////////////////////////////////////////////////////
@@ -112,36 +117,62 @@ fn main() {
     // Intialize Weather
     let thunder_func: PolyFunc = PolyFunc::from(150, 10, 15);
     let thunderstorm: Weather = Weather::from(Element::Electric, thunder_func);
-/* GGEZ STUFF
-    // Set up ggez frame
-    let c = conf::Conf::new();
-    let ctx = &mut Context::load_from_conf("helloworld", "ggez", c).unwrap();
 
-    // Add CARGO_MANIFEST_DIR/resources to path so ggez will look in our cargo project
-    // directory for files
-    let mut path = path::PathBuf::from("C:\\Users\\cjm57\\Documents\\Rust_Projects\\iron_sandboxide\\");
-    path.push("resources");
-    ctx.filesystem.mount(&path, true);
+    // Piston graphics stuff
+    let opengl = OpenGL::V3_2;
 
-    let state = &mut MainState::new(ctx).unwrap();
-    if let Err(e) = event::run(ctx, state) {
-        println!("Error encountered: {}", e);
-    } else {
-        println!("Game exited cleanly.");
-    }
- */
+    let mut window: Window = WindowSettings::new(
+            "spinning square",
+            [200, 200]
+        )
+        .opengl(opengl)
+        .exit_on_esc(true)
+        .build()
+        .unwrap();
     
+    // Create a new game and run it
+    let mut app = App {
+        gl: GlGraphics::new(opengl),
+        rotation: 0.0
+    };
+    
+    /////////////////
+    // Timing Loop //
+    /////////////////
+     
+    thread::spawn( || {
+        const MAX_TICKS: u32 = 31;
+        let mut tick: u32 = 0;
+        
+        while tick <= MAX_TICKS {
+            println!("Tick {}", tick);
+
+            tick = tick + 1;
+            thread::sleep(Duration::from_secs(1));
+        }
+    });
+
+
     ///////////////
     // Main Loop //
     ///////////////
-    
-    const MAX_TICKS: u32 = 31;
-    let mut tick: u32 = 0;
+    let mut events = Events::new(EventSettings {
+        max_fps:        144,
+        ups:            DEFAULT_UPS,
+        ups_reset:      DEFAULT_UPS_RESET,
+        swap_buffers:   true,
+        bench_mode:     false,
+        lazy:           false,
+    });
 
-    while tick <= MAX_TICKS {
-        println!("Tick {} Weather: {:?}", tick, thunderstorm.intensity(tick));
+    while let Some(e) = events.next(&mut window) {
+        if let Some(r) = e.render_args() {
+            app.render(&r);
+        }
 
-        tick = tick + 1;
+        if let Some(u) = e.update_args() {
+            app.update(&u);
+        }
     }
 }
 
