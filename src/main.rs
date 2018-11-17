@@ -41,13 +41,40 @@ use piston::event_loop::*;
 use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{ GlGraphics, OpenGL };
+use graphics::types::*;
 
+use std::f64;
 use std::thread;
 use std::time::Duration;
 
+pub mod shape;
+use shape::hexagon::Hexagon;
+use shape::point::Point;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//  Constants
+///////////////////////////////////////////////////////////////////////////////
 
 const WINDOW_X: u32 = 800;
 const WINDOW_Y: u32 = 600;
+
+const GRID_SIZE: f64 = 50.0;
+
+// X_OFFSET = (GRID_SIZE/2) + (GRID_SIZE * cos(pi/3))
+static X_OFFSET: f64 = GRID_SIZE + (GRID_SIZE * 0.5);
+// Y_OFFSET = GRID_SIZE * sin(pi/3) * 2
+static Y_OFFSET: f64 = GRID_SIZE * 0.86602540378;
+
+const BLACK:    Color = [0.0, 0.0, 0.0, 1.0];
+const WHITE:    Color = [1.0, 1.0, 1.0, 1.0];
+const RED:      Color = [1.0, 0.0, 0.0, 1.0];
+const GREEN:    Color = [0.0, 1.0, 0.0, 1.0];
+const BLUE:     Color = [0.0, 0.0, 1.0, 1.0];
+const YELLOW:   Color = [1.0, 1.0, 0.0, 1.0];
+const CYAN:     Color = [0.0, 1.0, 1.0, 1.0];
+const PURPLE:   Color = [1.0, 0.0, 1.0, 1.0];
+const GREY:     Color = [0.5, 0.5, 0.5, 1.0];
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
@@ -60,65 +87,66 @@ pub struct App {
 
 impl App {
     fn render(&mut self, args: &RenderArgs) {
-        use graphics::*;
-
-        const BLACK:    [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-        const WHITE:    [f32; 4] = [1.0, 1.0, 1.0, 1.0];
-        const RED:      [f32; 4] = [1.0, 0.0, 0.0, 1.0];
-        const GREEN:    [f32; 4] = [0.0, 1.0, 0.0, 1.0];
-        const BLUE:     [f32; 4] = [0.0, 0.0, 1.0, 1.0];
-        const YELLOW:   [f32; 4] = [1.0, 1.0, 0.0, 1.0];
-        const CYAN:     [f32; 4] = [0.0, 1.0, 1.0, 1.0];
-        const PURPLE:   [f32; 4] = [1.0, 0.0, 1.0, 1.0];
-        const GREY:     [f32; 4] = [0.5, 0.5, 0.5, 1.0];
-
-        const LINE_LENGTH: f64 = 100.0;
-        
-        let (x, y) = ((args.width / 2) as f64,
-                      (args.height / 2) as f64); 
+        use graphics::clear;
+        let center = Point::from(args.width as f64 / 2.0, args.height as f64 / 2.0);
 
         self.gl.draw(args.viewport(), |c, gl| {
             clear(BLACK, gl);
 
-            let my_line = [x, y,
-                           x, y-LINE_LENGTH];
+            let mut grid_elem = Hexagon::from(center, GRID_SIZE);
+            grid_elem.draw(c.transform, gl);
 
-            line(WHITE, 1.0, my_line, c.transform, gl);
+            let mut next_hex;
+            
+            // Draw E line of hexes
+            for i in 0..=5 {
+                next_hex = Point::from(center.x + (GRID_SIZE * 3.0 * i as f64), center.y);
+                grid_elem = Hexagon::from(next_hex, GRID_SIZE);
+                grid_elem.draw(c.transform, gl);
+            }
+            // Draw N line of hexes
+            for i in 0..=5 {
+                next_hex = Point::from(center.x, center.y - (Y_OFFSET * 2.0 * i as f64));
+                grid_elem = Hexagon::from(next_hex, GRID_SIZE);
+                grid_elem.draw(c.transform, gl);
+            }
+            // Draw W line of hexes
+            for i in 0..=5 {
+                next_hex = Point::from(center.x - (GRID_SIZE * 3.0 * i as f64), center.y);
+                grid_elem = Hexagon::from(next_hex, GRID_SIZE);
+                grid_elem.draw(c.transform, gl);
+            }
+            // Draw S line of hexes
+            for i in 0..=5 {
+                next_hex = Point::from(center.x, center.y + (Y_OFFSET * 2.0 * i as f64));
+                grid_elem = Hexagon::from(next_hex, GRID_SIZE);
+                grid_elem.draw(c.transform, gl);
+            }
 
-            let mut my_transform = c.transform.trans(x, y-LINE_LENGTH)
-                                     .rot_deg(45.0)
-                                     .trans(-x, -y);
-            line(RED, 1.0, my_line, my_transform, gl);
-
-            my_transform = my_transform.trans(x, y-LINE_LENGTH)
-                                          .rot_deg(45.0)
-                                          .trans(-x, -y);
-            line(GREEN, 1.0, my_line, my_transform, gl);
-
-            my_transform = my_transform.trans(x, y-LINE_LENGTH)
-                                          .rot_deg(45.0)
-                                          .trans(-x, -y);
-            line(BLUE, 1.0, my_line, my_transform, gl);
-
-            my_transform = my_transform.trans(x, y-LINE_LENGTH)
-                                          .rot_deg(45.0)
-                                          .trans(-x, -y);
-            line(YELLOW, 1.0, my_line, my_transform, gl);
-
-            my_transform = my_transform.trans(x, y-LINE_LENGTH)
-                                          .rot_deg(45.0)
-                                          .trans(-x, -y);
-            line(CYAN, 1.0, my_line, my_transform, gl);
-
-            my_transform = my_transform.trans(x, y-LINE_LENGTH)
-                                          .rot_deg(45.0)
-                                          .trans(-x, -y);
-            line(PURPLE, 1.0, my_line, my_transform, gl);
-
-            my_transform = my_transform.trans(x, y-LINE_LENGTH)
-                                          .rot_deg(45.0)
-                                          .trans(-x, -y);
-            line(GREY, 1.0, my_line, my_transform, gl);
+            // Draw NE line of hexes
+            for i in 0..=5 {
+                next_hex = Point::from(center.x + (X_OFFSET * i as f64), center.y - (Y_OFFSET * i as f64));
+                grid_elem = Hexagon::from(next_hex, GRID_SIZE);
+                grid_elem.draw(c.transform, gl);
+            }
+            // Draw NW line of hexes
+            for i in 0..=5 {
+                next_hex = Point::from(center.x - (X_OFFSET * i as f64), center.y - (Y_OFFSET * i as f64));
+                grid_elem = Hexagon::from(next_hex, GRID_SIZE);
+                grid_elem.draw(c.transform, gl);
+            }
+            // Draw SW line of hexes
+            for i in 0..=5 {
+                next_hex = Point::from(center.x - (X_OFFSET * i as f64), center.y + (Y_OFFSET * i as f64));
+                grid_elem = Hexagon::from(next_hex, GRID_SIZE);
+                grid_elem.draw(c.transform, gl);
+            }
+            // Draw SE line of hexes
+            for i in 0..=5 {
+                next_hex = Point::from(center.x + (X_OFFSET * i as f64), center.y + (Y_OFFSET * i as f64));
+                grid_elem = Hexagon::from(next_hex, GRID_SIZE);
+                grid_elem.draw(c.transform, gl);
+            }
         });
     }
 
