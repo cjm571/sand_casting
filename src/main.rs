@@ -109,8 +109,8 @@ impl App {
             clear(BLACK, gl);
 
             recursive_hex_draw(center, 0, c.transform, gl);
+            //recursive_spoke_draw()
 
-            //draw_hex_spokes(center, c.transform, gl);
         });
     }
 
@@ -212,62 +212,6 @@ fn main() {
     }
 }
 
-fn draw_hex_spokes<G>(center: Point, transform: Matrix2d, g: &mut G)
-where G: Graphics {
-    let mut grid_elem: Hexagon;
-    let mut next_hex: Point;
-            
-    // Draw E line of hexes
-    for i in 0..=5 {
-        next_hex = Point::from(center.x + (GRID_SIZE * 3.0 * i as f64), center.y);
-        grid_elem = Hexagon::from(next_hex, GRID_SIZE);
-        grid_elem.draw(transform, g);
-    }
-    // Draw N line of hexes
-    for i in 0..=5 {
-        next_hex = Point::from(center.x, center.y - (Y_OFFSET * 2.0 * i as f64));
-        grid_elem = Hexagon::from(next_hex, GRID_SIZE);
-        grid_elem.draw(transform, g);
-    }
-    // Draw W line of hexes
-    for i in 0..=5 {
-        next_hex = Point::from(center.x - (GRID_SIZE * 3.0 * i as f64), center.y);
-        grid_elem = Hexagon::from(next_hex, GRID_SIZE);
-        grid_elem.draw(transform, g);
-    }
-    // Draw S line of hexes
-    for i in 0..=5 {
-        next_hex = Point::from(center.x, center.y + (Y_OFFSET * 2.0 * i as f64));
-        grid_elem = Hexagon::from(next_hex, GRID_SIZE);
-        grid_elem.draw(transform, g);
-    }
-
-    // Draw NE line of hexes
-    for i in 0..=5 {
-        next_hex = Point::from(center.x + (X_OFFSET * i as f64), center.y - (Y_OFFSET * i as f64));
-        grid_elem = Hexagon::from(next_hex, GRID_SIZE);
-        grid_elem.draw(transform, g);
-    }
-    // Draw NW line of hexes
-    for i in 0..=5 {
-        next_hex = Point::from(center.x - (X_OFFSET * i as f64), center.y - (Y_OFFSET * i as f64));
-        grid_elem = Hexagon::from(next_hex, GRID_SIZE);
-        grid_elem.draw(transform, g);
-    }
-    // Draw SW line of hexes
-    for i in 0..=5 {
-        next_hex = Point::from(center.x - (X_OFFSET * i as f64), center.y + (Y_OFFSET * i as f64));
-        grid_elem = Hexagon::from(next_hex, GRID_SIZE);
-        grid_elem.draw(transform, g);
-    }
-    // Draw SE line of hexes
-    for i in 0..=5 {
-        next_hex = Point::from(center.x + (X_OFFSET * i as f64), center.y + (Y_OFFSET * i as f64));
-        grid_elem = Hexagon::from(next_hex, GRID_SIZE);
-        grid_elem.draw(transform, g);
-    }
-}
-
 /// Draws a hex grid at the given level using recursive calls radiating out
 /// from the given center.
 fn recursive_hex_draw<G>(center: Point, level: u32, transform: Matrix2d, g: &mut G)
@@ -281,8 +225,6 @@ where G: Graphics {
     // Draw a parallel line and dispatch a spoke draw call at the current level
     // for each intercardinal direction.
     for (dir, theta) in HEX_SIDES.iter() {
-        
-        println!("Drawing {:?} ({}) line...", dir, theta);
         // Calculate parallel line endpoints
         let mut x = center.x + GRID_SIZE * (theta - PI/6.0).cos();
         let mut y = center.y - GRID_SIZE * (theta - PI/6.0).sin();
@@ -298,10 +240,7 @@ where G: Graphics {
         endpt_b.x = endpt_b.x + level as f64 * (GRID_SIZE * theta.cos());
         endpt_b.y = endpt_b.y - level as f64 * (GRID_SIZE * theta.sin());
 
-        println!("A: {} B: {}", endpt_a, endpt_b);
-
-        // Draw parallel line at current level
-        
+        // Draw the line
         line(RED, 0.5, [endpt_a.x, endpt_a.y, endpt_b.x, endpt_b.y], transform, g);
         
         //TODO:Draw spoke at current level
@@ -312,7 +251,7 @@ where G: Graphics {
 
 /// Draws a spoke (i.e. -<) from a point in the given direction.
 /// Recursively spawns two more spoke draws at the endpoint
-fn spoke_draw<G>(origin: Point, dir: Direction, transform: Matrix2d, g: &mut G)
+fn recursive_spoke_draw<G>(origin: Point, dir: Direction, transform: Matrix2d, g: &mut G)
 where G: Graphics {
     let mut lines: [[f64; 4]; 3] = [[0.0; 4]; 3];
 
