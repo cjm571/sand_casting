@@ -58,6 +58,6 @@ impl Point {
 // Display output format for coordinates
 impl fmt::Display for Point {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({},{})", self.x, self.y)
+        write!(f, "({},{})", self.x as i64, self.y as i64)
     }
 } 

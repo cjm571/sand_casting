@@ -50,7 +50,7 @@ impl Hexagon {
     // Default Constructor
     pub fn new() -> Hexagon {
         // Build an array of default Points
-        let mut vertices: [Point; 6] = [Point::new(); 6];
+        let vertices: [Point; 6] = [Point::new(); 6];
 
         Hexagon {
             vertices:   vertices,
@@ -79,11 +79,11 @@ impl Hexagon {
             color:      [1.0, 1.0, 1.0, 1.0] // White
         }
     }
-    
+
     ///////////////////////////////////////////////////////////////////////////
     //  Utility Methods
     ///////////////////////////////////////////////////////////////////////////
-    
+
     // Draw hexagon to the given graphics context
     pub fn draw<G>(&self, transform: Matrix2d, g: &mut G)
     where G: Graphics {
@@ -96,7 +96,7 @@ impl Hexagon {
         }
         lines[5] = [self.vertices[5].x, self.vertices[5].y,
                     self.vertices[0].x, self.vertices[0].y];
-        
+
         // Draw all lines of hexagon
         for i in 0 ..=5 {
             line(self.color, 0.5, lines[i], transform, g);
