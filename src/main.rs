@@ -106,18 +106,7 @@ impl App {
         self.gl.draw(args.viewport(), |c, gl| {
             clear(BLACK, gl);
 
-            // Draw GRID_SIZE-width hexagon sides recursively
-            recursive_hex_draw(center, 0, c.transform, gl);
-
-            // Draw spokes recursively in all directions
-            for (_dir, theta) in HEX_VERTICES.iter() {
-                // Determine origin point for current direction
-                let origin = Point::from(
-                    center.x + (GRID_SIZE * theta.cos()),
-                    center.y - (GRID_SIZE * theta.sin())
-                );
-                recursive_spoke_draw(origin, *theta, 0, c.transform, gl);
-            }
+            draw_hex_grid(center, c.transform, gl);            
         });
     }
 
@@ -219,9 +208,26 @@ fn main() {
     }
 }
 
+/// Draws a baseline hex grid to the graphics window.
+fn draw_hex_grid<G>(center: Point, transform: Matrix2d, g: &mut G)
+where G: Graphics {
+    // Draw GRID_SIZE-width hexagon sides recursively
+    recursive_hex_draw(WHITE, center, 0, transform, g);
+
+    // Draw spokes recursively in all directions
+    for (_dir, theta) in HEX_VERTICES.iter() {
+        // Determine origin point for current direction
+        let origin = Point::from(
+            center.x + (GRID_SIZE * theta.cos()),
+            center.y - (GRID_SIZE * theta.sin())
+        );
+        recursive_spoke_draw(WHITE, origin, *theta, 0, transform, g);
+    }
+}
+
 /// Draws a hex grid at the given level using recursive calls radiating out
 /// from the given center.
-fn recursive_hex_draw<G>(center: Point, level: u32, transform: Matrix2d, g: &mut G)
+fn recursive_hex_draw<G>(color: Color, center: Point, level: u32, transform: Matrix2d, g: &mut G)
 where G: Graphics {
     // Final level exit case
     if level == WORLD_GRID.size {
@@ -250,16 +256,16 @@ where G: Graphics {
         endpt_b.y = endpt_b.y - level as f64 * (HEX_SIZE * theta.sin());
 
         // Draw the line
-        line(RED, 0.5, [endpt_a.x, endpt_a.y, endpt_b.x, endpt_b.y], transform, g);
+        line(color, 0.5, [endpt_a.x, endpt_a.y, endpt_b.x, endpt_b.y], transform, g);
     }
     
     // Make the recursive call
-    recursive_hex_draw(center, level+1, transform, g);
+    recursive_hex_draw(color, center, level+1, transform, g);
 }
 
 /// Draws a spoke (i.e. -<) from a point in the given direction.
 /// Recursively spawns two more spoke draws at the endpoint
-fn recursive_spoke_draw<G>(origin: Point, theta: f64, level: u32, transform: Matrix2d, g: &mut G)
+fn recursive_spoke_draw<G>(color: Color, origin: Point, theta: f64, level: u32, transform: Matrix2d, g: &mut G)
 where G: Graphics {
     // Final level exit case
     if level == WORLD_GRID.size {
@@ -293,12 +299,12 @@ where G: Graphics {
 
     // Draw lines
     for i in 0..=2 {
-        line (GREEN, 0.5, lines[i], transform, g);
+        line (color, 0.5, lines[i], transform, g);
     }
 
     // Make the recursive calls
-    recursive_spoke_draw(endpoints[1], theta, level+1, transform, g);
-    recursive_spoke_draw(endpoints[2], theta, level+1, transform, g);
+    recursive_spoke_draw(color, endpoints[1], theta, level+1, transform, g);
+    recursive_spoke_draw(color, endpoints[2], theta, level+1, transform, g);
 }
  
  
