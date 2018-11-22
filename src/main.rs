@@ -52,7 +52,6 @@ use std::thread;
 use std::time::Duration;
 
 pub mod shape;
-use shape::hexagon::Hexagon;
 use shape::point::Point;
 
 
@@ -65,10 +64,11 @@ const WINDOW_Y: u32 = 600;
 
 const GRID_SIZE: f64 = 50.0;
 
-// X_OFFSET = (GRID_SIZE/2) + (GRID_SIZE * cos(pi/3))
+// TODO: Determine if needed
+/* // X_OFFSET = (GRID_SIZE/2) + (GRID_SIZE * cos(pi/3))
 static X_OFFSET: f64 = GRID_SIZE + (GRID_SIZE * 0.5);
 // Y_OFFSET = GRID_SIZE * sin(pi/3) * 2
-static Y_OFFSET: f64 = GRID_SIZE * 0.86602540378;
+static Y_OFFSET: f64 = GRID_SIZE * 0.86602540378; */
 
 #[allow(dead_code)]
 const BLACK:    Color = [0.0, 0.0, 0.0, 1.0];
@@ -108,9 +108,19 @@ impl App {
         self.gl.draw(args.viewport(), |c, gl| {
             clear(BLACK, gl);
 
+            // Draw GRID_SIZE-width hexagon sides recursively
             recursive_hex_draw(center, 0, c.transform, gl);
-            //recursive_spoke_draw()
 
+            // Draw spokes recursively in all directions
+            let mut origin: Point = center;
+            for (_dir, theta) in HEX_VERTICES.iter() {
+                // Determine origin point for current direction
+                origin = Point::from(
+                    center.x + (GRID_SIZE * theta.cos()),
+                    center.y - (GRID_SIZE * theta.sin())
+                );
+                recursive_spoke_draw(origin, *theta, c.transform, gl);
+            }
         });
     }
 
@@ -216,15 +226,17 @@ fn main() {
 /// from the given center.
 fn recursive_hex_draw<G>(center: Point, level: u32, transform: Matrix2d, g: &mut G)
 where G: Graphics {
-    
     // Final level exit case
     if level == WORLD_GRID.size {
         return;
     }
+
+    // HEX_SIE to be used to correctly translate levels > 0
+    const HEX_SIZE: f64 = GRID_SIZE * 2.0;
     
     // Draw a parallel line and dispatch a spoke draw call at the current level
     // for each intercardinal direction.
-    for (dir, theta) in HEX_SIDES.iter() {
+    for (_dir, theta) in HEX_SIDES.iter() {
         // Calculate parallel line endpoints
         let mut x = center.x + GRID_SIZE * (theta - PI/6.0).cos();
         let mut y = center.y - GRID_SIZE * (theta - PI/6.0).sin();
@@ -235,15 +247,13 @@ where G: Graphics {
         let mut endpt_b: Point = Point::from(x, y);
 
         // Translate lines based on level
-        endpt_a.x = endpt_a.x + level as f64 * (GRID_SIZE * theta.cos());
-        endpt_a.y = endpt_a.y - level as f64 * (GRID_SIZE * theta.sin());
-        endpt_b.x = endpt_b.x + level as f64 * (GRID_SIZE * theta.cos());
-        endpt_b.y = endpt_b.y - level as f64 * (GRID_SIZE * theta.sin());
+        endpt_a.x = endpt_a.x + level as f64 * (HEX_SIZE * theta.cos());
+        endpt_a.y = endpt_a.y - level as f64 * (HEX_SIZE * theta.sin());
+        endpt_b.x = endpt_b.x + level as f64 * (HEX_SIZE * theta.cos());
+        endpt_b.y = endpt_b.y - level as f64 * (HEX_SIZE * theta.sin());
 
         // Draw the line
         line(RED, 0.5, [endpt_a.x, endpt_a.y, endpt_b.x, endpt_b.y], transform, g);
-        
-        //TODO:Draw spoke at current level
     }
     
     recursive_hex_draw(center, level+1, transform, g);
@@ -251,10 +261,22 @@ where G: Graphics {
 
 /// Draws a spoke (i.e. -<) from a point in the given direction.
 /// Recursively spawns two more spoke draws at the endpoint
-fn recursive_spoke_draw<G>(origin: Point, dir: Direction, transform: Matrix2d, g: &mut G)
+fn recursive_spoke_draw<G>(origin: Point, theta: f64, transform: Matrix2d, g: &mut G)
 where G: Graphics {
     let mut lines: [[f64; 4]; 3] = [[0.0; 4]; 3];
 
+    // Calculate endpoint of stem
+    let endpoint_stem: Point = Point::from(
+        origin.x + (GRID_SIZE * theta.cos()),
+        origin.y - (GRID_SIZE * theta.sin())
+    );
+
+    lines[0] = [origin.x, origin.y, endpoint_stem.x, endpoint_stem.y];
+
+    // Draw the stem line
+    line(GREEN, 0.5, lines[0], transform, g);
+
+    //TODO: Draw branches
     
 }
  
