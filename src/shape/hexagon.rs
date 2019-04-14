@@ -54,7 +54,7 @@ impl Hexagon {
 
         Hexagon {
             vertices:   vertices,
-            color:      [1.0, 1.0, 1.0, 1.0] // White
+            color:      [1.0, 1.0, 1.0, 1.0]
         }
     }
 

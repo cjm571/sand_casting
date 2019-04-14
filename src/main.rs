@@ -53,6 +53,7 @@ use std::time::Duration;
 
 pub mod shape;
 use shape::point::Point;
+use shape::hexagon::Hexagon;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -103,16 +104,16 @@ impl App {
         use graphics::clear;
         let center = Point::from(args.width as f64 / 2.0, args.height as f64 / 2.0);
 
+        //TODO: TEMP CODE, DELETE
+        let mut tempHex: Hexagon = Hexagon::from(center, GRID_SIZE);
+        tempHex.color = RED;
+
         self.gl.draw(args.viewport(), |c, gl| {
             clear(BLACK, gl);
 
-            draw_hex_grid(center, c.transform, gl);            
+            draw_hex_grid(center, c.transform, gl);
+            tempHex.draw(c.transform, gl);
         });
-    }
-
-    fn update (&mut self, args: &UpdateArgs) {
-        // Rotate 2rad/s
-        self.rotation += 2.0 * args.dt;
     }
 }
 
@@ -185,9 +186,9 @@ fn main() {
     });
 
 
-    ///////////////
-    // Main Loop //
-    ///////////////
+    /*  *  *  *  *  *  *  *  *\
+     *   M A I N   L O O P   *
+    \*  *  *  *  *  *  *  *  */
     let mut events = Events::new(EventSettings {
         max_fps:        144,
         ups:            DEFAULT_UPS,
@@ -200,10 +201,6 @@ fn main() {
     while let Some(e) = events.next(&mut window) {
         if let Some(r) = e.render_args() {
             app.render(&r);
-        }
-
-        if let Some(u) = e.update_args() {
-            app.update(&u);
         }
     }
 }
