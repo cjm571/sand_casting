@@ -95,8 +95,7 @@ const WORLD_GRID: WorldGrid = WorldGrid {size:10};
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct App {
-    gl: GlGraphics,         // OpenGL drawing backend
-    rotation: f64,          // Rotation for the square
+    gl: GlGraphics  // OpenGL drawing backend
 }
 
 impl App {
@@ -105,14 +104,14 @@ impl App {
         let center = Point::from(args.width as f64 / 2.0, args.height as f64 / 2.0);
 
         //TODO: TEMP CODE, DELETE
-        let mut tempHex: Hexagon = Hexagon::from(center, GRID_SIZE);
-        tempHex.color = RED;
+        let mut temp_hex: Hexagon = Hexagon::from(center, GRID_SIZE);
+        temp_hex.color = RED;
 
         self.gl.draw(args.viewport(), |c, gl| {
             clear(BLACK, gl);
 
             draw_hex_grid(center, c.transform, gl);
-            tempHex.draw(c.transform, gl);
+            temp_hex.draw(c.transform, gl);
         });
     }
 }
@@ -165,8 +164,7 @@ fn main() {
     
     // Create a new game and run it
     let mut app = App {
-        gl: GlGraphics::new(opengl),
-        rotation: 0.0
+        gl: GlGraphics::new(opengl)
     };
     
     /*  *  *  *  *  *  *  *  *  *  *\

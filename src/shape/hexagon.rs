@@ -64,9 +64,8 @@ impl Hexagon {
         let x_offset = size * (f64::consts::PI/3.0).cos();
         let y_offset = size * (f64::consts::PI/3.0).sin();
 
-        let mut vertices: [Point; 6] = [Point::new(); 6];
-
         // NOTE: these are graphical coordinates, where (0, 0) is the top-left
+        let mut vertices: [Point; 6] = [Point::new(); 6];
         vertices[0] = Point::from(center.x + size, center.y);
         vertices[1] = Point::from(center.x + x_offset, center.y - y_offset);
         vertices[2] = Point::from(center.x - x_offset, center.y - y_offset);
