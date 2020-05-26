@@ -23,13 +23,15 @@ Changelog:
     CJ Mcallister   02 Sep 2018     Add basic ggez graphics
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#[macro_use(lazy_static)]
+extern crate lazy_static;
+
 extern crate cast_iron;
 use cast_iron::actor::Actor;
 use cast_iron::ability::Ability;
 use cast_iron::ability::aspect::*;
 use cast_iron::environment::Element;
 use cast_iron::environment::weather::Weather;
-use cast_iron::environment::world_grid::*;
 use cast_iron::polyfunc::PolyFunc;
 
 extern crate piston;
@@ -43,17 +45,16 @@ use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{ GlGraphics, OpenGL };
 use graphics::types::*;
-use graphics::line;
-use graphics::Graphics;
 
 use std::f64;
-use std::f64::consts::PI;
 use std::thread;
 use std::time::Duration;
 
 pub mod shape;
 use shape::point::Point;
-use shape::hexagon::Hexagon;
+
+pub mod world_grid_manager;
+use world_grid_manager::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -62,12 +63,6 @@ use shape::hexagon::Hexagon;
 
 const WINDOW_X: u32 = 800;
 const WINDOW_Y: u32 = 600;
-
-const GRID_SIZE: f64 = 50.0;
-
-// Y_OFFSET = GRID_SIZE * sin(pi/3) * 2
-// Distance from centerpoint of hex to center of a side 
-static Y_OFFSET: f64 = GRID_SIZE * 0.86602540378;
 
 #[allow(dead_code)]
 const BLACK:    Color = [0.0, 0.0, 0.0, 1.0];
@@ -88,14 +83,15 @@ const PURPLE:   Color = [1.0, 0.0, 1.0, 1.0];
 #[allow(dead_code)]
 const GREY:     Color = [0.5, 0.5, 0.5, 1.0];
 
-const WORLD_GRID: WorldGrid = WorldGrid {size:10};
+const WORLD_GRID_MANAGER: WorldGridManager = WorldGridManager {max_radial_distance:10};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct App {
-    gl: GlGraphics  // OpenGL drawing backend
+    gl_backend: GlGraphics, // OpenGL drawing backend
 }
 
 impl App {
@@ -103,15 +99,14 @@ impl App {
         use graphics::clear;
         let center = Point::from(args.width as f64 / 2.0, args.height as f64 / 2.0);
 
-        //TODO: TEMP CODE, DELETE
-        let mut temp_hex: Hexagon = Hexagon::from(center, GRID_SIZE);
-        temp_hex.color = RED;
+        self.gl_backend.draw(args.viewport(), |c, gl_backend| {
+            // Clear before each frame
+            clear(BLACK, gl_backend);
 
-        self.gl.draw(args.viewport(), |c, gl| {
-            clear(BLACK, gl);
+            // Draw underlying hex grid
+            WORLD_GRID_MANAGER.draw_grid(center, c.transform, gl_backend);
 
-            draw_hex_grid(center, c.transform, gl);
-            temp_hex.draw(c.transform, gl);
+            //TODO: Draw weather tiles
         });
     }
 }
@@ -164,13 +159,12 @@ fn main() {
     
     // Create a new game and run it
     let mut app = App {
-        gl: GlGraphics::new(opengl)
+        gl_backend: GlGraphics::new(opengl)
     };
     
-    /*  *  *  *  *  *  *  *  *  *  *\
-     *    T I M I N G   L O O P    *
-    \*  *  *  *  *  *  *  *  *  *  */
-     
+    /*  *  *  *  *  *  *  *  *  *  *  *\
+     *    T I M I N G   T H R E A D   * 
+    \*  *  *  *  *  *  *  *  *  *  *  */
     thread::spawn(move || {
         const MAX_TICKS: u32 = 31;
         let mut tick: u32 = 0;
@@ -196,110 +190,10 @@ fn main() {
         lazy:           false,
     });
 
+    // Render
     while let Some(e) = events.next(&mut window) {
         if let Some(r) = e.render_args() {
             app.render(&r);
         }
     }
 }
-
-/// Draws a baseline hex grid to the graphics window.
-fn draw_hex_grid<G>(center: Point, transform: Matrix2d, g: &mut G)
-where G: Graphics {
-    // Draw GRID_SIZE-width hexagon sides recursively
-    recursive_hex_draw(WHITE, center, 0, transform, g);
-
-    // Draw spokes recursively in all directions
-    for (_dir, theta) in HEX_VERTICES.iter() {
-        // Determine origin point for current direction
-        let origin = Point::from(
-            center.x + (GRID_SIZE * theta.cos()),
-            center.y - (GRID_SIZE * theta.sin())
-        );
-        recursive_spoke_draw(WHITE, origin, *theta, 0, transform, g);
-    }
-}
-
-/// Draws a hex grid at the given level using recursive calls radiating out
-/// from the given center.
-fn recursive_hex_draw<G>(color: Color, center: Point, level: u32, transform: Matrix2d, g: &mut G)
-where G: Graphics {
-    // Final level exit case
-    if level == WORLD_GRID.size {
-        return;
-    }
-
-    // HEX_SIE to be used to correctly translate levels > 0
-    static HEX_SIZE: f64 = Y_OFFSET * 2.0;
-    
-    // Draw a parallel line and dispatch a spoke draw call at the current level
-    // for each intercardinal direction.
-    for (_dir, theta) in HEX_SIDES.iter() {
-        // Calculate parallel line endpoints
-        let mut x = center.x + GRID_SIZE * (theta - PI/6.0).cos();
-        let mut y = center.y - GRID_SIZE * (theta - PI/6.0).sin();
-        let mut endpt_a: Point = Point::from(x, y);
-
-        x = center.x + GRID_SIZE * (theta + PI/6.0).cos();
-        y = center.y - GRID_SIZE * (theta + PI/6.0).sin();
-        let mut endpt_b: Point = Point::from(x, y);
-
-        // Translate lines based on level
-        endpt_a.x = endpt_a.x + level as f64 * (HEX_SIZE * theta.cos());
-        endpt_a.y = endpt_a.y - level as f64 * (HEX_SIZE * theta.sin());
-        endpt_b.x = endpt_b.x + level as f64 * (HEX_SIZE * theta.cos());
-        endpt_b.y = endpt_b.y - level as f64 * (HEX_SIZE * theta.sin());
-
-        // Draw the line
-        line(color, 0.5, [endpt_a.x, endpt_a.y, endpt_b.x, endpt_b.y], transform, g);
-    }
-    
-    // Make the recursive call
-    recursive_hex_draw(color, center, level+1, transform, g);
-}
-
-/// Draws a spoke (i.e. -<) from a point in the given direction.
-/// Recursively spawns two more spoke draws at the endpoint
-fn recursive_spoke_draw<G>(color: Color, origin: Point, theta: f64, level: u32, transform: Matrix2d, g: &mut G)
-where G: Graphics {
-    // Final level exit case
-    if level == WORLD_GRID.size {
-        return;
-    }
-
-    let mut lines: [[f64; 4]; 3] = [[0.0; 4]; 3];
-    let mut endpoints: [Point; 3] = [Point::new(); 3];
-
-    // Calculate endpoint of stem
-    endpoints[0] = Point::from(
-        origin.x + (GRID_SIZE * theta.cos()),
-        origin.y - (GRID_SIZE * theta.sin())
-    );
-    lines[0] = [origin.x, origin.y,
-                endpoints[0].x, endpoints[0].y];
-
-    // Calculate branch endpoints
-    endpoints[1] = Point::from(
-        endpoints[0].x + (GRID_SIZE * (theta + PI/3.0).cos()),
-        endpoints[0].y - (GRID_SIZE * (theta + PI/3.0).sin())
-    );
-    endpoints[2] = Point::from(
-        endpoints[0].x + (GRID_SIZE * (theta - PI/3.0).cos()),
-        endpoints[0].y - (GRID_SIZE * (theta - PI/3.0).sin())
-    );
-    lines[1] = [endpoints[0].x, endpoints[0].y,
-                endpoints[1].x, endpoints[1].y];
-    lines[2] = [endpoints[0].x, endpoints[0].y,
-                endpoints[2].x, endpoints[2].y];
-
-    // Draw lines
-    for i in 0..=2 {
-        line (color, 0.5, lines[i], transform, g);
-    }
-
-    // Make the recursive calls
-    recursive_spoke_draw(color, endpoints[1], theta, level+1, transform, g);
-    recursive_spoke_draw(color, endpoints[2], theta, level+1, transform, g);
-}
- 
- 
