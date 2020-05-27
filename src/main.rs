@@ -25,6 +25,7 @@ Changelog:
 
 #[macro_use(lazy_static)]
 extern crate lazy_static;
+extern crate ggez;
 
 extern crate cast_iron;
 use cast_iron::actor::Actor;
@@ -34,21 +35,13 @@ use cast_iron::environment::Element;
 use cast_iron::environment::weather::Weather;
 use cast_iron::polyfunc::PolyFunc;
 
-extern crate piston;
-extern crate graphics;
-extern crate glutin_window;
-extern crate opengl_graphics;
-
-use piston::window::WindowSettings;
-use piston::event_loop::*;
-use piston::input::*;
-use glutin_window::GlutinWindow as Window;
-use opengl_graphics::{ GlGraphics, OpenGL };
-use graphics::types::*;
+use ggez::{Context, ContextBuilder, GameResult};
+use ggez::event::{self, EventHandler};
+use ggez::graphics;
 
 use std::f64;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub mod shape;
 use shape::point::Point;
@@ -61,55 +54,66 @@ use world_grid_manager::*;
 //  Constants
 ///////////////////////////////////////////////////////////////////////////////
 
+const STACK_SIZE: usize = 8 * 1024 * 1024;
+
 const WINDOW_X: u32 = 800;
 const WINDOW_Y: u32 = 600;
 
 #[allow(dead_code)]
-const BLACK:    Color = [0.0, 0.0, 0.0, 1.0];
+const BLACK:    [f64; 4] = [0.0, 0.0, 0.0, 1.0];
 #[allow(dead_code)]
-const WHITE:    Color = [1.0, 1.0, 1.0, 1.0];
+const WHITE:    [f64; 4] = [1.0, 1.0, 1.0, 1.0];
 #[allow(dead_code)]
-const RED:      Color = [1.0, 0.0, 0.0, 1.0];
+const RED:      [f64; 4] = [1.0, 0.0, 0.0, 1.0];
 #[allow(dead_code)]
-const GREEN:    Color = [0.0, 1.0, 0.0, 1.0];
+const GREEN:    [f64; 4] = [0.0, 1.0, 0.0, 1.0];
 #[allow(dead_code)]
-const BLUE:     Color = [0.0, 0.0, 1.0, 1.0];
+const BLUE:     [f64; 4] = [0.0, 0.0, 1.0, 1.0];
 #[allow(dead_code)]
-const YELLOW:   Color = [1.0, 1.0, 0.0, 1.0];
+const YELLOW:   [f64; 4] = [1.0, 1.0, 0.0, 1.0];
 #[allow(dead_code)]
-const CYAN:     Color = [0.0, 1.0, 1.0, 1.0];
+const CYAN:     [f64; 4] = [0.0, 1.0, 1.0, 1.0];
 #[allow(dead_code)]
-const PURPLE:   Color = [1.0, 0.0, 1.0, 1.0];
+const PURPLE:   [f64; 4] = [1.0, 0.0, 1.0, 1.0];
 #[allow(dead_code)]
-const GREY:     Color = [0.5, 0.5, 0.5, 1.0];
+const GREY:     [f64; 4] = [0.5, 0.5, 0.5, 1.0];
 
-const WORLD_GRID_MANAGER: WorldGridManager = WorldGridManager {max_radial_distance:10};
 
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
-pub struct App {
-    gl_backend: GlGraphics, // OpenGL drawing backend
+/// Primary Game Struct
+struct IronSandboxideGame {
+    world_grid_manager: WorldGridManager
 }
 
-impl App {
-    fn render(&mut self, args: &RenderArgs) {
-        use graphics::clear;
-        let center = Point::from(args.width as f64 / 2.0, args.height as f64 / 2.0);
-
-        self.gl_backend.draw(args.viewport(), |c, gl_backend| {
-            // Clear before each frame
-            clear(BLACK, gl_backend);
-
-            // Draw underlying hex grid
-            WORLD_GRID_MANAGER.draw_grid(center, c.transform, gl_backend);
-
-            //TODO: Draw weather tiles
-        });
+impl IronSandboxideGame {
+    pub fn new(_ctx: &mut Context) -> IronSandboxideGame {
+        // Load/create resources here: images, fonts, sounds, etc.
+        IronSandboxideGame{
+            world_grid_manager: WorldGridManager::new(10)
+        }
     }
 }
+
+impl EventHandler for IronSandboxideGame {
+    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+        // Update code here...
+
+        Ok(())
+    }
+
+    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        graphics::clear(ctx, graphics::WHITE);
+
+        //TODO: Draw code here...
+
+        graphics::present(ctx)
+    }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Functions and Methods
@@ -145,26 +149,15 @@ fn main() {
     let thunder_func: PolyFunc = PolyFunc::from(150, 10, 15);
     let thunderstorm: Weather = Weather::from(Element::Electric, thunder_func);
 
-    // Piston graphics stuff
-    let opengl = OpenGL::V3_2;
+    // Create a GGEZ Context and EventLoop
+    let (mut ggez_context, mut ggez_event_loop) = ContextBuilder::new("Iron Sandboxide", "CJ McAllister")
+                                                  .build()
+                                                  .unwrap();
 
-    let mut window: Window = WindowSettings::new(
-            "Cast(Iron) Sandb(Oxide)",
-            [WINDOW_X, WINDOW_Y]
-        )
-        .opengl(opengl)
-        .exit_on_esc(true)
-        .build()
-        .unwrap();
+    // Create a GGEZ Event Handler instance
+    let mut iron_sandboxide_game = IronSandboxideGame::new(&mut ggez_context);
     
-    // Create a new game and run it
-    let mut app = App {
-        gl_backend: GlGraphics::new(opengl)
-    };
-    
-    /*  *  *  *  *  *  *  *  *  *  *  *\
-     *    T I M I N G   T H R E A D   * 
-    \*  *  *  *  *  *  *  *  *  *  *  */
+    // Kick off the timing thread
     thread::spawn(move || {
         const MAX_TICKS: u32 = 31;
         let mut tick: u32 = 0;
@@ -177,23 +170,9 @@ fn main() {
         }
     });
 
-
-    /*  *  *  *  *  *  *  *  *\
-     *   M A I N   L O O P   *
-    \*  *  *  *  *  *  *  *  */
-    let mut events = Events::new(EventSettings {
-        max_fps:        144,
-        ups:            DEFAULT_UPS,
-        ups_reset:      DEFAULT_UPS_RESET,
-        swap_buffers:   true,
-        bench_mode:     false,
-        lazy:           false,
-    });
-
-    // Render
-    while let Some(e) = events.next(&mut window) {
-        if let Some(r) = e.render_args() {
-            app.render(&r);
-        }
+    // Run the game!
+    match event::run(&mut ggez_context, &mut ggez_event_loop, &mut iron_sandboxide_game) {
+        Ok(_)   => println!("Exited cleanly."),
+        Err(e)  => println!("Error occured: {}", e)
     }
 }

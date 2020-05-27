@@ -23,11 +23,6 @@ Changelog:
     CJ McAllister   16 Nov 2018     File created
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-use graphics::Graphics;
-use graphics::line;
-use graphics::types::*;
-
 use std::f64;
 
 use super::point::Point;
@@ -40,7 +35,7 @@ use super::point::Point;
 #[derive(Debug, Copy, Clone)]
 pub struct Hexagon {
     vertices:   [Point; 6],
-    pub color:  Color
+    pub color:  [f64; 4]
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -84,8 +79,7 @@ impl Hexagon {
     ///////////////////////////////////////////////////////////////////////////
 
     // Draw hexagon to the given graphics context
-    pub fn draw<G>(&self, transform: Matrix2d, g: &mut G)
-    where G: Graphics {
+    pub fn draw<G>(&self) {
         // Build up an array of "lines" for use in the line() draw function
         let mut lines: [[f64; 4]; 6] = [[0.0; 4]; 6];
 
@@ -98,7 +92,8 @@ impl Hexagon {
 
         // Draw all lines of hexagon
         for i in 0 ..=5 {
-            line(self.color, 0.5, lines[i], transform, g);
+            // FIXME: replace with GGEZ call
+            // line(self.color, 0.5, lines[i], transform, g);
         }
     }
 

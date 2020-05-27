@@ -22,10 +22,6 @@ Changelog:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use graphics::types::*;
-use graphics::line;
-use graphics::Graphics;
-
 use std::f64::consts::PI;
 use std::collections::HashMap;
 
@@ -37,7 +33,7 @@ use super::*;
 //  Constants
 ///////////////////////////////////////////////////////////////////////////////
 
-const GRID_CELL_SIZE: f64 = 50.0;
+const GRID_CELL_SIZE: f64 = 30.0;
 
 // Y_OFFSET = GRID_CELL_SIZE * sin(pi/3) * 2
 // Distance from centerpoint of hex to center of a side 
@@ -123,11 +119,11 @@ impl WorldGridManager {
     }
 
     /// Draws a baseline hex grid to the graphics window.
-    pub fn draw_grid<G>(self, center: Point, transform: Matrix2d, g: &mut G)
-    where G: Graphics {
+    pub fn draw_grid(self, center: Point) {
         // Draw GRID_CELL_SIZE-width hexagon sides recursively
-        self.recursive_hex_draw(WHITE, center, 0, transform, g);
+        self.recursive_hex_draw(WHITE, center, 0);
 
+        let spoke_color = GREEN;
         // Draw spokes recursively in all directions
         for (_dir, theta) in HEX_VERTICES.iter() {
             // Determine origin point for current direction
@@ -135,7 +131,7 @@ impl WorldGridManager {
                 center.x + (GRID_CELL_SIZE * theta.cos()),
                 center.y - (GRID_CELL_SIZE * theta.sin())
             );
-            self.recursive_spoke_draw(WHITE, origin, *theta, 0, transform, g);
+            self.recursive_spoke_draw(spoke_color, origin, *theta, 0);
         }
     }
 
@@ -145,8 +141,7 @@ impl WorldGridManager {
 
     /// Draws a hex grid at the given level using recursive calls radiating out
     /// from the given center.
-    fn recursive_hex_draw<G>(self, color: Color, center: Point, level: u32, transform: Matrix2d, g: &mut G)
-    where G: Graphics {
+    fn recursive_hex_draw(self, color: [f64; 4], center: Point, level: u32) {
         // Final level exit case
         if level == self.max_radial_distance {
             return;
@@ -174,17 +169,17 @@ impl WorldGridManager {
             endpt_b.y = endpt_b.y - level as f64 * (HEX_SIZE * theta.sin());
 
             // Draw the line
-            line(color, 0.5, [endpt_a.x, endpt_a.y, endpt_b.x, endpt_b.y], transform, g);
+            // FIXME: replace with GGEZ call
+            // line(color, 0.5, [endpt_a.x, endpt_a.y, endpt_b.x, endpt_b.y]);
         }
         
         // Make the recursive call
-        self.recursive_hex_draw(color, center, level+1, transform, g);
+        self.recursive_hex_draw(color, center, level+1);
     }
 
     /// Draws a spoke (i.e. -<) from a point in the given direction.
     /// Recursively spawns two more spoke draws at the endpoint
-    fn recursive_spoke_draw<G>(self, color: Color, origin: Point, theta: f64, level: u32, transform: Matrix2d, g: &mut G)
-    where G: Graphics {
+    fn recursive_spoke_draw(self, mut color: [f64; 4], origin: Point, theta: f64, level: u32) {
         // Final level exit case
         if level == self.max_radial_distance {
             return;
@@ -217,12 +212,16 @@ impl WorldGridManager {
 
         // Draw lines
         for i in 0..=2 {
-            line (color, 0.5, lines[i], transform, g);
+            // FIXME: replace with GGEZ call
+            // line (color, 0.5, lines[i]);
         }
 
         // Make the recursive calls
-        self.recursive_spoke_draw(color, endpoints[1], theta, level+1, transform, g);
-        self.recursive_spoke_draw(color, endpoints[2], theta, level+1, transform, g);
+        color[1] = color[1] - 0.1;
+
+        color[0] = color[0] + 0.1;
+        self.recursive_spoke_draw(color, endpoints[1], theta, level+1);
+        color[0] = color[2] + 0.1;
+        self.recursive_spoke_draw(color, endpoints[2], theta, level+1);
     }
 }
-
