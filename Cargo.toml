@@ -1,6 +1,6 @@
 [package]
-name = "iron_sandboxide"
-version = "0.1.1"
+name = "sand_casting"
+version = "0.2.0"
 authors = ["CJ McAllister <cjm571@gmail.com>"]
 
 [dependencies]

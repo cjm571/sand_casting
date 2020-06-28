@@ -38,6 +38,7 @@ use cast_iron::polyfunc::PolyFunc;
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::event::{self, EventHandler};
 use ggez::graphics;
+use ggez::conf;
 
 use std::f64;
 use std::thread;
@@ -53,11 +54,6 @@ use world_grid_manager::*;
 ///////////////////////////////////////////////////////////////////////////////
 //  Constants
 ///////////////////////////////////////////////////////////////////////////////
-
-const STACK_SIZE: usize = 8 * 1024 * 1024;
-
-const WINDOW_X: u32 = 800;
-const WINDOW_Y: u32 = 600;
 
 #[allow(dead_code)]
 const BLACK:    [f64; 4] = [0.0, 0.0, 0.0, 1.0];
@@ -78,6 +74,9 @@ const PURPLE:   [f64; 4] = [1.0, 0.0, 1.0, 1.0];
 #[allow(dead_code)]
 const GREY:     [f64; 4] = [0.5, 0.5, 0.5, 1.0];
 
+const DEFAULT_WINDOW_SIZE_X: f32 = 800.0;
+const DEFAULT_WINDOW_SIZE_Y: f32 = 600.0;
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -85,20 +84,20 @@ const GREY:     [f64; 4] = [0.5, 0.5, 0.5, 1.0];
 ///////////////////////////////////////////////////////////////////////////////
 
 /// Primary Game Struct
-struct IronSandboxideGame {
+struct SandCastingGame {
     world_grid_manager: WorldGridManager
 }
 
-impl IronSandboxideGame {
-    pub fn new(_ctx: &mut Context) -> IronSandboxideGame {
+impl SandCastingGame {
+    pub fn new(_ctx: &mut Context) -> SandCastingGame {
         // Load/create resources here: images, fonts, sounds, etc.
-        IronSandboxideGame{
+        SandCastingGame{
             world_grid_manager: WorldGridManager::new(10)
         }
     }
 }
 
-impl EventHandler for IronSandboxideGame {
+impl EventHandler for SandCastingGame {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         // Update code here...
 
@@ -106,7 +105,7 @@ impl EventHandler for IronSandboxideGame {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, graphics::WHITE);
+        graphics::clear(ctx, graphics::BLACK);
 
         //TODO: Draw code here...
 
@@ -150,12 +149,14 @@ fn main() {
     let thunderstorm: Weather = Weather::from(Element::Electric, thunder_func);
 
     // Create a GGEZ Context and EventLoop
-    let (mut ggez_context, mut ggez_event_loop) = ContextBuilder::new("Iron Sandboxide", "CJ McAllister")
+    let (mut ggez_context, mut ggez_event_loop) = ContextBuilder::new("sand_casting", "CJ McAllister")
+                                                  .window_setup(conf::WindowSetup::default().title("Sand Casting - A Cast Iron Sandbox Game"))
+                                                  .window_mode(conf::WindowMode::default().dimensions(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_Y))
                                                   .build()
                                                   .unwrap();
 
-    // Create a GGEZ Event Handler instance
-    let mut iron_sandboxide_game = IronSandboxideGame::new(&mut ggez_context);
+    // Use built context to create a GGEZ Event Handler instance
+    let mut sand_casting_game_state = SandCastingGame::new(&mut ggez_context);
     
     // Kick off the timing thread
     thread::spawn(move || {
@@ -171,7 +172,7 @@ fn main() {
     });
 
     // Run the game!
-    match event::run(&mut ggez_context, &mut ggez_event_loop, &mut iron_sandboxide_game) {
+    match event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {
         Ok(_)   => println!("Exited cleanly."),
         Err(e)  => println!("Error occured: {}", e)
     }
