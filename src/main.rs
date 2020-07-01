@@ -28,25 +28,35 @@ extern crate lazy_static;
 extern crate ggez;
 
 extern crate cast_iron;
-use cast_iron::actor::Actor;
-use cast_iron::ability::Ability;
-use cast_iron::ability::aspect::*;
-use cast_iron::environment::Element;
-use cast_iron::environment::weather::Weather;
-use cast_iron::polyfunc::PolyFunc;
+use cast_iron::{
+    actor::Actor,
+    ability::{
+        Ability,
+        aspect::*
+    },
+    environment::{
+        Element,
+        weather::Weather
+    },
+    polyfunc::PolyFunc
+};
 
-use ggez::{Context, ContextBuilder, GameResult};
-use ggez::event::{self, EventHandler};
-use ggez::graphics;
-use ggez::conf;
+use ggez::{
+    Context as GgEzContext,
+    ContextBuilder as GgEzContextBuilder,
+    GameResult,
+    conf as ggez_conf,
+    event as ggez_event,
+    graphics as ggez_gfx,
+    nalgebra as ggez_na,
+    timer as ggez_timer
+};
 
-use std::f64;
-use std::thread;
-use std::time::{Duration, Instant};
-
-pub mod shape;
-use shape::point::Point;
-
+///
+// Module Declarations
+/// 
+pub mod game_assets;
+use game_assets::colors::*;
 pub mod world_grid_manager;
 use world_grid_manager::*;
 
@@ -55,28 +65,9 @@ use world_grid_manager::*;
 //  Constants
 ///////////////////////////////////////////////////////////////////////////////
 
-#[allow(dead_code)]
-const BLACK:    [f64; 4] = [0.0, 0.0, 0.0, 1.0];
-#[allow(dead_code)]
-const WHITE:    [f64; 4] = [1.0, 1.0, 1.0, 1.0];
-#[allow(dead_code)]
-const RED:      [f64; 4] = [1.0, 0.0, 0.0, 1.0];
-#[allow(dead_code)]
-const GREEN:    [f64; 4] = [0.0, 1.0, 0.0, 1.0];
-#[allow(dead_code)]
-const BLUE:     [f64; 4] = [0.0, 0.0, 1.0, 1.0];
-#[allow(dead_code)]
-const YELLOW:   [f64; 4] = [1.0, 1.0, 0.0, 1.0];
-#[allow(dead_code)]
-const CYAN:     [f64; 4] = [0.0, 1.0, 1.0, 1.0];
-#[allow(dead_code)]
-const PURPLE:   [f64; 4] = [1.0, 0.0, 1.0, 1.0];
-#[allow(dead_code)]
-const GREY:     [f64; 4] = [0.5, 0.5, 0.5, 1.0];
-
 const DEFAULT_WINDOW_SIZE_X: f32 = 800.0;
 const DEFAULT_WINDOW_SIZE_Y: f32 = 600.0;
-
+const DESIRED_FPS: u32 = 60;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -84,32 +75,53 @@ const DEFAULT_WINDOW_SIZE_Y: f32 = 600.0;
 ///////////////////////////////////////////////////////////////////////////////
 
 /// Primary Game Struct
-struct SandCastingGame {
+struct SandCastingGameState {
     world_grid_manager: WorldGridManager
 }
 
-impl SandCastingGame {
-    pub fn new(_ctx: &mut Context) -> SandCastingGame {
+impl SandCastingGameState {
+    pub fn new(_ctx: &mut GgEzContext) -> SandCastingGameState {
         // Load/create resources here: images, fonts, sounds, etc.
-        SandCastingGame{
+        SandCastingGameState{
             world_grid_manager: WorldGridManager::new(10)
         }
     }
 }
 
-impl EventHandler for SandCastingGame {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
-        // Update code here...
+impl ggez_event::EventHandler for SandCastingGameState {
+    fn update(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
+        while ggez_timer::check_update_time(ctx, 1) {
+            let elapsed_time = ggez_timer::time_since_start(ctx);
+
+            println!("Elapsed Time: {}.{}", elapsed_time.as_secs(), elapsed_time.subsec_millis());
+        }
 
         Ok(())
     }
 
-    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, graphics::BLACK);
+    fn draw(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
+        ggez_gfx::clear(ctx, BLACK);
+        
+        //FIXME: START TRIAL CODE, DELETE
+        let mesh_points = [
+                ggez_na::Point2::new(10.0, 0.0),    // Top Left
+                ggez_na::Point2::new(20.0, 0.0),    // Top Right
+                ggez_na::Point2::new(30.0, 10.0),    // Mid Right
+                ggez_na::Point2::new(20.0, 20.0),   // Bot Right 
+                ggez_na::Point2::new(10.0, 20.0),   // Bot Left
+                ggez_na::Point2::new(0.0, 10.0)     // Mid Left
+        ];
+        let mesh_test = ggez_gfx::MeshBuilder::new()
+                        .polygon(
+                            ggez_gfx::DrawMode::stroke(1.0),
+                            &mesh_points,
+                            WHITE
+                        )?
+                        .build(ctx)?;
+        ggez_gfx::draw(ctx, &mesh_test, ggez_gfx::DrawParam::default())?;
+        //FIXME: END TRIAL CODE, DELETE
 
-        //TODO: Draw code here...
-
-        graphics::present(ctx)
+        ggez_gfx::present(ctx)
     }
 }
 
@@ -149,30 +161,24 @@ fn main() {
     let thunderstorm: Weather = Weather::from(Element::Electric, thunder_func);
 
     // Create a GGEZ Context and EventLoop
-    let (mut ggez_context, mut ggez_event_loop) = ContextBuilder::new("sand_casting", "CJ McAllister")
-                                                  .window_setup(conf::WindowSetup::default().title("Sand Casting - A Cast Iron Sandbox Game"))
-                                                  .window_mode(conf::WindowMode::default().dimensions(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_Y))
+    let (mut ggez_context, mut ggez_event_loop) = GgEzContextBuilder::new("sand_casting", "CJ McAllister")
+                                                  .window_setup(
+                                                      ggez_conf::WindowSetup::default()
+                                                      .title("Sand Casting - A Cast Iron Sandbox Game")
+                                                      .vsync(true)
+                                                    )
+                                                  .window_mode(
+                                                      ggez_conf::WindowMode::default()
+                                                      .dimensions(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_Y)
+                                                    )
                                                   .build()
                                                   .unwrap();
 
     // Use built context to create a GGEZ Event Handler instance
-    let mut sand_casting_game_state = SandCastingGame::new(&mut ggez_context);
-    
-    // Kick off the timing thread
-    thread::spawn(move || {
-        const MAX_TICKS: u32 = 31;
-        let mut tick: u32 = 0;
-        
-        while tick <= MAX_TICKS {
-            println!("Tick {}: Weather: {:?}", tick, thunderstorm.intensity(tick));
-
-            tick = tick + 1;
-            thread::sleep(Duration::from_secs(1));
-        }
-    });
+    let mut sand_casting_game_state = SandCastingGameState::new(&mut ggez_context);
 
     // Run the game!
-    match event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {
+    match ggez_event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {
         Ok(_)   => println!("Exited cleanly."),
         Err(e)  => println!("Error occured: {}", e)
     }

@@ -23,9 +23,12 @@ Changelog:
     CJ McAllister   16 Nov 2018     File created
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-use std::f64;
+use std::f32;
 
-use super::point::Point;
+use ggez::{
+    graphics as ggez_gfx,
+    mint as ggez_mint
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
@@ -34,8 +37,8 @@ use super::point::Point;
 // Point array starts with the eastern-most point, and continues counter-clockwise.
 #[derive(Debug, Copy, Clone)]
 pub struct Hexagon {
-    vertices:   [Point; 6],
-    pub color:  [f64; 4]
+    vertices:   [ggez_mint::Point2<f32>; 6],
+    pub color:  [f32; 4]
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -45,7 +48,7 @@ impl Hexagon {
     // Default Constructor
     pub fn new() -> Hexagon {
         // Build an array of default Points
-        let vertices: [Point; 6] = [Point::new(); 6];
+        let vertices: [ggez_mint::Point2<f32>; 6] = [ggez_mint::Point2{x: 0.0, y: 0.0}; 6];
 
         Hexagon {
             vertices:   vertices,
@@ -54,19 +57,19 @@ impl Hexagon {
     }
 
     // Specific Constructor
-    pub fn from(center: Point, size: f64) -> Hexagon {
+    pub fn from(center: ggez_mint::Point2<f32>, size: f32) -> Hexagon {
         // Compute vertices components
-        let x_offset = size * (f64::consts::PI/3.0).cos();
-        let y_offset = size * (f64::consts::PI/3.0).sin();
+        let x_offset = size * (f32::consts::PI/3.0).cos();
+        let y_offset = size * (f32::consts::PI/3.0).sin();
 
         // NOTE: these are graphical coordinates, where (0, 0) is the top-left
-        let mut vertices: [Point; 6] = [Point::new(); 6];
-        vertices[0] = Point::from(center.x + size, center.y);
-        vertices[1] = Point::from(center.x + x_offset, center.y - y_offset);
-        vertices[2] = Point::from(center.x - x_offset, center.y - y_offset);
-        vertices[3] = Point::from(center.x - size, center.y);
-        vertices[4] = Point::from(center.x - x_offset, center.y + y_offset);
-        vertices[5] = Point::from(center.x + x_offset, center.y + y_offset);
+        let mut vertices: [ggez_mint::Point2<f32>; 6] = [ggez_mint::Point2{x: 0.0, y: 0.0}; 6];
+        vertices[0] = ggez_mint::Point2{ x: center.x + size,       y: center.y};
+        vertices[1] = ggez_mint::Point2{ x: center.x + x_offset,   y: center.y - y_offset};
+        vertices[2] = ggez_mint::Point2{ x: center.x - x_offset,   y: center.y - y_offset};
+        vertices[3] = ggez_mint::Point2{ x: center.x - size,       y: center.y};
+        vertices[4] = ggez_mint::Point2{ x: center.x - x_offset,   y: center.y + y_offset};
+        vertices[5] = ggez_mint::Point2{ x: center.x + x_offset,   y: center.y + y_offset};
 
         Hexagon {
             vertices:   vertices,
@@ -81,7 +84,7 @@ impl Hexagon {
     // Draw hexagon to the given graphics context
     pub fn draw<G>(&self) {
         // Build up an array of "lines" for use in the line() draw function
-        let mut lines: [[f64; 4]; 6] = [[0.0; 4]; 6];
+        let mut lines: [[f32; 4]; 6] = [[0.0; 4]; 6];
 
         for i in 0 ..=4 {
             lines[i] = [self.vertices[i].x, self.vertices[i].y,
@@ -92,8 +95,7 @@ impl Hexagon {
 
         // Draw all lines of hexagon
         for i in 0 ..=5 {
-            // FIXME: replace with GGEZ call
-            // line(self.color, 0.5, lines[i], transform, g);
+            //FIXME: ggez draws
         }
     }
 

@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
-Filename : shape\mod.rs
+Filename : game_assets\mod.rs
 
 Copyright (C) 2017 CJ McAllister
     This program is free software; you can redistribute it and/or modify
@@ -15,11 +15,12 @@ Copyright (C) 2017 CJ McAllister
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 
 Purpose:
-    This module defines various shapes to be used for drawing.
+    This module defines various game assets to be used for drawing.
 
 Changelog:
     CJ McAllister   16 Nov 2018     File created
+    CJ McAllister   01 Jul 2020     Module renamed to game_assets, added color submod
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-pub mod point;
 pub mod hexagon;
+pub mod colors;
