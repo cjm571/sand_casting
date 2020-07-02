@@ -20,7 +20,7 @@ Purpose:
 Changelog:
     CJ McAllister   22 Nov 2017     File created
     CJ McAllister   18 Jan 2018     Add main loop, weather
-    CJ Mcallister   02 Sep 2018     Add basic ggez graphics
+    CJ McAllister   02 Sep 2018     Add basic ggez graphics
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #[macro_use(lazy_static)]
