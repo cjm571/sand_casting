@@ -25,7 +25,7 @@ Changelog:
 
 #[macro_use(lazy_static)]
 extern crate lazy_static;
-extern crate ggez;
+extern crate rand;
 
 extern crate cast_iron;
 use cast_iron::{
@@ -41,6 +41,7 @@ use cast_iron::{
     polyfunc::PolyFunc
 };
 
+extern crate ggez;
 use ggez::{
     Context as GgEzContext,
     ContextBuilder as GgEzContextBuilder,
@@ -57,6 +58,10 @@ use ggez::{
 /// 
 pub mod game_assets;
 use game_assets::colors::*;
+
+pub mod weather_manager;
+use weather_manager::WeatherManager;
+
 pub mod world_grid_manager;
 use world_grid_manager::*;
 
@@ -76,24 +81,25 @@ const DESIRED_FPS: u32 = 60;
 
 /// Primary Game Struct
 struct SandCastingGameState {
-    world_grid_manager: WorldGridManager
+    world_grid_manager: WorldGridManager,
+    weather_manager:    WeatherManager
 }
 
 impl SandCastingGameState {
     pub fn new(_ctx: &mut GgEzContext) -> SandCastingGameState {
         // Load/create resources here: images, fonts, sounds, etc.
         SandCastingGameState{
-            world_grid_manager: WorldGridManager::new(10)
+            world_grid_manager: WorldGridManager::new(10),
+            weather_manager:    WeatherManager::new()
         }
     }
 }
 
 impl ggez_event::EventHandler for SandCastingGameState {
     fn update(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
-        while ggez_timer::check_update_time(ctx, 1) {
-            let elapsed_time = ggez_timer::time_since_start(ctx);
-
-            println!("Elapsed Time: {}.{}", elapsed_time.as_secs(), elapsed_time.subsec_millis());
+        while ggez_timer::check_update_time(ctx, DESIRED_FPS) {
+            // Update weather
+            self.weather_manager.update_weather(&ctx);
         }
 
         Ok(())
@@ -106,7 +112,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
         let mesh_points = [
                 ggez_na::Point2::new(10.0, 0.0),    // Top Left
                 ggez_na::Point2::new(20.0, 0.0),    // Top Right
-                ggez_na::Point2::new(30.0, 10.0),    // Mid Right
+                ggez_na::Point2::new(30.0, 10.0),   // Mid Right
                 ggez_na::Point2::new(20.0, 20.0),   // Bot Right 
                 ggez_na::Point2::new(10.0, 20.0),   // Bot Left
                 ggez_na::Point2::new(0.0, 10.0)     // Mid Left
