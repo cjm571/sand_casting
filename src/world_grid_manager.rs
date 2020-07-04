@@ -219,7 +219,7 @@ impl WorldGridManager {
             endpt_b.y = endpt_b.y - level as f32 * (HEX_SIZE * theta.sin());
 
             // Add the line to the GGEZ mesh builder
-            input_mesh = input_mesh.line(&[endpt_a, endpt_b], 1.0, WHITE).unwrap();
+            input_mesh = input_mesh.line(&[endpt_a, endpt_b], 1.0, color).unwrap();
         }
         
         // Make the recursive call
@@ -265,7 +265,7 @@ impl WorldGridManager {
 
         // Build lines
         for i in 0..=2 {
-            input_mesh = input_mesh.line(&lines[i], 1.0, WHITE).unwrap();
+            input_mesh = input_mesh.line(&lines[i], 1.0, color).unwrap();
         }
 
         // Make the recursive calls
