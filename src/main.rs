@@ -34,11 +34,7 @@ use cast_iron::{
         Ability,
         aspect::*
     },
-    environment::{
-        Element,
-        weather::Weather
-    },
-    polyfunc::PolyFunc
+    environment::Element
 };
 
 extern crate ggez;
@@ -49,7 +45,6 @@ use ggez::{
     conf as ggez_conf,
     event as ggez_event,
     graphics as ggez_gfx,
-    mint as ggez_mint,
     timer as ggez_timer
 };
 
@@ -86,10 +81,10 @@ struct SandCastingGameState {
 }
 
 impl SandCastingGameState {
-    pub fn new(_ctx: &mut GgEzContext) -> SandCastingGameState {
+    pub fn new(ctx: &mut GgEzContext) -> SandCastingGameState {
         // Load/create resources here: images, fonts, sounds, etc.
         SandCastingGameState{
-            world_grid_manager: WorldGridManager::new(10),
+            world_grid_manager: WorldGridManager::new(10, ctx),
             weather_manager:    WeatherManager::new()
         }
     }
@@ -106,19 +101,10 @@ impl ggez_event::EventHandler for SandCastingGameState {
     }
 
     fn draw(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
+        println!("Frame Delta: {}ns, Avg: {}ns", ggez_timer::delta(ctx).subsec_nanos(), ggez_timer::average_delta(ctx).subsec_nanos());
         ggez_gfx::clear(ctx, BLACK);
         
-        // Get current window dimensions
-        let (window_x, window_y) = ggez_gfx::size(ctx);
-        let center = ggez_mint::Point2 {x: window_x / 2.0, y: window_y / 2.0};
-
-        // Create a mesh builder for the base hex grid
-        let mut base_grid_mesh_builder = ggez_gfx::MeshBuilder::new();
-        self.world_grid_manager.draw_grid(center, &mut base_grid_mesh_builder);
-
-        // Build the base hex grid mesh and draw it
-        let base_grid_mesh = base_grid_mesh_builder.build(ctx)?;
-        ggez_gfx::draw(ctx, &base_grid_mesh, ggez_gfx::DrawParam::default())?;
+        ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
 
         ggez_gfx::present(ctx)
     }
@@ -154,10 +140,6 @@ fn main() {
     player_one.add_ability(lightning_bolt);
     player_one.add_ability(blood_drain);
     player_one.add_ability(null_abil);
-
-    // Intialize Weather
-    let thunder_func: PolyFunc = PolyFunc::from(150, 10, 15);
-    let thunderstorm: Weather = Weather::from(Element::Electric, thunder_func);
 
     // Create a GGEZ Context and EventLoop
     let (mut ggez_context, mut ggez_event_loop) = GgEzContextBuilder::new("sand_casting", "CJ McAllister")

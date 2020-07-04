@@ -89,13 +89,6 @@ impl WeatherManager {
         }
         else { // Otherwise, decrement the timeout
             self.timeout = self.timeout - 1;
-            println!(
-                "Tick {:>3}: Weather (TO: {:>3}, Kind: {:?}, Int: {:?})",
-                cur_tick,
-                self.timeout,
-                self.active_weather.kind(),
-                self.active_weather.intensity(cur_tick)
-            );
         }
     }
 }

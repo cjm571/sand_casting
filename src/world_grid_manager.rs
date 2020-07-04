@@ -26,6 +26,7 @@ use std::f32::consts::PI;
 use std::collections::HashMap;
 
 use ggez::{
+    Context as GgEzContext,
     graphics as ggez_gfx,
     mint as ggez_mint
 };
@@ -98,7 +99,8 @@ lazy_static! {
 }
 
 pub struct WorldGridManager {
-    pub max_radial_distance: u32, // Maximum value for an axis of the hex grid
+    max_radial_distance:    u32,            // Maximum value for an axis of the hex grid
+    base_grid_mesh:         ggez_gfx::Mesh  // Mesh for the base hex grid
 }
 
 
@@ -107,11 +109,35 @@ pub struct WorldGridManager {
 ///////////////////////////////////////////////////////////////////////////////
 
 impl WorldGridManager {
-    pub fn new(max_radial_distance: u32) -> WorldGridManager {
-        WorldGridManager {
-            max_radial_distance: max_radial_distance,
-        }
+    /// Returns a new instance of WorldGridManager, with a base grid mesh initialized based on
+    /// the GGEZ context's current window dimensions.
+    pub fn new(max_radial_distance: u32, ctx: &mut GgEzContext) -> WorldGridManager {
+        let mut world_manager = WorldGridManager {
+            max_radial_distance:    max_radial_distance,
+            base_grid_mesh:         ggez_gfx::MeshBuilder::new()
+                                        .line(
+                                            &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
+                                            1.0,
+                                            WHITE
+                                        ).unwrap()
+                                        .build(ctx)
+                                        .unwrap()
+        };
+
+        // Get window dimensions
+        let (window_x, window_y) = ggez_gfx::size(ctx);
+        let center = ggez_mint::Point2 {x: window_x / 2.0, y: window_y / 2.0};
+
+        // Create a mesh builder for the base hex grid
+        let mut base_grid_mesh_builder = ggez_gfx::MeshBuilder::new();
+        world_manager.build_grid(center, &mut base_grid_mesh_builder);
+
+        // Build the base hex grid mesh and draw it
+        world_manager.base_grid_mesh = base_grid_mesh_builder.build(ctx).unwrap();
+
+        world_manager
     }    
+
 
     ///////////////////////////////////////////////////////////////////////////
     //  Accessor Methods
@@ -121,34 +147,39 @@ impl WorldGridManager {
         self.max_radial_distance
     }
 
-    /// Draws a baseline hex grid to the graphics window.
-    pub fn draw_grid(
+    pub fn get_base_grid_mesh(&self) -> &ggez_gfx::Mesh {
+        &self.base_grid_mesh
+    }
+
+    
+    ///////////////////////////////////////////////////////////////////////////
+    //  Helper Functions
+    ///////////////////////////////////////////////////////////////////////////
+
+    /// Builds a baseline hex grid to the graphics window.
+    fn build_grid(
         &self,
         center: ggez_mint::Point2<f32>,
         mesh_builder: &mut ggez_gfx::MeshBuilder
     ) {
-        // Draw GRID_CELL_SIZE-width hexagon sides recursively
-        self.recursive_hex_draw(WHITE, center, 0, mesh_builder);
+        // Build GRID_CELL_SIZE-width hexagon sides recursively
+        self.recursive_hex_build(WHITE, center, 0, mesh_builder);
 
         let spoke_color = GREEN;
-        // Draw spokes recursively in all directions
+        // Build spokes recursively in all directions
         for (_dir, theta) in HEX_VERTICES.iter() {
             // Determine origin point for current direction
             let origin = ggez_mint::Point2 {
                 x: center.x + (GRID_CELL_SIZE * theta.cos()),
                 y: center.y - (GRID_CELL_SIZE * theta.sin())
             };
-            self.recursive_spoke_draw(spoke_color, origin, *theta, 0, mesh_builder);
+            self.recursive_spoke_build(spoke_color, origin, *theta, 0, mesh_builder);
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    //  Helper Functions
-    ///////////////////////////////////////////////////////////////////////////
-
-    /// Draws a hex grid at the given level using recursive calls radiating out
+    /// Builds a hex grid at the given level using recursive calls radiating out
     /// from the given center.
-    fn recursive_hex_draw(
+    fn recursive_hex_build(
         &self,
         color: ggez_gfx::Color,
         center: ggez_mint::Point2<f32>,
@@ -163,7 +194,7 @@ impl WorldGridManager {
         // HEX_SIZE to be used to correctly translate levels > 0
         static HEX_SIZE: f32 = Y_OFFSET * 2.0;
         
-        // Draw a parallel line and dispatch a spoke draw call at the current level
+        // Build a parallel line and dispatch a spoke build call at the current level
         // for each intercardinal direction.
         for (_dir, theta) in HEX_SIDES.iter() {
             // Calculate parallel line endpoints
@@ -192,12 +223,12 @@ impl WorldGridManager {
         }
         
         // Make the recursive call
-        self.recursive_hex_draw(color, center, level+1, input_mesh);
+        self.recursive_hex_build(color, center, level+1, input_mesh);
     }
 
-    /// Draws a spoke (i.e. -<) from a point in the given direction.
-    /// Recursively spawns two more spoke draws at the endpoint
-    fn recursive_spoke_draw(
+    /// Builds a spoke (i.e. -<) from a point in the given direction.
+    /// Recursively spawns two more spoke builds at the endpoint
+    fn recursive_spoke_build(
         &self,
         mut color: ggez_gfx::Color,
         origin: ggez_mint::Point2<f32>,
@@ -232,7 +263,7 @@ impl WorldGridManager {
         lines[1] = [endpoints[0], endpoints[1]];
         lines[2] = [endpoints[0], endpoints[2]];
 
-        // Draw lines
+        // Build lines
         for i in 0..=2 {
             input_mesh = input_mesh.line(&lines[i], 1.0, WHITE).unwrap();
         }
@@ -241,8 +272,8 @@ impl WorldGridManager {
         color.g = color.g - 0.1;
 
         color.r = color.r + 0.1;
-        self.recursive_spoke_draw(color, endpoints[1], theta, level+1, input_mesh);
+        self.recursive_spoke_build(color, endpoints[1], theta, level+1, input_mesh);
         color.r = color.b + 0.1;
-        self.recursive_spoke_draw(color, endpoints[2], theta, level+1, input_mesh);
+        self.recursive_spoke_build(color, endpoints[2], theta, level+1, input_mesh);
     }
 }
