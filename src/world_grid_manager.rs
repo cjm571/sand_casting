@@ -97,7 +97,6 @@ lazy_static! {
     };
 }
 
-#[derive(Copy, Clone)]
 pub struct WorldGridManager {
     pub max_radial_distance: u32, // Maximum value for an axis of the hex grid
 }
@@ -118,14 +117,18 @@ impl WorldGridManager {
     //  Accessor Methods
     ///////////////////////////////////////////////////////////////////////////
      
-    pub fn get_grid_size(self) -> u32 {
+    pub fn get_grid_size(&self) -> u32 {
         self.max_radial_distance
     }
 
     /// Draws a baseline hex grid to the graphics window.
-    pub fn draw_grid(self, center: ggez_mint::Point2<f32>) {
+    pub fn draw_grid(
+        &self,
+        center: ggez_mint::Point2<f32>,
+        mesh_builder: &mut ggez_gfx::MeshBuilder
+    ) {
         // Draw GRID_CELL_SIZE-width hexagon sides recursively
-        self.recursive_hex_draw(WHITE, center, 0);
+        self.recursive_hex_draw(WHITE, center, 0, mesh_builder);
 
         let spoke_color = GREEN;
         // Draw spokes recursively in all directions
@@ -135,7 +138,7 @@ impl WorldGridManager {
                 x: center.x + (GRID_CELL_SIZE * theta.cos()),
                 y: center.y - (GRID_CELL_SIZE * theta.sin())
             };
-            self.recursive_spoke_draw(spoke_color, origin, *theta, 0);
+            self.recursive_spoke_draw(spoke_color, origin, *theta, 0, mesh_builder);
         }
     }
 
@@ -145,13 +148,19 @@ impl WorldGridManager {
 
     /// Draws a hex grid at the given level using recursive calls radiating out
     /// from the given center.
-    fn recursive_hex_draw(self, color: ggez_gfx::Color, center: ggez_mint::Point2<f32>, level: u32) {
+    fn recursive_hex_draw(
+        &self,
+        color: ggez_gfx::Color,
+        center: ggez_mint::Point2<f32>,
+        level: u32,
+        mut input_mesh: &mut ggez_gfx::MeshBuilder
+    ) {
         // Final level exit case
         if level == self.max_radial_distance {
             return;
         }
 
-        // HEX_SIE to be used to correctly translate levels > 0
+        // HEX_SIZE to be used to correctly translate levels > 0
         static HEX_SIZE: f32 = Y_OFFSET * 2.0;
         
         // Draw a parallel line and dispatch a spoke draw call at the current level
@@ -178,24 +187,30 @@ impl WorldGridManager {
             endpt_b.x = endpt_b.x + level as f32 * (HEX_SIZE * theta.cos());
             endpt_b.y = endpt_b.y - level as f32 * (HEX_SIZE * theta.sin());
 
-            // Draw the line
-            // FIXME: replace with GGEZ call
-            // line(color, 0.5, [endpt_a.x, endpt_a.y, endpt_b.x, endpt_b.y]);
+            // Add the line to the GGEZ mesh builder
+            input_mesh = input_mesh.line(&[endpt_a, endpt_b], 1.0, WHITE).unwrap();
         }
         
         // Make the recursive call
-        self.recursive_hex_draw(color, center, level+1);
+        self.recursive_hex_draw(color, center, level+1, input_mesh);
     }
 
     /// Draws a spoke (i.e. -<) from a point in the given direction.
     /// Recursively spawns two more spoke draws at the endpoint
-    fn recursive_spoke_draw(self, mut color: ggez_gfx::Color, origin: ggez_mint::Point2<f32>, theta: f32, level: u32) {
+    fn recursive_spoke_draw(
+        &self,
+        mut color: ggez_gfx::Color,
+        origin: ggez_mint::Point2<f32>,
+        theta: f32,
+        level: u32,
+        mut input_mesh: &mut ggez_gfx::MeshBuilder
+    ) {
         // Final level exit case
         if level == self.max_radial_distance {
             return;
         }
 
-        let mut lines: [[f32; 4]; 3] = [[0.0; 4]; 3];
+        let mut lines: [[ggez_mint::Point2<f32>; 2]; 3] = [[ggez_mint::Point2 {x: 0.0, y: 0.0}; 2]; 3];
         let mut endpoints: [ggez_mint::Point2<f32>; 3] = [ggez_mint::Point2 {x: 0.0, y: 0.0}; 3];
 
         // Calculate endpoint of stem
@@ -203,8 +218,7 @@ impl WorldGridManager {
             x: origin.x + (GRID_CELL_SIZE * theta.cos()),
             y: origin.y - (GRID_CELL_SIZE * theta.sin())
         };
-        lines[0] = [origin.x, origin.y,
-                    endpoints[0].x, endpoints[0].y];
+        lines[0] = [origin, endpoints[0]];
 
         // Calculate branch endpoints
         endpoints[1] = ggez_mint::Point2 {
@@ -215,23 +229,20 @@ impl WorldGridManager {
             x: endpoints[0].x + (GRID_CELL_SIZE * (theta - PI/3.0).cos()),
             y: endpoints[0].y - (GRID_CELL_SIZE * (theta - PI/3.0).sin())
         };
-        lines[1] = [endpoints[0].x, endpoints[0].y,
-                    endpoints[1].x, endpoints[1].y];
-        lines[2] = [endpoints[0].x, endpoints[0].y,
-                    endpoints[2].x, endpoints[2].y];
+        lines[1] = [endpoints[0], endpoints[1]];
+        lines[2] = [endpoints[0], endpoints[2]];
 
         // Draw lines
         for i in 0..=2 {
-            // FIXME: replace with GGEZ call
-            // line (color, 0.5, lines[i]);
+            input_mesh = input_mesh.line(&lines[i], 1.0, WHITE).unwrap();
         }
 
         // Make the recursive calls
         color.g = color.g - 0.1;
 
         color.r = color.r + 0.1;
-        self.recursive_spoke_draw(color, endpoints[1], theta, level+1);
+        self.recursive_spoke_draw(color, endpoints[1], theta, level+1, input_mesh);
         color.r = color.b + 0.1;
-        self.recursive_spoke_draw(color, endpoints[2], theta, level+1);
+        self.recursive_spoke_draw(color, endpoints[2], theta, level+1, input_mesh);
     }
 }

@@ -49,7 +49,7 @@ use ggez::{
     conf as ggez_conf,
     event as ggez_event,
     graphics as ggez_gfx,
-    nalgebra as ggez_na,
+    mint as ggez_mint,
     timer as ggez_timer
 };
 
@@ -70,8 +70,8 @@ use world_grid_manager::*;
 //  Constants
 ///////////////////////////////////////////////////////////////////////////////
 
-const DEFAULT_WINDOW_SIZE_X: f32 = 800.0;
-const DEFAULT_WINDOW_SIZE_Y: f32 = 600.0;
+const DEFAULT_WINDOW_SIZE_X: f32 = 1500.0;
+const DEFAULT_WINDOW_SIZE_Y: f32 = 1000.0;
 const DESIRED_FPS: u32 = 60;
 
 
@@ -108,24 +108,17 @@ impl ggez_event::EventHandler for SandCastingGameState {
     fn draw(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
         ggez_gfx::clear(ctx, BLACK);
         
-        //FIXME: START TRIAL CODE, DELETE
-        let mesh_points = [
-                ggez_na::Point2::new(10.0, 0.0),    // Top Left
-                ggez_na::Point2::new(20.0, 0.0),    // Top Right
-                ggez_na::Point2::new(30.0, 10.0),   // Mid Right
-                ggez_na::Point2::new(20.0, 20.0),   // Bot Right 
-                ggez_na::Point2::new(10.0, 20.0),   // Bot Left
-                ggez_na::Point2::new(0.0, 10.0)     // Mid Left
-        ];
-        let mesh_test = ggez_gfx::MeshBuilder::new()
-                        .polygon(
-                            ggez_gfx::DrawMode::stroke(1.0),
-                            &mesh_points,
-                            WHITE
-                        )?
-                        .build(ctx)?;
-        ggez_gfx::draw(ctx, &mesh_test, ggez_gfx::DrawParam::default())?;
-        //FIXME: END TRIAL CODE, DELETE
+        // Get current window dimensions
+        let (window_x, window_y) = ggez_gfx::size(ctx);
+        let center = ggez_mint::Point2 {x: window_x / 2.0, y: window_y / 2.0};
+
+        // Create a mesh builder for the base hex grid
+        let mut base_grid_mesh_builder = ggez_gfx::MeshBuilder::new();
+        self.world_grid_manager.draw_grid(center, &mut base_grid_mesh_builder);
+
+        // Build the base hex grid mesh and draw it
+        let base_grid_mesh = base_grid_mesh_builder.build(ctx)?;
+        ggez_gfx::draw(ctx, &base_grid_mesh, ggez_gfx::DrawParam::default())?;
 
         ggez_gfx::present(ctx)
     }
