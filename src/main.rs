@@ -21,6 +21,7 @@ Changelog:
     CJ McAllister   22 Nov 2017     File created
     CJ McAllister   18 Jan 2018     Add main loop, weather
     CJ McAllister   02 Sep 2018     Add basic ggez graphics
+    CJ McAllister   03 Jul 2020     Completed removal of piston-2d
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #[macro_use(lazy_static)]
@@ -34,7 +35,11 @@ use cast_iron::{
         Ability,
         aspect::*
     },
-    environment::Element
+    environment::{
+        Element,
+        coords::Coords,
+        resource
+    }
 };
 
 extern crate ggez;
@@ -45,6 +50,7 @@ use ggez::{
     conf as ggez_conf,
     event as ggez_event,
     graphics as ggez_gfx,
+    mint as ggez_mint,
     timer as ggez_timer
 };
 
@@ -76,9 +82,9 @@ const DESIRED_FPS: u32 = 60;
 
 /// Primary Game Struct
 struct SandCastingGameState {
-    world_grid_manager: WorldGridManager,
-    weather_manager:    WeatherManager,
-    scene_has_changed:  bool
+    world_grid_manager: WorldGridManager,   // World Grid Manager instance
+    weather_manager: WeatherManager,        // Weather Manager instance
+    avg_fps: f64                            // Average FPS for display
 }
 
 impl SandCastingGameState {
@@ -86,8 +92,8 @@ impl SandCastingGameState {
         // Load/create resources here: images, fonts, sounds, etc.
         SandCastingGameState{
             world_grid_manager: WorldGridManager::new(10, ctx),
-            weather_manager:    WeatherManager::new(),
-            scene_has_changed:  true
+            weather_manager: WeatherManager::new(),
+            avg_fps: 0.0
         }
     }
 }
@@ -97,25 +103,27 @@ impl ggez_event::EventHandler for SandCastingGameState {
         while ggez_timer::check_update_time(ctx, DESIRED_FPS) {
             // Update weather
             self.weather_manager.update_weather(&ctx);
+
+            // Update average FPS
+            self.avg_fps = ggez_timer::fps(ctx);
         }
 
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
-        println!("Avg FPS: {:4.3}  Last Frame Time: {}ns", ggez_timer::fps(ctx), ggez_timer::delta(ctx).subsec_nanos());
-        if self.scene_has_changed == true {
-            ggez_gfx::clear(ctx, BLACK);
-            
-            ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
+        ggez_gfx::clear(ctx, BLACK);
+        
+        // Draw the hex grid
+        ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
 
-            self.scene_has_changed = false;
+        // Draw the FPS counter
+        let fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
+        let fps_str = format!("FPS: {:.0}", self.avg_fps);
+        let fps_display = ggez_gfx::Text::new((fps_str, ggez_gfx::Font::default(), 16.0));
+        ggez_gfx::draw(ctx, &fps_display, (fps_pos, 0.0, GREEN)).unwrap();
 
-            ggez_gfx::present(ctx)
-        }
-        else {
-            Ok(())
-        }
+        ggez_gfx::present(ctx)
     }
 }
 
@@ -166,6 +174,13 @@ fn main() {
 
     // Use built context to create a GGEZ Event Handler instance
     let mut sand_casting_game_state = SandCastingGameState::new(&mut ggez_context);
+
+    //FIXME: TEST CODE, DELETE
+    // Add resources to the grid
+    let pond = resource::Resource::from(Element::Water, resource::State::Full, Coords::new(), 1);
+    let campfire = resource::Resource::from(Element::Fire, resource::State::Full, Coords::new_at(5, 5, -10).unwrap(), 2);
+    sand_casting_game_state.world_grid_manager.add_resource(pond).unwrap();
+    sand_casting_game_state.world_grid_manager.add_resource(campfire).unwrap();
 
     // Run the game!
     match ggez_event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {

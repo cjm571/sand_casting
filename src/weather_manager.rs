@@ -28,7 +28,8 @@ use cast_iron::{
         Element,
         weather
     },
-    polyfunc::PolyFunc
+    polyfunc::PolyFunc,
+    debug_println
 };
 
 use ggez::{
@@ -76,8 +77,8 @@ impl WeatherManager {
             let rand_func = PolyFunc::from(rand_magnitude, rand_duration, cur_tick);
 
             self.active_weather = weather::Weather::from(rand_element, rand_func);
-            println!(
-                "Tick {:>3}: Weather changed to Mag: {:>3}  Dur: {:>3}  Elem: {:?}",
+            debug_println!(
+                "Tick {:>8}: Weather changed to Mag: {:>3}  Dur: {:>3}  Elem: {:?}",
                 cur_tick,
                 rand_magnitude,
                 rand_duration,

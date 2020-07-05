@@ -25,6 +25,8 @@ Changelog:
 use std::f32::consts::PI;
 use std::collections::HashMap;
 
+use cast_iron::environment::resource::Resource;
+
 use ggez::{
     Context as GgEzContext,
     graphics as ggez_gfx,
@@ -99,10 +101,14 @@ lazy_static! {
 }
 
 pub struct WorldGridManager {
-    max_radial_distance:    u32,            // Maximum value for an axis of the hex grid
-    base_grid_mesh:         ggez_gfx::Mesh  // Mesh for the base hex grid
+    max_radial_distance: u32,       // Maximum value for an axis of the hex grid
+    base_grid_mesh: ggez_gfx::Mesh, // Mesh for the base hex grid
+    resources: Vec<Resource>        // Collection of active resources
 }
 
+
+#[derive(Debug)]
+pub struct WorldGridError;
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Functions and Methods
@@ -113,15 +119,17 @@ impl WorldGridManager {
     /// the GGEZ context's current window dimensions.
     pub fn new(max_radial_distance: u32, ctx: &mut GgEzContext) -> WorldGridManager {
         let mut world_manager = WorldGridManager {
-            max_radial_distance:    max_radial_distance,
-            base_grid_mesh:         ggez_gfx::MeshBuilder::new()
-                                        .line(
-                                            &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                            1.0,
-                                            WHITE
-                                        ).unwrap()
-                                        .build(ctx)
-                                        .unwrap()
+            max_radial_distance: max_radial_distance,
+            base_grid_mesh: ggez_gfx::MeshBuilder::new()
+                                .line(
+                                    &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
+                                    1.0,
+                                    WHITE
+                                )
+                                .unwrap()
+                                .build(ctx)
+                                .unwrap(),
+            resources: Vec::new()
         };
 
         // Get window dimensions
@@ -151,7 +159,33 @@ impl WorldGridManager {
         &self.base_grid_mesh
     }
 
-    
+
+    ///////////////////////////////////////////////////////////////////////////
+    //  Mutator Methods
+    ///////////////////////////////////////////////////////////////////////////
+
+    pub fn add_resource(&mut self, new_res: Resource) -> Result<(), WorldGridError>
+    {
+        // Verify that no resource already exists in the same location
+        let mut coords_occupied = false;
+        for existing_res in &self.resources {
+            if existing_res.get_position() == new_res.get_position() {
+                coords_occupied = true;
+                break;
+            }
+        }
+
+        // If the new resource's coordinates are unoccupied, add it
+        if coords_occupied == false {
+            self.resources.push(new_res);
+            Ok(())
+        }
+        else { // Otherwise, return an error
+            Err(WorldGridError)
+        }
+    }
+
+
     ///////////////////////////////////////////////////////////////////////////
     //  Helper Functions
     ///////////////////////////////////////////////////////////////////////////
