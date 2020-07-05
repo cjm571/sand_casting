@@ -30,6 +30,9 @@ use ggez::{
     mint as ggez_mint
 };
 
+use ::game_assets::colors::*;
+
+
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
@@ -82,20 +85,23 @@ impl Hexagon {
     ///////////////////////////////////////////////////////////////////////////
 
     // Draw hexagon to the given graphics context
-    pub fn draw<G>(&self) {
+    pub fn draw(&self, mesh_builder: &mut ggez_gfx::MeshBuilder) {
         // Build up an array of "lines" for use in the line() draw function
-        let mut lines: [[f32; 4]; 6] = [[0.0; 4]; 6];
+        let mut lines: [[ggez_mint::Point2<f32>; 2]; 6] = [[ggez_mint::Point2 {x: 0.0, y: 0.0}; 2]; 6];
 
         for i in 0 ..=4 {
-            lines[i] = [self.vertices[i].x, self.vertices[i].y,
-                        self.vertices[i+1].x, self.vertices[i+1].y];
+            lines[i] = [ggez_mint::Point2 {x: self.vertices[i].x,   y: self.vertices[i].y},
+                        ggez_mint::Point2 {x: self.vertices[i+1].x, y: self.vertices[i+1].y}];
         }
-        lines[5] = [self.vertices[5].x, self.vertices[5].y,
-                    self.vertices[0].x, self.vertices[0].y];
+        lines[5] = [ggez_mint::Point2 {x: self.vertices[5].x, y: self.vertices[5].y},
+                    ggez_mint::Point2 {x: self.vertices[0].x, y: self.vertices[0].y}];
 
         // Draw all lines of hexagon
         for i in 0 ..=5 {
-            //FIXME: ggez draws
+            match mesh_builder.line(&lines[i], 1.0, WHITE) {
+                Ok(_mb) => (),
+                _       => panic!("Failed to add line to mesh_builder")
+            }
         }
     }
 

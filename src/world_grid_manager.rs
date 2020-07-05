@@ -184,7 +184,7 @@ impl WorldGridManager {
         color: ggez_gfx::Color,
         center: ggez_mint::Point2<f32>,
         level: u32,
-        mut input_mesh: &mut ggez_gfx::MeshBuilder
+        mesh_builder: &mut ggez_gfx::MeshBuilder
     ) {
         // Final level exit case
         if level == self.max_radial_distance {
@@ -219,11 +219,14 @@ impl WorldGridManager {
             endpt_b.y = endpt_b.y - level as f32 * (HEX_SIZE * theta.sin());
 
             // Add the line to the GGEZ mesh builder
-            input_mesh = input_mesh.line(&[endpt_a, endpt_b], 1.0, color).unwrap();
+            match mesh_builder.line(&[endpt_a, endpt_b], 1.0, color) {
+                Ok(_mb) => (),
+                _       => panic!("Failed to add line to mesh_builder")
+            }
         }
         
         // Make the recursive call
-        self.recursive_hex_build(color, center, level+1, input_mesh);
+        self.recursive_hex_build(color, center, level+1, mesh_builder);
     }
 
     /// Builds a spoke (i.e. -<) from a point in the given direction.
@@ -234,7 +237,7 @@ impl WorldGridManager {
         origin: ggez_mint::Point2<f32>,
         theta: f32,
         level: u32,
-        mut input_mesh: &mut ggez_gfx::MeshBuilder
+        mesh_builder: &mut ggez_gfx::MeshBuilder
     ) {
         // Final level exit case
         if level == self.max_radial_distance {
@@ -265,15 +268,18 @@ impl WorldGridManager {
 
         // Build lines
         for i in 0..=2 {
-            input_mesh = input_mesh.line(&lines[i], 1.0, color).unwrap();
+            match mesh_builder.line(&lines[i], 1.0, color) {
+                Ok(_mb) => (),
+                _       => panic!("Failed to add line to mesh_builder")
+            }
         }
 
         // Make the recursive calls
         color.g = color.g - 0.1;
 
         color.r = color.r + 0.1;
-        self.recursive_spoke_build(color, endpoints[1], theta, level+1, input_mesh);
+        self.recursive_spoke_build(color, endpoints[1], theta, level+1, mesh_builder);
         color.r = color.b + 0.1;
-        self.recursive_spoke_build(color, endpoints[2], theta, level+1, input_mesh);
+        self.recursive_spoke_build(color, endpoints[2], theta, level+1, mesh_builder);
     }
 }

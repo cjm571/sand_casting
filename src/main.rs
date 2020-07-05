@@ -65,8 +65,8 @@ use world_grid_manager::*;
 //  Constants
 ///////////////////////////////////////////////////////////////////////////////
 
-const DEFAULT_WINDOW_SIZE_X: f32 = 1500.0;
-const DEFAULT_WINDOW_SIZE_Y: f32 = 1000.0;
+const DEFAULT_WINDOW_SIZE_X: f32 = 1200.0;
+const DEFAULT_WINDOW_SIZE_Y: f32 = 1200.0;
 const DESIRED_FPS: u32 = 60;
 
 
@@ -77,7 +77,8 @@ const DESIRED_FPS: u32 = 60;
 /// Primary Game Struct
 struct SandCastingGameState {
     world_grid_manager: WorldGridManager,
-    weather_manager:    WeatherManager
+    weather_manager:    WeatherManager,
+    scene_has_changed:  bool
 }
 
 impl SandCastingGameState {
@@ -85,7 +86,8 @@ impl SandCastingGameState {
         // Load/create resources here: images, fonts, sounds, etc.
         SandCastingGameState{
             world_grid_manager: WorldGridManager::new(10, ctx),
-            weather_manager:    WeatherManager::new()
+            weather_manager:    WeatherManager::new(),
+            scene_has_changed:  true
         }
     }
 }
@@ -101,12 +103,19 @@ impl ggez_event::EventHandler for SandCastingGameState {
     }
 
     fn draw(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
-        println!("Frame Delta: {}ns, Avg: {}ns", ggez_timer::delta(ctx).subsec_nanos(), ggez_timer::average_delta(ctx).subsec_nanos());
-        ggez_gfx::clear(ctx, BLACK);
-        
-        ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
+        println!("Avg FPS: {:4.3}  Last Frame Time: {}ns", ggez_timer::fps(ctx), ggez_timer::delta(ctx).subsec_nanos());
+        if self.scene_has_changed == true {
+            ggez_gfx::clear(ctx, BLACK);
+            
+            ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
 
-        ggez_gfx::present(ctx)
+            self.scene_has_changed = false;
+
+            ggez_gfx::present(ctx)
+        }
+        else {
+            Ok(())
+        }
     }
 }
 
@@ -146,7 +155,7 @@ fn main() {
                                                   .window_setup(
                                                       ggez_conf::WindowSetup::default()
                                                       .title("Sand Casting - A Cast Iron Sandbox Game")
-                                                      .vsync(true)
+                                                      .vsync(false)
                                                     )
                                                   .window_mode(
                                                       ggez_conf::WindowMode::default()
