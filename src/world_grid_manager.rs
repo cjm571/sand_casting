@@ -33,7 +33,10 @@ use ggez::{
     mint as ggez_mint
 };
 
-use ::game_assets::colors::*;
+use ::game_assets::{
+    colors,
+    hexagon::Hexagon
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -45,6 +48,10 @@ const GRID_CELL_SIZE: f32 = 30.0;
 // Y_OFFSET = GRID_CELL_SIZE * sin(pi/3) * 2
 // Distance from centerpoint of hex to center of a side 
 static Y_OFFSET: f32 = GRID_CELL_SIZE * 0.86602540378;
+
+// Y_OFFSET = GRID_CELL_SIZE * cos(pi/3) * 2
+// Distance from centerpoint of hex to center of a side 
+static X_OFFSET: f32 = GRID_CELL_SIZE * 0.5;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -103,7 +110,8 @@ lazy_static! {
 pub struct WorldGridManager {
     max_radial_distance: u32,       // Maximum value for an axis of the hex grid
     base_grid_mesh: ggez_gfx::Mesh, // Mesh for the base hex grid
-    resources: Vec<Resource>        // Collection of active resources
+    resources: Vec<Resource>,       // Collection of active resources
+    resource_mesh: ggez_gfx::Mesh   // Mesh for the resources on the grid
 }
 
 
@@ -124,12 +132,21 @@ impl WorldGridManager {
                                 .line(
                                     &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
                                     1.0,
-                                    WHITE
+                                    colors::WHITE
                                 )
                                 .unwrap()
                                 .build(ctx)
                                 .unwrap(),
-            resources: Vec::new()
+            resources: Vec::new(),
+            resource_mesh: ggez_gfx::MeshBuilder::new()
+                                .line(
+                                    &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
+                                    1.0,
+                                    colors::WHITE
+                                )
+                                .unwrap()
+                                .build(ctx)
+                                .unwrap(),
         };
 
         // Get window dimensions
@@ -159,17 +176,21 @@ impl WorldGridManager {
         &self.base_grid_mesh
     }
 
+    pub fn get_resource_mesh(&self) -> &ggez_gfx::Mesh {
+        &self.resource_mesh
+    }
+
 
     ///////////////////////////////////////////////////////////////////////////
     //  Mutator Methods
     ///////////////////////////////////////////////////////////////////////////
 
-    pub fn add_resource(&mut self, new_res: Resource) -> Result<(), WorldGridError>
+    pub fn add_resource(&mut self, new_res: Resource, ctx: &mut GgEzContext) -> Result<(), WorldGridError>
     {
         // Verify that no resource already exists in the same location
         let mut coords_occupied = false;
         for existing_res in &self.resources {
-            if existing_res.get_position() == new_res.get_position() {
+            if existing_res.get_coords() == new_res.get_coords() {
                 coords_occupied = true;
                 break;
             }
@@ -178,11 +199,45 @@ impl WorldGridManager {
         // If the new resource's coordinates are unoccupied, add it
         if coords_occupied == false {
             self.resources.push(new_res);
+
+            // Update resource mesh
+            self.update_resource_mesh(ctx);
             Ok(())
         }
         else { // Otherwise, return an error
             Err(WorldGridError)
         }
+    }    
+
+    //FIXME: Still needs to handle radius of resources
+    pub fn update_resource_mesh(&mut self, ctx: &mut GgEzContext) {
+        let mut resource_mesh_builder = ggez_gfx::MeshBuilder::new();
+
+        // Get window dimensions
+        let (window_x, window_y) = ggez_gfx::size(ctx);
+        let window_center = ggez_mint::Point2 {
+            x: window_x / 2.0,
+            y: window_y / 2.0
+        };
+        
+        // Iterate through resources, adding to mesh builder along the way
+        for res in &self.resources {
+            let res_coords = res.get_coords();
+
+            // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
+            let x_offset = (res_coords.get_x() - res_coords.get_y()) as f32 * (X_OFFSET * 3.0);
+            let y_offset = res_coords.get_z() as f32 * Y_OFFSET;
+            let res_center = ggez_mint::Point2 {
+                x: window_center.x + x_offset,
+                y: window_center.y + y_offset
+            };
+
+            // Create a hexagon object and add it to the mesh builder
+            let cur_hex = Hexagon::from(res_center, GRID_CELL_SIZE);
+            cur_hex.add_to_mesh(colors::from_element(res.get_kind()), &mut resource_mesh_builder);
+        }
+
+        self.resource_mesh = resource_mesh_builder.build(ctx).unwrap();
     }
 
 
@@ -197,9 +252,9 @@ impl WorldGridManager {
         mesh_builder: &mut ggez_gfx::MeshBuilder
     ) {
         // Build GRID_CELL_SIZE-width hexagon sides recursively
-        self.recursive_hex_build(WHITE, center, 0, mesh_builder);
+        self.recursive_hex_build(colors::WHITE, center, 0, mesh_builder);
 
-        let spoke_color = GREEN;
+        let spoke_color = colors::GREEN;
         // Build spokes recursively in all directions
         for (_dir, theta) in HEX_VERTICES.iter() {
             // Determine origin point for current direction

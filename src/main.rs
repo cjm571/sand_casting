@@ -102,7 +102,10 @@ impl ggez_event::EventHandler for SandCastingGameState {
     fn update(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
         while ggez_timer::check_update_time(ctx, DESIRED_FPS) {
             // Update weather
-            self.weather_manager.update_weather(&ctx);
+            self.weather_manager.update_weather(ctx);
+
+            // Update the resource mesh
+            self.world_grid_manager.update_resource_mesh(ctx);
 
             // Update average FPS
             self.avg_fps = ggez_timer::fps(ctx);
@@ -116,6 +119,9 @@ impl ggez_event::EventHandler for SandCastingGameState {
         
         // Draw the hex grid
         ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
+
+        // Draw the resource grid
+        ggez_gfx::draw(ctx, self.world_grid_manager.get_resource_mesh(), ggez_gfx::DrawParam::default())?;
 
         // Draw the FPS counter
         let fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
@@ -179,8 +185,10 @@ fn main() {
     // Add resources to the grid
     let pond = resource::Resource::from(Element::Water, resource::State::Full, Coords::new(), 1);
     let campfire = resource::Resource::from(Element::Fire, resource::State::Full, Coords::new_at(5, 5, -10).unwrap(), 2);
-    sand_casting_game_state.world_grid_manager.add_resource(pond).unwrap();
-    sand_casting_game_state.world_grid_manager.add_resource(campfire).unwrap();
+    let powerline = resource::Resource::from(Element::Electric, resource::State::Full, Coords::new_at(0, 4, -4).unwrap(), 3);
+    sand_casting_game_state.world_grid_manager.add_resource(pond, &mut ggez_context).unwrap();
+    sand_casting_game_state.world_grid_manager.add_resource(campfire, &mut ggez_context).unwrap();
+    sand_casting_game_state.world_grid_manager.add_resource(powerline, &mut ggez_context).unwrap();
 
     // Run the game!
     match ggez_event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {

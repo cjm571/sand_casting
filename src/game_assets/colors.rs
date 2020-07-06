@@ -21,60 +21,112 @@ Changelog:
     CJ McAllister   01 Jul 2020     File created
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use ggez::graphics;
+use cast_iron::environment::Element;
+
+use ggez::graphics as ggez_gfx;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Constants
 ///////////////////////////////////////////////////////////////////////////////
 
-pub const BLACK:    graphics::Color = graphics::BLACK;
-pub const WHITE:    graphics::Color = graphics::WHITE;
-
-pub const RED:      graphics::Color = graphics::Color {
-    r: 1.0,
-    g: 0.0,
-    b: 0.0,
-    a: 1.0
+/* Greyscale */
+pub const BLACK:    ggez_gfx::Color = ggez_gfx::BLACK;
+pub const WHITE:    ggez_gfx::Color = ggez_gfx::WHITE;
+pub const GREY:     ggez_gfx::Color = ggez_gfx::Color {
+    r: 0.500,
+    g: 0.500,
+    b: 0.500,
+    a: 1.000
 };
 
-pub const GREEN:    graphics::Color = graphics::Color {
-    r: 0.0,
-    g: 1.0,
-    b: 0.0,
-    a: 1.0
+/* ROYGBIV Rainbow (values from wikipedia) */
+pub const RED:      ggez_gfx::Color = ggez_gfx::Color {
+    r: 1.000,
+    g: 0.000,
+    b: 0.000,
+    a: 1.000
+};
+pub const ORANGE:   ggez_gfx::Color = ggez_gfx::Color {
+    r: 1.000,
+    g: 0.496,
+    b: 0.000,
+    a: 1.000
+};
+pub const YELLOW:   ggez_gfx::Color = ggez_gfx::Color {
+    r: 1.000,
+    g: 1.000,
+    b: 0.000,
+    a: 1.000
+};
+pub const GREEN:    ggez_gfx::Color = ggez_gfx::Color {
+    r: 0.000,
+    g: 1.000,
+    b: 0.000,
+    a: 1.000
+};
+pub const BLUE:     ggez_gfx::Color = ggez_gfx::Color {
+    r: 0.000,
+    g: 0.000,
+    b: 1.000,
+    a: 1.000
+};
+pub const INDIGO:   ggez_gfx::Color = ggez_gfx::Color {
+    r: 0.180,
+    g: 0.168,
+    b: 0.371,
+    a: 1.000
+};
+pub const VIOLET:   ggez_gfx::Color = ggez_gfx::Color {
+    r: 0.543,
+    g: 0.000,
+    b: 1.000,
+    a: 1.000
 };
 
-pub const BLUE:     graphics::Color = graphics::Color {
-    r: 0.0,
-    g: 0.0,
-    b: 1.0,
-    a: 1.0
+/* Printer Ink (CMYK) */
+pub const CYAN:     ggez_gfx::Color = ggez_gfx::Color {
+    r: 0.000,
+    g: 1.000,
+    b: 1.000,
+    a: 1.000
+};
+pub const MAGENTA:  ggez_gfx::Color = ggez_gfx::Color {
+    r: 1.000,
+    g: 0.000,
+    b: 1.000,
+    a: 1.000
 };
 
-pub const YELLOW:   graphics::Color = graphics::Color {
-    r: 1.0,
-    g: 1.0,
-    b: 0.0,
-    a: 1.0
+/* Other (alphabetical) */
+pub const BROWN:    ggez_gfx::Color = ggez_gfx::Color {
+    r: 0.547,
+    g: 0.273,
+    b: 0.078,
+    a: 1.000
+};
+pub const IVORY:    ggez_gfx::Color = ggez_gfx::Color {
+    r: 1.000,
+    g: 1.000,
+    b: 0.941,
+    a: 1.000
 };
 
-pub const CYAN:     graphics::Color = graphics::Color {
-    r: 0.0,
-    g: 1.0,
-    b: 1.0,
-    a: 1.0
-};
 
-pub const PURPLE:   graphics::Color = graphics::Color {
-    r: 1.0,
-    g: 0.0,
-    b: 1.0,
-    a: 1.0
-};
 
-pub const GREY:     graphics::Color = graphics::Color {
-    r: 0.5,
-    g: 0.5,
-    b: 0.5,
-    a: 1.0
-};
+///////////////////////////////////////////////////////////////////////////////
+//  Utility Functions
+///////////////////////////////////////////////////////////////////////////////
+pub fn from_element(elem: Element) -> ggez_gfx::Color{
+    match elem {
+        Element::Unset      => panic!("Requested color of Unset Element!"),
+        Element::Fire       => RED,
+        Element::Ice        => CYAN,
+        Element::Wind       => GREEN,
+        Element::Water      => BLUE,
+        Element::Electric   => YELLOW,
+        Element::Earth      => BROWN,
+        Element::Light      => IVORY,
+        Element::Dark       => INDIGO
+    }
+}

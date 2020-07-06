@@ -84,9 +84,15 @@ impl Hexagon {
     //  Utility Methods
     ///////////////////////////////////////////////////////////////////////////
 
-    // Draw hexagon to the given graphics context
-    pub fn draw(&self, mesh_builder: &mut ggez_gfx::MeshBuilder) {
-        // Build up an array of "lines" for use in the line() draw function
+    // Add hexagon to the given mesh builder
+    pub fn add_to_mesh(&self, color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
+        // Add the filled hexagon
+        match mesh_builder.polygon(ggez_gfx::DrawMode::fill(), &self.vertices, color) {
+            Ok(_mb) => (),
+            _       => panic!("Failed to add filled hexagon to mesh_builder")
+        }
+
+        // Build up an array of lines for use in the outline
         let mut lines: [[ggez_mint::Point2<f32>; 2]; 6] = [[ggez_mint::Point2 {x: 0.0, y: 0.0}; 2]; 6];
 
         for i in 0 ..=4 {
@@ -96,7 +102,7 @@ impl Hexagon {
         lines[5] = [ggez_mint::Point2 {x: self.vertices[5].x, y: self.vertices[5].y},
                     ggez_mint::Point2 {x: self.vertices[0].x, y: self.vertices[0].y}];
 
-        // Draw all lines of hexagon
+        // Add the outline of hexagon
         for i in 0 ..=5 {
             match mesh_builder.line(&lines[i], 1.0, WHITE) {
                 Ok(_mb) => (),
@@ -104,7 +110,6 @@ impl Hexagon {
             }
         }
     }
-
 }
 ///////////////////////////////////////////////////////////////////////////////
 //  Unit Tests
