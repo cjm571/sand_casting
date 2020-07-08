@@ -21,7 +21,13 @@ Changelog:
     CJ McAllister   01 Jul 2020     File created
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use cast_iron::environment::Element;
+use cast_iron::environment::{
+    Element,
+    resource::{
+        Resource,
+        State
+    }
+};
 
 use ggez::graphics as ggez_gfx;
 
@@ -117,8 +123,9 @@ pub const IVORY:    ggez_gfx::Color = ggez_gfx::Color {
 ///////////////////////////////////////////////////////////////////////////////
 //  Utility Functions
 ///////////////////////////////////////////////////////////////////////////////
-pub fn from_element(elem: Element) -> ggez_gfx::Color{
-    match elem {
+pub fn from_resource(res: &Resource) -> ggez_gfx::Color {    
+    // Determine base color based on element of resource
+    let mut res_color: ggez_gfx::Color = match res.get_kind() {
         Element::Unset      => panic!("Requested color of Unset Element!"),
         Element::Fire       => RED,
         Element::Ice        => CYAN,
@@ -128,5 +135,17 @@ pub fn from_element(elem: Element) -> ggez_gfx::Color{
         Element::Earth      => BROWN,
         Element::Light      => IVORY,
         Element::Dark       => INDIGO
+    };
+
+    // Adjust alpha based on intensity
+    match res.get_state() {
+        State::Depleted => res_color.a = 0.000,
+        State::Low      => res_color.a = 0.050,
+        State::Partial  => res_color.a = 0.100,
+        State::High     => res_color.a = 0.150,
+        State::Full     => res_color.a = 0.200,
+        State::Overflow => res_color.a = 1.000
     }
+
+    res_color
 }

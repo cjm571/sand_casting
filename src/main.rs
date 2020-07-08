@@ -168,7 +168,7 @@ fn main() {
     let (mut ggez_context, mut ggez_event_loop) = GgEzContextBuilder::new("sand_casting", "CJ McAllister")
                                                   .window_setup(
                                                       ggez_conf::WindowSetup::default()
-                                                      .title("Sand Casting - A Cast Iron Sandbox Game")
+                                                      .title("Sand Casting - A CastIron Sandbox Game")
                                                       .vsync(false)
                                                     )
                                                   .window_mode(
@@ -183,8 +183,8 @@ fn main() {
 
     //FIXME: TEST CODE, DELETE
     // Add resources to the grid
-    let pond = resource::Resource::from(Element::Water, resource::State::Full, Coords::new(), 1);
-    let campfire = resource::Resource::from(Element::Fire, resource::State::Full, Coords::new_at(5, 5, -10).unwrap(), 2);
+    let pond = resource::Resource::from(Element::Water, resource::State::Low, Coords::new_at(1, -3, 2).unwrap(), 1);
+    let campfire = resource::Resource::from(Element::Fire, resource::State::Partial, Coords::new_at(5, 5, -10).unwrap(), 2);
     let powerline = resource::Resource::from(Element::Electric, resource::State::Full, Coords::new_at(0, 4, -4).unwrap(), 3);
     sand_casting_game_state.world_grid_manager.add_resource(pond, &mut ggez_context).unwrap();
     sand_casting_game_state.world_grid_manager.add_resource(campfire, &mut ggez_context).unwrap();

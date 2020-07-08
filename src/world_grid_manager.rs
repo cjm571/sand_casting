@@ -234,7 +234,7 @@ impl WorldGridManager {
 
             // Create a hexagon object and add it to the mesh builder
             let cur_hex = Hexagon::from(res_center, GRID_CELL_SIZE);
-            cur_hex.add_to_mesh(colors::from_element(res.get_kind()), &mut resource_mesh_builder);
+            cur_hex.add_to_mesh(colors::from_resource(&res), &mut resource_mesh_builder);
         }
 
         self.resource_mesh = resource_mesh_builder.build(ctx).unwrap();
