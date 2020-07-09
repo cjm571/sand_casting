@@ -60,6 +60,9 @@ use ggez::{
 pub mod game_assets;
 use game_assets::colors::*;
 
+pub mod resource_manager;
+use resource_manager::ResourceManager;
+
 pub mod weather_manager;
 use weather_manager::WeatherManager;
 
@@ -71,9 +74,25 @@ use world_grid_manager::*;
 //  Constants
 ///////////////////////////////////////////////////////////////////////////////
 
+/* Appearence */
 const DEFAULT_WINDOW_SIZE_X: f32 = 1200.0;
 const DEFAULT_WINDOW_SIZE_Y: f32 = 1200.0;
 const DESIRED_FPS: u32 = 60;
+
+const DEFAULT_LINE_WIDTH: f32 = 2.0;
+const DEFAULT_LINE_COLOR: ggez_gfx::Color = WHITE;
+
+/* Hex Grid */
+const GRID_CELL_SIZE: f32 = 30.0;
+// Y_OFFSET = GRID_CELL_SIZE * sin(pi/3) * 2
+// Distance from centerpoint of hex to center of a side 
+static Y_OFFSET: f32 = GRID_CELL_SIZE * 0.86602540378;
+// Y_OFFSET = GRID_CELL_SIZE * cos(pi/3) * 2
+// Distance from centerpoint of hex to center of a side 
+static X_OFFSET: f32 = GRID_CELL_SIZE * 0.5;
+
+/* Mechanics */
+const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: u32 = 10;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -82,18 +101,20 @@ const DESIRED_FPS: u32 = 60;
 
 /// Primary Game Struct
 struct SandCastingGameState {
-    world_grid_manager: WorldGridManager,   // World Grid Manager instance
+    avg_fps: f64,                           // Average FPS for display
+    resource_manager: ResourceManager,      // Resource Manager instance
     weather_manager: WeatherManager,        // Weather Manager instance
-    avg_fps: f64                            // Average FPS for display
+    world_grid_manager: WorldGridManager,   // World Grid Manager instance
 }
 
 impl SandCastingGameState {
     pub fn new(ctx: &mut GgEzContext) -> SandCastingGameState {
         // Load/create resources here: images, fonts, sounds, etc.
         SandCastingGameState{
-            world_grid_manager: WorldGridManager::new(10, ctx),
+            avg_fps: 0.0,
+            resource_manager: ResourceManager::new(ctx),
             weather_manager: WeatherManager::new(),
-            avg_fps: 0.0
+            world_grid_manager: WorldGridManager::new(DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ctx),
         }
     }
 }
@@ -105,7 +126,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
             self.weather_manager.update_weather(ctx);
 
             // Update the resource mesh
-            self.world_grid_manager.update_resource_mesh(ctx);
+            self.resource_manager.update_resource_mesh(ctx);
 
             // Update average FPS
             self.avg_fps = ggez_timer::fps(ctx);
@@ -121,7 +142,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
         ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
 
         // Draw the resource grid
-        ggez_gfx::draw(ctx, self.world_grid_manager.get_resource_mesh(), ggez_gfx::DrawParam::default())?;
+        ggez_gfx::draw(ctx, self.resource_manager.get_resource_mesh(), ggez_gfx::DrawParam::default())?;
 
         // Draw the FPS counter
         let fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
@@ -183,12 +204,12 @@ fn main() {
 
     //FIXME: TEST CODE, DELETE
     // Add resources to the grid
-    let pond = resource::Resource::from(Element::Water, resource::State::Low, Coords::new_at(1, -3, 2).unwrap(), 1);
-    let campfire = resource::Resource::from(Element::Fire, resource::State::Partial, Coords::new_at(5, 5, -10).unwrap(), 2);
-    let powerline = resource::Resource::from(Element::Electric, resource::State::Full, Coords::new_at(0, 4, -4).unwrap(), 3);
-    sand_casting_game_state.world_grid_manager.add_resource(pond, &mut ggez_context).unwrap();
-    sand_casting_game_state.world_grid_manager.add_resource(campfire, &mut ggez_context).unwrap();
-    sand_casting_game_state.world_grid_manager.add_resource(powerline, &mut ggez_context).unwrap();
+    let pond = resource::Resource::new(Element::Water, resource::State::Low, Coords::new_at(1, -3, 2).unwrap(), 1);
+    let campfire = resource::Resource::new(Element::Fire, resource::State::Partial, Coords::new_at(5, 5, -10).unwrap(), 2);
+    let powerline = resource::Resource::new(Element::Electric, resource::State::Full, Coords::new_at(0, 4, -4).unwrap(), 3);
+    sand_casting_game_state.resource_manager.add_resource(pond, &mut ggez_context).unwrap();
+    sand_casting_game_state.resource_manager.add_resource(campfire, &mut ggez_context).unwrap();
+    sand_casting_game_state.resource_manager.add_resource(powerline, &mut ggez_context).unwrap();
 
     // Run the game!
     match ggez_event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {

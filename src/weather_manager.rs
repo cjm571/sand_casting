@@ -43,8 +43,8 @@ use ggez::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct WeatherManager {
-    pub active_weather:     weather::Weather, //FIXME: Needs to be public?
-    pub timeout:            u8
+    active_weather:     weather::Weather, //FIXME: Needs to be public?
+    timeout:            u8
 }
 
 
@@ -55,7 +55,10 @@ pub struct WeatherManager {
 impl WeatherManager {
     pub fn new() -> WeatherManager {
         WeatherManager {
-            active_weather:     weather::Weather::new(),
+            active_weather:     weather::Weather::new(
+                Element::Unset,
+                PolyFunc::new()
+            ),
             timeout:            0
         }
     }
@@ -76,7 +79,7 @@ impl WeatherManager {
             let rand_duration   = rand::random::<u8>();
             let rand_func = PolyFunc::from(rand_magnitude, rand_duration, cur_tick);
 
-            self.active_weather = weather::Weather::from(rand_element, rand_func);
+            self.active_weather = weather::Weather::new(rand_element, rand_func);
             debug_println!(
                 "Tick {:>8}: Weather changed to Mag: {:>3}  Dur: {:>3}  Elem: {:?}",
                 cur_tick,

@@ -48,19 +48,8 @@ pub struct Hexagon {
 //  Functions and Methods
 ///////////////////////////////////////////////////////////////////////////////
 impl Hexagon {
-    // Default Constructor
-    pub fn new() -> Hexagon {
-        // Build an array of default Points
-        let vertices: [ggez_mint::Point2<f32>; 6] = [ggez_mint::Point2{x: 0.0, y: 0.0}; 6];
-
-        Hexagon {
-            vertices:   vertices,
-            color:      [1.0, 1.0, 1.0, 1.0]
-        }
-    }
-
-    // Specific Constructor
-    pub fn from(center: ggez_mint::Point2<f32>, size: f32) -> Hexagon {
+    /// Constructor
+    pub fn new(center: ggez_mint::Point2<f32>, size: f32) -> Hexagon {
         // Compute vertices components
         let x_offset = size * (f32::consts::PI/3.0).cos();
         let y_offset = size * (f32::consts::PI/3.0).sin();
