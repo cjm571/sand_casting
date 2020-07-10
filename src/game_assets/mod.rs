@@ -22,5 +22,5 @@ Changelog:
     CJ McAllister   01 Jul 2020     Module renamed to game_assets, added color submod
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-pub mod hexagon;
+pub mod hex_grid_cell;
 pub mod colors;

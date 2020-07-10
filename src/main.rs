@@ -81,13 +81,14 @@ const DESIRED_FPS: u32 = 60;
 
 const DEFAULT_LINE_WIDTH: f32 = 2.0;
 const DEFAULT_LINE_COLOR: ggez_gfx::Color = WHITE;
+const DEFAULT_FILL_COLOR: ggez_gfx::Color = GREY;
 
 /* Hex Grid */
 const GRID_CELL_SIZE: f32 = 30.0;
 // Y_OFFSET = GRID_CELL_SIZE * sin(pi/3) * 2
 // Distance from centerpoint of hex to center of a side 
 static Y_OFFSET: f32 = GRID_CELL_SIZE * 0.86602540378;
-// Y_OFFSET = GRID_CELL_SIZE * cos(pi/3) * 2
+// X_OFFSET = GRID_CELL_SIZE * cos(pi/3) * 2
 // Distance from centerpoint of hex to center of a side 
 static X_OFFSET: f32 = GRID_CELL_SIZE * 0.5;
 
@@ -204,9 +205,9 @@ fn main() {
 
     //FIXME: TEST CODE, DELETE
     // Add resources to the grid
-    let pond = resource::Resource::new(Element::Water, resource::State::Low, Coords::new_at(1, -3, 2).unwrap(), 1);
-    let campfire = resource::Resource::new(Element::Fire, resource::State::Partial, Coords::new_at(5, 5, -10).unwrap(), 2);
-    let powerline = resource::Resource::new(Element::Electric, resource::State::Full, Coords::new_at(0, 4, -4).unwrap(), 3);
+    let pond = resource::Resource::new(Element::Ice, resource::State::Low, Coords::new_at(1, -3, 2).unwrap(), 1);
+    let campfire = resource::Resource::new(Element::Fire, resource::State::Overflow, Coords::new_at(5, 5, -10).unwrap(), 3);
+    let powerline = resource::Resource::new(Element::Water, resource::State::Overflow, Coords::new_at(0, 4, -4).unwrap(), 2);
     sand_casting_game_state.resource_manager.add_resource(pond, &mut ggez_context).unwrap();
     sand_casting_game_state.resource_manager.add_resource(campfire, &mut ggez_context).unwrap();
     sand_casting_game_state.resource_manager.add_resource(powerline, &mut ggez_context).unwrap();

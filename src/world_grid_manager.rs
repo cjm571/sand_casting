@@ -21,7 +21,6 @@ Purpose:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use std::f32::consts::PI;
-use std::collections::HashMap;
 
 use ggez::{
     Context as GgEzContext,
@@ -29,60 +28,14 @@ use ggez::{
     mint as ggez_mint
 };
 
-use ::game_assets::colors;
+use ::game_assets::{
+    colors,
+    hex_grid_cell
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Data structures
 ///////////////////////////////////////////////////////////////////////////////
-
-#[derive(Debug, Hash)]
-pub enum Direction {
-    EAST,
-    NORTHEAST,
-    NORTH,
-    NORTHWEST,
-    WEST,
-    SOUTHWEST,
-    SOUTH,
-    SOUTHEAST
-}
-// Equivalence comparison
-impl PartialEq for Direction {
-    fn eq(&self, other: &Direction) -> bool {
-        self == other
-    }
-}
-impl Eq for Direction {}
-
-lazy_static! {
-    pub static ref HEX_SIDES: HashMap<Direction, f32> = {
-        let mut m = HashMap::new();
-
-        m.insert(Direction::NORTHEAST, PI/6.0);
-        m.insert(Direction::NORTH,     PI/2.0);
-        m.insert(Direction::NORTHWEST, 5.0*PI/6.0);
-        m.insert(Direction::SOUTHWEST, 7.0*PI/6.0);
-        m.insert(Direction::SOUTH,     3.0*PI/2.0);
-        m.insert(Direction::SOUTHEAST, 11.0*PI/6.0);
-
-        m
-    };
-}
-
-lazy_static! {
-    pub static ref HEX_VERTICES: HashMap<Direction, f32> = {
-        let mut m = HashMap::new();
-
-        m.insert(Direction::EAST,       0.0);
-        m.insert(Direction::NORTHEAST,  PI/3.0);
-        m.insert(Direction::NORTHWEST,  2.0*PI/3.0);
-        m.insert(Direction::WEST,       PI);
-        m.insert(Direction::SOUTHWEST,  4.0*PI/3.0);
-        m.insert(Direction::SOUTHEAST,  5.0*PI/3.0);
-
-        m
-    };
-}
 
 pub struct WorldGridManager {
     max_radial_distance: u32,       // Maximum value for an axis of the hex grid
@@ -92,6 +45,7 @@ pub struct WorldGridManager {
 //TODO: Proper implementation of an error type
 #[derive(Debug)]
 pub struct WorldGridError;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Functions and Methods
@@ -157,7 +111,7 @@ impl WorldGridManager {
 
         let spoke_color = colors::GREEN;
         // Build spokes recursively in all directions
-        for (_dir, theta) in HEX_VERTICES.iter() {
+        for (_dir, theta) in hex_grid_cell::HEX_VERTICES.iter() {
             // Determine origin point for current direction
             let origin = ggez_mint::Point2 {
                 x: center.x + (::GRID_CELL_SIZE * theta.cos()),
@@ -186,7 +140,7 @@ impl WorldGridManager {
         
         // Build a parallel line and dispatch a spoke build call at the current level
         // for each intercardinal direction.
-        for (_dir, theta) in HEX_SIDES.iter() {
+        for (_dir, theta) in hex_grid_cell::HEX_SIDES.iter() {
             // Calculate parallel line endpoints
             let mut endpt_x = center.x + ::GRID_CELL_SIZE * (theta - PI/6.0).cos();
             let mut endpt_y = center.y - ::GRID_CELL_SIZE * (theta - PI/6.0).sin();
