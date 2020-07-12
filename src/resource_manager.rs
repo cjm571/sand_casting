@@ -20,8 +20,6 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use std::f32::consts::PI;
-
 use cast_iron::environment::resource::Resource;
 
 use ggez::{
@@ -32,10 +30,7 @@ use ggez::{
 
 use ::game_assets::{
     colors,
-    hex_grid_cell::{
-        self,
-        HexGridCell
-    }
+    hex_grid_cell::HexGridCell
 };
 
 
@@ -134,79 +129,13 @@ impl ResourceManager {
             cur_hex.add_to_mesh(colors::from_resource(&res), &mut resource_mesh_builder);
 
             // Create radial HexGridCells as necessary
-            ResourceManager::radial_hex_build(
-                cur_hex,
+            cur_hex.add_radials_to_mesh(
                 colors::from_resource(res),
                 res.get_radius(),
+                true,
                 &mut resource_mesh_builder);
         }
 
         self.resource_mesh = resource_mesh_builder.build(ctx).unwrap();
-    }
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    //  Helper Functions
-    ///////////////////////////////////////////////////////////////////////////
-    
-    //OPT: This is a lot like an iterative version of WorldGridManager.recursive_hex_build()...
-    /// Iteratively build up the hex grid radials of a resource
-    fn radial_hex_build(
-        origin_hex: HexGridCell,
-        color: ggez_gfx::Color,
-        radius: u8,
-        resource_mesh_builder: &mut ggez_gfx::MeshBuilder
-    ) {
-        // In order to reliably construct radiating hexes:
-        // 1. Take the origin hex cell
-        // 2. Rotate its vertices by PI/6
-        // 3. Inflate the hex based on current radial level
-        // 4. Construct the appropriate number of hexes to fit along the lines between those vertices
-        
-        // Copy original color to allow for transparentization across levels
-        let mut cur_color = color;
-
-        // Get origin hex vertices
-        let origin_centerpoint = origin_hex.get_center();
-        let mut radial_vertices = [ggez_mint::Point2{x: 0.0, y: 0.0}; 6];
-
-        for level in 0..radius {
-            let mut i = 0;
-            for (_dir, theta) in hex_grid_cell::HEX_VERTICES.iter() {
-                // Add PI/6 to theta to rotate the standard flat-up hex to point-up
-                // This is important as all radial groups of hexes will effectively be large point-up hexes
-                let adj_theta = theta + PI/6.0;
-
-                radial_vertices[i].x = origin_centerpoint.x + (::Y_OFFSET*2.0*adj_theta.cos());
-                radial_vertices[i].y = origin_centerpoint.y - (::Y_OFFSET*2.0*adj_theta.sin());
-
-                // Inflate the vertices based on level
-                radial_vertices[i].x = radial_vertices[i].x + (::Y_OFFSET*2.0*adj_theta.cos()) * level as f32;
-                radial_vertices[i].y = radial_vertices[i].y - (::Y_OFFSET*2.0*adj_theta.sin()) * level as f32;
-
-                // Create hex cells at each vertex
-                let vert_hex = HexGridCell::new(radial_vertices[i], ::GRID_CELL_SIZE);
-                vert_hex.add_to_mesh(cur_color, resource_mesh_builder);
-
-                // Create interstitial hex(es) if level requires
-                for j in 0..level {
-                    let inter_hex_theta = adj_theta + 4.0*PI/6.0;
-                    
-                    let inter_hex_center = ggez_mint::Point2 {
-                        x: radial_vertices[i].x + (::Y_OFFSET*2.0*inter_hex_theta.cos()) * (j+1) as f32,
-                        y: radial_vertices[i].y - (::Y_OFFSET*2.0*inter_hex_theta.sin()) * (j+1) as f32
-                    };
-
-                    let inter_hex = HexGridCell::new(inter_hex_center, ::GRID_CELL_SIZE);
-                    inter_hex.add_to_mesh(cur_color, resource_mesh_builder);
-                }
-
-                i = i + 1;
-            }
-
-            //OPT: A logarithmic scale would be prettier
-            // Transparentize color such that we get to mostly transparent at the furthest level, but not fully transparent
-            cur_color.a = cur_color.a - (1.0/(radius) as f32);
-        }
     }
 }

@@ -93,7 +93,7 @@ static Y_OFFSET: f32 = GRID_CELL_SIZE * 0.86602540378;
 static X_OFFSET: f32 = GRID_CELL_SIZE * 0.5;
 
 /* Mechanics */
-const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: u32 = 10;
+const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: u8 = 10;
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -145,7 +145,7 @@ impl HexGridCell {
     //  Utility Methods
     ///////////////////////////////////////////////////////////////////////////
 
-    // Add hexagon to the given mesh builder
+    /// Add hexagon to the given mesh builder
     pub fn add_to_mesh(&self, color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
         // Add the filled hexagon
         match mesh_builder.polygon(ggez_gfx::DrawMode::fill(), &self.vertices, color) {
@@ -168,6 +168,68 @@ impl HexGridCell {
             match mesh_builder.line(&lines[i], 1.0, WHITE) {
                 Ok(_mb) => (),
                 _       => panic!("Failed to add line to mesh_builder")
+            }
+        }
+    }
+
+    pub fn add_radials_to_mesh(
+        &self,
+        color: ggez_gfx::Color,
+        radius: u8,
+        has_gradient: bool,
+        resource_mesh_builder: &mut ggez_gfx::MeshBuilder
+    ) {
+        // In order to reliably construct radiating hexes:
+        // 1. Take the origin hex cell
+        // 2. Rotate its vertices by PI/6
+        // 3. Inflate the hex based on current radial level
+        // 4. Construct the appropriate number of hexes to fit along the lines between those vertices
+        
+        // Copy original color to allow for transparentization across levels
+        let mut cur_color = color;
+
+        // Get origin hex vertices
+        let origin_centerpoint = self.get_center();
+        let mut radial_vertices = [ggez_mint::Point2{x: 0.0, y: 0.0}; 6];
+
+        for level in 0..radius {
+            let mut i = 0;
+            for (_dir, theta) in HEX_VERTICES.iter() {
+                // Add PI/6 to theta to rotate the standard flat-up hex to point-up
+                // This is important as all radial groups of hexes will effectively be large point-up hexes
+                let adj_theta = theta + PI/6.0;
+
+                radial_vertices[i].x = origin_centerpoint.x + (::Y_OFFSET*2.0*adj_theta.cos());
+                radial_vertices[i].y = origin_centerpoint.y - (::Y_OFFSET*2.0*adj_theta.sin());
+
+                // Inflate the vertices based on level
+                radial_vertices[i].x = radial_vertices[i].x + (::Y_OFFSET*2.0*adj_theta.cos()) * level as f32;
+                radial_vertices[i].y = radial_vertices[i].y - (::Y_OFFSET*2.0*adj_theta.sin()) * level as f32;
+
+                // Create hex cells at each vertex
+                let vert_hex = HexGridCell::new(radial_vertices[i], ::GRID_CELL_SIZE);
+                vert_hex.add_to_mesh(cur_color, resource_mesh_builder);
+
+                // Create interstitial hex(es) if level requires
+                for j in 0..level {
+                    let inter_hex_theta = adj_theta + 4.0*PI/6.0;
+                    
+                    let inter_hex_center = ggez_mint::Point2 {
+                        x: radial_vertices[i].x + (::Y_OFFSET*2.0*inter_hex_theta.cos()) * (j+1) as f32,
+                        y: radial_vertices[i].y - (::Y_OFFSET*2.0*inter_hex_theta.sin()) * (j+1) as f32
+                    };
+
+                    let inter_hex = HexGridCell::new(inter_hex_center, ::GRID_CELL_SIZE);
+                    inter_hex.add_to_mesh(cur_color, resource_mesh_builder);
+                }
+
+                i = i + 1;
+            }
+
+            //OPT: A logarithmic scale would probably be prettier
+            if has_gradient == true {
+                // Transparentize color such that we get to mostly transparent at the furthest level, but not fully transparent
+                cur_color.a = cur_color.a - (1.0/(radius) as f32);
             }
         }
     }

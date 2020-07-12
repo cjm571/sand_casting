@@ -20,8 +20,6 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use std::f32::consts::PI;
-
 use ggez::{
     Context as GgEzContext,
     graphics as ggez_gfx,
@@ -30,7 +28,7 @@ use ggez::{
 
 use ::game_assets::{
     colors,
-    hex_grid_cell
+    hex_grid_cell::HexGridCell
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -38,7 +36,7 @@ use ::game_assets::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct WorldGridManager {
-    max_radial_distance: u32,       // Maximum value for an axis of the hex grid
+    max_radial_distance: u8,       // Maximum value for an axis of the hex grid
     base_grid_mesh: ggez_gfx::Mesh  // Mesh for the base hex grid
 }
 
@@ -54,7 +52,7 @@ pub struct WorldGridError;
 impl WorldGridManager {
     /// Returns a new instance of WorldGridManager, with a base grid mesh initialized based on
     /// the GGEZ context's current window dimensions.
-    pub fn new(max_radial_distance: u32, ctx: &mut GgEzContext) -> WorldGridManager {
+    pub fn new(max_radial_distance: u8, ctx: &mut GgEzContext) -> WorldGridManager {
         let mut world_manager = WorldGridManager {
             max_radial_distance: max_radial_distance,
             base_grid_mesh: ggez_gfx::MeshBuilder::new()
@@ -87,7 +85,7 @@ impl WorldGridManager {
     //  Accessor Methods
     ///////////////////////////////////////////////////////////////////////////
      
-    pub fn get_grid_size(&self) -> u32 {
+    pub fn get_grid_size(&self) -> u8 {
         self.max_radial_distance
     }
 
@@ -106,124 +104,15 @@ impl WorldGridManager {
         center: ggez_mint::Point2<f32>,
         mesh_builder: &mut ggez_gfx::MeshBuilder
     ) {
-        // Build GRID_CELL_SIZE-width hexagon sides recursively
-        self.recursive_hex_build(colors::WHITE, center, 0, mesh_builder);
-
-        let spoke_color = colors::GREEN;
-        // Build spokes recursively in all directions
-        for (_dir, theta) in hex_grid_cell::HEX_VERTICES.iter() {
-            // Determine origin point for current direction
-            let origin = ggez_mint::Point2 {
-                x: center.x + (::GRID_CELL_SIZE * theta.cos()),
-                y: center.y - (::GRID_CELL_SIZE * theta.sin())
-            };
-            self.recursive_spoke_build(spoke_color, origin, *theta, 0, mesh_builder);
-        }
-    }
-
-    /// Builds a hex grid at the given level using recursive calls radiating out
-    /// from the given center.
-    fn recursive_hex_build(
-        &self,
-        color: ggez_gfx::Color,
-        center: ggez_mint::Point2<f32>,
-        level: u32,
-        mesh_builder: &mut ggez_gfx::MeshBuilder
-    ) {
-        // Final level exit case
-        if level == self.max_radial_distance {
-            return;
-        }
-
-        // HEX_SIZE to be used to correctly translate levels > 0
-        static HEX_SIZE: f32 = ::Y_OFFSET * 2.0;
-        
-        // Build a parallel line and dispatch a spoke build call at the current level
-        // for each intercardinal direction.
-        for (_dir, theta) in hex_grid_cell::HEX_SIDES.iter() {
-            // Calculate parallel line endpoints
-            let mut endpt_x = center.x + ::GRID_CELL_SIZE * (theta - PI/6.0).cos();
-            let mut endpt_y = center.y - ::GRID_CELL_SIZE * (theta - PI/6.0).sin();
-            let mut endpt_a = ggez_mint::Point2 {
-                x: endpt_x,
-                y: endpt_y
-            };
-
-            endpt_x = center.x + ::GRID_CELL_SIZE * (theta + PI/6.0).cos();
-            endpt_y = center.y - ::GRID_CELL_SIZE * (theta + PI/6.0).sin();
-            let mut endpt_b = ggez_mint::Point2 {
-                x: endpt_x,
-                y: endpt_y
-            };
-
-            // Translate lines based on level
-            endpt_a.x = endpt_a.x + level as f32 * (HEX_SIZE * theta.cos());
-            endpt_a.y = endpt_a.y - level as f32 * (HEX_SIZE * theta.sin());
-            endpt_b.x = endpt_b.x + level as f32 * (HEX_SIZE * theta.cos());
-            endpt_b.y = endpt_b.y - level as f32 * (HEX_SIZE * theta.sin());
-
-            // Add the line to the GGEZ mesh builder
-            match mesh_builder.line(&[endpt_a, endpt_b], ::DEFAULT_LINE_WIDTH, color) {
-                Ok(_mb) => (),
-                _       => panic!("Failed to add line to mesh_builder")
-            }
-        }
-        
-        // Make the recursive call
-        self.recursive_hex_build(color, center, level+1, mesh_builder);
-    }
-
-    /// Builds a spoke (i.e. -<) from a point in the given direction.
-    /// Recursively spawns two more spoke builds at the endpoint
-    fn recursive_spoke_build(
-        &self,
-        mut color: ggez_gfx::Color,
-        origin: ggez_mint::Point2<f32>,
-        theta: f32,
-        level: u32,
-        mesh_builder: &mut ggez_gfx::MeshBuilder
-    ) {
-        // Final level exit case
-        if level == self.max_radial_distance {
-            return;
-        }
-
-        let mut lines: [[ggez_mint::Point2<f32>; 2]; 3] = [[ggez_mint::Point2 {x: 0.0, y: 0.0}; 2]; 3];
-        let mut endpoints: [ggez_mint::Point2<f32>; 3] = [ggez_mint::Point2 {x: 0.0, y: 0.0}; 3];
-
-        // Calculate endpoint of stem
-        endpoints[0] = ggez_mint::Point2 {
-            x: origin.x + (::GRID_CELL_SIZE * theta.cos()),
-            y: origin.y - (::GRID_CELL_SIZE * theta.sin())
-        };
-        lines[0] = [origin, endpoints[0]];
-
-        // Calculate branch endpoints
-        endpoints[1] = ggez_mint::Point2 {
-            x: endpoints[0].x + (::GRID_CELL_SIZE * (theta + PI/3.0).cos()),
-            y: endpoints[0].y - (::GRID_CELL_SIZE * (theta + PI/3.0).sin())
-        };
-        endpoints[2] = ggez_mint::Point2 {
-            x: endpoints[0].x + (::GRID_CELL_SIZE * (theta - PI/3.0).cos()),
-            y: endpoints[0].y - (::GRID_CELL_SIZE * (theta - PI/3.0).sin())
-        };
-        lines[1] = [endpoints[0], endpoints[1]];
-        lines[2] = [endpoints[0], endpoints[2]];
-
-        // Build lines
-        for i in 0..=2 {
-            match mesh_builder.line(&lines[i], ::DEFAULT_LINE_WIDTH, color) {
-                Ok(_mb) => (),
-                _       => panic!("Failed to add line to mesh_builder")
-            }
-        }
-
-        // Make the recursive calls
-        color.g = color.g - 0.1;
-
-        color.r = color.r + 0.1;
-        self.recursive_spoke_build(color, endpoints[1], theta, level+1, mesh_builder);
-        color.r = color.b + 0.1;
-        self.recursive_spoke_build(color, endpoints[2], theta, level+1, mesh_builder);
+        // Construct the central hex cell
+        let central_hex_cell = HexGridCell::new(center, ::GRID_CELL_SIZE);
+    
+        // Add it, and its radials to the mesh
+        central_hex_cell.add_to_mesh(colors::TRANSPARENT, mesh_builder);
+        central_hex_cell.add_radials_to_mesh(
+            colors::TRANSPARENT,
+            ::DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE,
+            false,
+            mesh_builder);
     }
 }

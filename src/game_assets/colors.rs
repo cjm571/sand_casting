@@ -117,7 +117,12 @@ pub const IVORY:    ggez_gfx::Color = ggez_gfx::Color {
     b: 0.941,
     a: 1.000
 };
-
+pub const TRANSPARENT: ggez_gfx::Color = ggez_gfx::Color {
+    r: 0.000,
+    g: 0.000,
+    b: 0.000,
+    a: 0.000
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
