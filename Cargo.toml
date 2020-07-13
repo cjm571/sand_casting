@@ -4,7 +4,7 @@ version = "0.2.0"
 authors = ["CJ McAllister <cjm571@gmail.com>"]
 
 [dependencies]
-cast_iron = { path = "../cast_iron", version = "0.1.2" }
+cast_iron = { path = "../cast_iron", version = "0.2.0" }
 lazy_static = "1.2.0"
 ggez = "0.5.1"
 rand = "0.7.3"

@@ -25,7 +25,7 @@ Changelog:
 
 use cast_iron::{
     environment::{
-        Element,
+        element::Element,
         weather
     },
     polyfunc::PolyFunc,
@@ -53,7 +53,7 @@ pub struct WeatherManager {
 ///////////////////////////////////////////////////////////////////////////////
 
 impl WeatherManager {
-    pub fn new() -> WeatherManager {
+    pub fn new() -> Self {
         WeatherManager {
             active_weather:     weather::Weather::new(
                 Element::Unset,

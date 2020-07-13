@@ -22,7 +22,7 @@ Changelog:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::environment::{
-    Element,
+    element::Element,
     resource::{
         Resource,
         State

@@ -52,7 +52,7 @@ pub struct WorldGridError;
 impl WorldGridManager {
     /// Returns a new instance of WorldGridManager, with a base grid mesh initialized based on
     /// the GGEZ context's current window dimensions.
-    pub fn new(max_radial_distance: u8, ctx: &mut GgEzContext) -> WorldGridManager {
+    pub fn new(max_radial_distance: u8, ctx: &mut GgEzContext) -> Self {
         let mut world_manager = WorldGridManager {
             max_radial_distance: max_radial_distance,
             base_grid_mesh: ggez_gfx::MeshBuilder::new()
@@ -72,7 +72,7 @@ impl WorldGridManager {
 
         // Create a mesh builder for the base hex grid
         let mut base_grid_mesh_builder = ggez_gfx::MeshBuilder::new();
-        world_manager.build_grid(center, &mut base_grid_mesh_builder);
+        world_manager.build_base_grid(center, &mut base_grid_mesh_builder);
 
         // Build the base hex grid mesh and draw it
         world_manager.base_grid_mesh = base_grid_mesh_builder.build(ctx).unwrap();
@@ -99,7 +99,7 @@ impl WorldGridManager {
     ///////////////////////////////////////////////////////////////////////////
 
     /// Builds a baseline hex grid to the graphics window.
-    fn build_grid(
+    fn build_base_grid(
         &self,
         center: ggez_mint::Point2<f32>,
         mesh_builder: &mut ggez_gfx::MeshBuilder

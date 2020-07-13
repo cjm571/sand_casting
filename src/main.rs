@@ -36,7 +36,7 @@ use cast_iron::{
         aspect::*
     },
     environment::{
-        Element,
+        element::Element,
         coords::Coords,
         resource
     }
@@ -109,7 +109,7 @@ struct SandCastingGameState {
 }
 
 impl SandCastingGameState {
-    pub fn new(ctx: &mut GgEzContext) -> SandCastingGameState {
+    pub fn new(ctx: &mut GgEzContext) -> Self {
         // Load/create resources here: images, fonts, sounds, etc.
         SandCastingGameState{
             avg_fps: 0.0,
@@ -205,9 +205,9 @@ fn main() {
 
     //FIXME: TEST CODE, DELETE
     // Add resources to the grid
-    let pond = resource::Resource::new(Element::Ice, resource::State::Low, Coords::new_at(1, -3, 2).unwrap(), 1);
-    let campfire = resource::Resource::new(Element::Fire, resource::State::Overflow, Coords::new_at(5, 5, -10).unwrap(), 3);
-    let powerline = resource::Resource::new(Element::Water, resource::State::Overflow, Coords::new_at(0, 4, -4).unwrap(), 2);
+    let pond = resource::Resource::new(Element::Ice, resource::State::Low, Coords::new(1, -3, 2).unwrap(), 1);
+    let campfire = resource::Resource::new(Element::Fire, resource::State::Overflow, Coords::new(5, 5, -10).unwrap(), 3);
+    let powerline = resource::Resource::new(Element::Water, resource::State::Overflow, Coords::new(0, 4, -4).unwrap(), 2);
     sand_casting_game_state.resource_manager.add_resource(pond, &mut ggez_context).unwrap();
     sand_casting_game_state.resource_manager.add_resource(campfire, &mut ggez_context).unwrap();
     sand_casting_game_state.resource_manager.add_resource(powerline, &mut ggez_context).unwrap();

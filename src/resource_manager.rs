@@ -54,7 +54,7 @@ pub struct ResourceManager {
 
 impl ResourceManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(ctx: &mut GgEzContext) -> ResourceManager {
+    pub fn new(ctx: &mut GgEzContext) -> Self {
         ResourceManager {
             resources: Vec::new(),
             resource_mesh: ggez_gfx::Mesh::new_line(

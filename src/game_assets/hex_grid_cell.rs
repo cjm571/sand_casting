@@ -104,7 +104,7 @@ pub struct HexGridCell {
 ///////////////////////////////////////////////////////////////////////////////
 impl HexGridCell {
     /// Constructor
-    pub fn new(center: ggez_mint::Point2<f32>, size: f32) -> HexGridCell {
+    pub fn new(center: ggez_mint::Point2<f32>, size: f32) -> Self {
         // Compute vertices components
         let x_offset = size * (PI/3.0).cos();
         let y_offset = size * (PI/3.0).sin();
