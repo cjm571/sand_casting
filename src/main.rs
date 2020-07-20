@@ -24,8 +24,6 @@ Changelog:
     CJ McAllister   03 Jul 2020     Completed removal of piston-2d
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#[macro_use(lazy_static)]
-extern crate lazy_static;
 extern crate rand;
 
 extern crate cast_iron;
@@ -75,8 +73,8 @@ use world_grid_manager::*;
 ///////////////////////////////////////////////////////////////////////////////
 
 /* Appearence */
-const DEFAULT_WINDOW_SIZE_X: f32 = 1200.0;
-const DEFAULT_WINDOW_SIZE_Y: f32 = 1200.0;
+const DEFAULT_WINDOW_SIZE_X: f32 = 1000.0;
+const DEFAULT_WINDOW_SIZE_Y: f32 = 1000.0;
 const DESIRED_FPS: u32 = 60;
 
 const DEFAULT_LINE_WIDTH: f32 = 2.0;
@@ -84,7 +82,7 @@ const DEFAULT_LINE_COLOR: ggez_gfx::Color = WHITE;
 const DEFAULT_FILL_COLOR: ggez_gfx::Color = GREY;
 
 /* Hex Grid */
-const GRID_CELL_SIZE: f32 = 30.0;
+const GRID_CELL_SIZE: f32 = 25.0;
 // Y_OFFSET = GRID_CELL_SIZE * sin(pi/3) * 2
 // Distance from centerpoint of hex to center of a side 
 static Y_OFFSET: f32 = GRID_CELL_SIZE * 0.86602540378;

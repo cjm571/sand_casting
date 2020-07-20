@@ -25,7 +25,8 @@ Changelog:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use std::f32::consts::PI;
-use std::collections::BTreeMap;
+
+use cast_iron::hex_direction_provider::*;
 
 use ggez::{
     graphics as ggez_gfx,
@@ -38,58 +39,6 @@ use ::game_assets::colors::*;
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
-
-
-#[derive(Debug, PartialOrd, Ord)]
-pub enum Direction {
-    NORTH,
-    NORTHEAST,
-    EAST,
-    SOUTHEAST,
-    SOUTH,
-    SOUTHWEST,
-    WEST,
-    NORTHWEST
-}
-// Equivalence comparison
-impl PartialEq for Direction {
-    fn eq(&self, other: &Direction) -> bool {
-        self == other
-    }
-}
-impl Eq for Direction {}
-
-lazy_static! {
-    pub static ref HEX_SIDES: BTreeMap<Direction, f32> = {
-        let mut m = BTreeMap::new();
-
-        // NOTE: Clockwise for ease of use with GGEZ MeshBuilders
-        m.insert(Direction::NORTH,     PI/2.0);
-        m.insert(Direction::NORTHEAST, PI/6.0);
-        m.insert(Direction::SOUTHEAST, 11.0*PI/6.0);
-        m.insert(Direction::SOUTH,     3.0*PI/2.0);
-        m.insert(Direction::SOUTHWEST, 7.0*PI/6.0);
-        m.insert(Direction::NORTHWEST, 5.0*PI/6.0);
-
-        m
-    };
-}
-
-lazy_static! {
-    pub static ref HEX_VERTICES: BTreeMap<Direction, f32> = {
-        let mut m = BTreeMap::new();
-
-        // NOTE: Clockwise for ease of use with GGEZ MeshBuilders
-        m.insert(Direction::NORTHEAST,  PI/3.0);
-        m.insert(Direction::EAST,       0.0);
-        m.insert(Direction::SOUTHEAST,  5.0*PI/3.0);
-        m.insert(Direction::SOUTHWEST,  4.0*PI/3.0);
-        m.insert(Direction::WEST,       PI);
-        m.insert(Direction::NORTHWEST,  2.0*PI/3.0);
-
-        m
-    };
-}
 
 // Point array starts with the eastern-most point, and continues counter-clockwise.
 #[derive(Debug, Copy, Clone)]
@@ -193,8 +142,11 @@ impl HexGridCell {
         let mut radial_vertices = [ggez_mint::Point2{x: 0.0, y: 0.0}; 6];
 
         for level in 0..radius {
+            // Create an iterator starting at the East vertex and going COUNTER-CLOCKWISE as required by GGEZ draw calls
             let mut i = 0;
-            for (_dir, theta) in HEX_VERTICES.iter() {
+            let direction_provider: HexDirectionProvider<HexVertices> = HexDirectionProvider::new(HexVertices::EAST);
+            for vertex in direction_provider {
+                let theta: f32 = vertex.into();
                 // Add PI/6 to theta to rotate the standard flat-up hex to point-up
                 // This is important as all radial groups of hexes will effectively be large point-up hexes
                 let adj_theta = theta + PI/6.0;
