@@ -28,17 +28,16 @@ extern crate rand;
 
 extern crate cast_iron;
 use cast_iron::{
-    actor::Actor,
     ability::{
         Ability,
         aspect::*
     },
-    environment::{
-        element::Element,
-        coords::Coords,
-        resource
-    }
+    actor::Actor,
+    context::Context as CastIronContext,
+    environment::element::Element
 };
+// use cast_iron::environment::resource;
+// use cast_iron::environment::coords::Coords;
 
 extern crate ggez;
 use ggez::{
@@ -83,15 +82,16 @@ const DEFAULT_FILL_COLOR: ggez_gfx::Color = GREY;
 
 /* Hex Grid */
 const GRID_CELL_SIZE: f32 = 25.0;
-// Y_OFFSET = GRID_CELL_SIZE * sin(pi/3) * 2
+// CENTER_TO_SIDE_DIST = GRID_CELL_SIZE * sin(pi/3)
 // Distance from centerpoint of hex to center of a side 
-static Y_OFFSET: f32 = GRID_CELL_SIZE * 0.86602540378;
-// X_OFFSET = GRID_CELL_SIZE * cos(pi/3) * 2
+static CENTER_TO_SIDE_DIST: f32 = GRID_CELL_SIZE * 0.86602540378;
+// CENTER_TO_VERTEX_DIST = GRID_CELL_SIZE * cos(pi/3)
 // Distance from centerpoint of hex to center of a side 
-static X_OFFSET: f32 = GRID_CELL_SIZE * 0.5;
+static CENTER_TO_VERTEX_DIST: f32 = GRID_CELL_SIZE * 0.5;
 
 /* Mechanics */
 const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: u8 = 10;
+// const DEFAULT_MAX_OBSTACLE_LENGTH: u8 = 5;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -101,6 +101,7 @@ const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: u8 = 10;
 /// Primary Game Struct
 struct SandCastingGameState {
     avg_fps: f64,                           // Average FPS for display
+    peak_fps: f64,                          // Peak FPS for display
     resource_manager: ResourceManager,      // Resource Manager instance
     weather_manager: WeatherManager,        // Weather Manager instance
     world_grid_manager: WorldGridManager,   // World Grid Manager instance
@@ -111,6 +112,7 @@ impl SandCastingGameState {
         // Load/create resources here: images, fonts, sounds, etc.
         SandCastingGameState{
             avg_fps: 0.0,
+            peak_fps: 0.0,
             resource_manager: ResourceManager::new(ctx),
             weather_manager: WeatherManager::new(),
             world_grid_manager: WorldGridManager::new(DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ctx),
@@ -127,8 +129,11 @@ impl ggez_event::EventHandler for SandCastingGameState {
             // Update the resource mesh
             self.resource_manager.update_resource_mesh(ctx);
 
-            // Update average FPS
+            // Update FPS
             self.avg_fps = ggez_timer::fps(ctx);
+            if self.avg_fps > self.peak_fps {
+                self.peak_fps = self.avg_fps;
+            }
         }
 
         Ok(())
@@ -143,11 +148,16 @@ impl ggez_event::EventHandler for SandCastingGameState {
         // Draw the resource grid
         ggez_gfx::draw(ctx, self.resource_manager.get_resource_mesh(), ggez_gfx::DrawParam::default())?;
 
-        // Draw the FPS counter
-        let fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
-        let fps_str = format!("FPS: {:.0}", self.avg_fps);
-        let fps_display = ggez_gfx::Text::new((fps_str, ggez_gfx::Font::default(), 16.0));
-        ggez_gfx::draw(ctx, &fps_display, (fps_pos, 0.0, GREEN)).unwrap();
+        // Draw the FPS counters
+        let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
+        let avg_fps_str = format!("Avg. FPS: {:.0}", self.avg_fps);
+        let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(), 16.0));
+        ggez_gfx::draw(ctx, &avg_fps_display, (avg_fps_pos, 0.0, GREEN)).unwrap();
+        
+        let peak_fps_pos = ggez_mint::Point2 {x: 0.0, y: 20.0};
+        let peak_fps_str = format!("Peak FPS: {:.0}", self.peak_fps);
+        let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(), 16.0));
+        ggez_gfx::draw(ctx, &peak_fps_display, (peak_fps_pos, 0.0, GREEN)).unwrap();
 
         ggez_gfx::present(ctx)
     }
@@ -184,6 +194,9 @@ fn main() {
     player_one.add_ability(blood_drain);
     player_one.add_ability(null_abil);
 
+    // Create CastIron Context
+    let mut ci_ctx = CastIronContext::default();
+
     // Create a GGEZ Context and EventLoop
     let (mut ggez_context, mut ggez_event_loop) = GgEzContextBuilder::new("sand_casting", "CJ McAllister")
                                                   .window_setup(
@@ -201,14 +214,21 @@ fn main() {
     // Use built context to create a GGEZ Event Handler instance
     let mut sand_casting_game_state = SandCastingGameState::new(&mut ggez_context);
 
+    
     //FIXME: TEST CODE, DELETE
     // Add resources to the grid
-    let pond = resource::Resource::new(Element::Ice, resource::State::Low, Coords::new(1, -3, 2).unwrap(), 1);
-    let campfire = resource::Resource::new(Element::Fire, resource::State::Overflow, Coords::new(5, 5, -10).unwrap(), 3);
-    let powerline = resource::Resource::new(Element::Water, resource::State::Overflow, Coords::new(0, 4, -4).unwrap(), 2);
-    sand_casting_game_state.resource_manager.add_resource(pond, &mut ggez_context).unwrap();
-    sand_casting_game_state.resource_manager.add_resource(campfire, &mut ggez_context).unwrap();
-    sand_casting_game_state.resource_manager.add_resource(powerline, &mut ggez_context).unwrap();
+    // let pond = resource::Resource::new(Element::Ice, resource::State::Overflow, Coords::new(3, -1, -2).unwrap(), 1);
+    // let campfire = resource::Resource::new(Element::Fire, resource::State::Overflow, Coords::new(0, 3, -3).unwrap(), 1);
+    // let powerline = resource::Resource::new(Element::Water, resource::State::Overflow, Coords::new(-1, -2, 3).unwrap(), 1);
+    // sand_casting_game_state.resource_manager.add_resource(pond, &mut ggez_context).unwrap();
+    // sand_casting_game_state.resource_manager.add_resource(campfire, &mut ggez_context).unwrap();
+    // sand_casting_game_state.resource_manager.add_resource(powerline, &mut ggez_context).unwrap();
+
+    // Create random resources
+    for _i in 0..3 {
+        sand_casting_game_state.resource_manager.add_rand_resouce(&mut ci_ctx, &mut ggez_context).unwrap();
+    }
+
 
     // Run the game!
     match ggez_event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {

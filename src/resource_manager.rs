@@ -20,7 +20,12 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use cast_iron::environment::resource::Resource;
+use cast_iron::{
+    context::Context as CIContext,
+    environment::resource::Resource,
+    hex_direction_provider::*,
+    debug_println
+};
 
 use ggez::{
     Context as GgEzContext,
@@ -32,6 +37,13 @@ use ::game_assets::{
     colors,
     hex_grid_cell::HexGridCell
 };
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Constants
+///////////////////////////////////////////////////////////////////////////////
+
+const MAX_RAND_RESOURCE_ATTEMPTS: usize = 10;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -65,7 +77,7 @@ impl ResourceManager {
                 .unwrap()
         }
     }
-    
+
     ///////////////////////////////////////////////////////////////////////////
     //  Accessor Methods
     ///////////////////////////////////////////////////////////////////////////
@@ -78,8 +90,48 @@ impl ResourceManager {
     //  Utility Functions
     ///////////////////////////////////////////////////////////////////////////
 
-    pub fn add_resource(&mut self, new_res: Resource, ctx: &mut GgEzContext) -> Result<(), ResourceError>
-    {
+    pub fn update_resource_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
+        let mut resource_mesh_builder = ggez_gfx::MeshBuilder::new();
+
+        // Get window dimensions
+        let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
+        let window_center = ggez_mint::Point2 {
+            x: window_x / 2.0,
+            y: window_y / 2.0
+        };
+
+        // Iterate through resources, adding to mesh builder along the way
+        for res in &self.resources {
+            let res_coords = res.get_coords();
+
+            //OPT: Not a great spot for this conversion logic...
+            // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
+            let x_offset = res_coords.get_x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
+            let y_offset = -1.0 * (res_coords.get_y() as f32 * f32::from(HexSides::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) + 
+                           -1.0 * (res_coords.get_z() as f32 * f32::from(HexSides::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
+
+            let res_center = ggez_mint::Point2 {
+                x: window_center.x + x_offset,
+                y: window_center.y + y_offset
+            };
+
+            // Create a HexGridCell object and add it to the mesh builder
+            let cur_hex = HexGridCell::new(res_center, ::GRID_CELL_SIZE);
+            cur_hex.add_to_mesh(colors::from_resource(&res), colors::WHITE, &mut resource_mesh_builder);
+
+            // Create radial HexGridCells as necessary
+            cur_hex.add_radials_to_mesh(
+                colors::from_resource(res),
+                colors::WHITE,
+                res.get_radius(),
+                true,
+                &mut resource_mesh_builder);
+        }
+
+        self.resource_mesh = resource_mesh_builder.build(ggez_ctx).unwrap();
+    }
+
+    pub fn add_resource(&mut self, new_res: Resource, ggez_ctx: &mut GgEzContext) -> Result<(), ResourceError> {
         // Verify that no resource already exists in the same location
         let mut coords_occupied = false;
         for existing_res in &self.resources {
@@ -94,48 +146,37 @@ impl ResourceManager {
             self.resources.push(new_res);
 
             // Update resource mesh
-            self.update_resource_mesh(ctx);
+            self.update_resource_mesh(ggez_ctx);
             Ok(())
         }
         else { // Otherwise, return an error
             Err(ResourceError)
         }
-    }    
+    }
 
-    pub fn update_resource_mesh(&mut self, ctx: &mut GgEzContext) {
-        let mut resource_mesh_builder = ggez_gfx::MeshBuilder::new();
+    pub fn add_rand_resouce(&mut self, ci_ctx: &mut CIContext, ggez_ctx: &mut GgEzContext) -> Result<(), ResourceError> {
+        // Create a random resources and attempt to add them until we succeed (or fail too many times)
+        let mut attempts = 0;
+        while attempts < MAX_RAND_RESOURCE_ATTEMPTS {
+            let rand_resource = Resource::rand(ci_ctx);
+            match self.add_resource(rand_resource, ggez_ctx) {
+                Ok(())              => {        
+                    debug_println!("Added resource: {:?}", rand_resource);
+                    break;   // Successfully added resource, break loop
+                },
+                Err(ResourceError)  => ()       // Failed to add resource, continue
+            }
 
-        // Get window dimensions
-        let (window_x, window_y) = ggez_gfx::size(ctx);
-        let window_center = ggez_mint::Point2 {
-            x: window_x / 2.0,
-            y: window_y / 2.0
-        };
-        
-        // Iterate through resources, adding to mesh builder along the way
-        for res in &self.resources {
-            let res_coords = res.get_coords();
-
-            // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
-            let x_offset = (res_coords.get_x() - res_coords.get_y()) as f32 * (::X_OFFSET * 3.0);
-            let y_offset = res_coords.get_z() as f32 * ::Y_OFFSET;
-            let res_center = ggez_mint::Point2 {
-                x: window_center.x + x_offset,
-                y: window_center.y + y_offset
-            };
-
-            // Create a HexGridCell object and add it to the mesh builder
-            let cur_hex = HexGridCell::new(res_center, ::GRID_CELL_SIZE);
-            cur_hex.add_to_mesh(colors::from_resource(&res), &mut resource_mesh_builder);
-
-            // Create radial HexGridCells as necessary
-            cur_hex.add_radials_to_mesh(
-                colors::from_resource(res),
-                res.get_radius(),
-                true,
-                &mut resource_mesh_builder);
+            attempts = attempts + 1;
         }
 
-        self.resource_mesh = resource_mesh_builder.build(ctx).unwrap();
+        // If attempts maxed out - return error, otherwise Ok()
+        if attempts == MAX_RAND_RESOURCE_ATTEMPTS {
+            Err(ResourceError)
+        }
+        else
+        {
+            Ok(())
+        }
     }
 }

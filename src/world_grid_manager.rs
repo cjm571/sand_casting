@@ -20,6 +20,8 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+use cast_iron::debug_exec;
+
 use ggez::{
     Context as GgEzContext,
     graphics as ggez_gfx,
@@ -108,11 +110,17 @@ impl WorldGridManager {
         let central_hex_cell = HexGridCell::new(center, ::GRID_CELL_SIZE);
     
         // Add it, and its radials to the mesh
-        central_hex_cell.add_to_mesh(colors::TRANSPARENT, mesh_builder);
+        central_hex_cell.add_to_mesh(colors::TRANSPARENT, ::DEFAULT_LINE_COLOR, mesh_builder);
         central_hex_cell.add_radials_to_mesh(
             colors::TRANSPARENT,
+            ::DEFAULT_LINE_COLOR,
             ::DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE,
             false,
             mesh_builder);
+
+        debug_exec!{
+            // Add central hex with a green outline for visibility
+            central_hex_cell.add_to_mesh(colors::TRANSPARENT, colors::GREEN, mesh_builder)
+        };
     }
 }
