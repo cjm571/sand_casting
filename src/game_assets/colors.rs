@@ -17,8 +17,6 @@ Copyright (C) 2020 CJ McAllister
 Purpose:
     This module defines various game assets to be used for drawing.
 
-Changelog:
-    CJ McAllister   01 Jul 2020     File created
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::environment::{
@@ -128,7 +126,7 @@ pub const TRANSPARENT: ggez_gfx::Color = ggez_gfx::Color {
 ///////////////////////////////////////////////////////////////////////////////
 //  Utility Functions
 ///////////////////////////////////////////////////////////////////////////////
-pub fn from_resource(res: &Resource) -> ggez_gfx::Color {    
+pub fn from_resource(res: &Resource) -> ggez_gfx::Color {
     // Determine base color based on element of resource
     let mut res_color: ggez_gfx::Color = match res.get_kind() {
         Element::Unset      => panic!("Requested color of Unset Element!"),

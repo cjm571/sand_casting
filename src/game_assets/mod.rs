@@ -17,9 +17,6 @@ Copyright (C) 2017 CJ McAllister
 Purpose:
     This module defines various game assets to be used for drawing.
 
-Changelog:
-    CJ McAllister   16 Nov 2018     File created
-    CJ McAllister   01 Jul 2020     Module renamed to game_assets, added color submod
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 pub mod hex_grid_cell;

@@ -18,9 +18,6 @@ Purpose:
     This module manages weather effects over the course of the game, including
     but not limited to generating random weather events.
 
-Changelog:
-    CJ McAllister   02 Jul 2020     File created
-
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::{
@@ -72,13 +69,13 @@ impl WeatherManager {
     pub fn update_weather(&mut self, ctx: &GgEzContext) {
         // Get current state info from GGEZ context
         let cur_tick = ggez_timer::ticks(ctx);
-        
+
         // If current weather has timed out, randomly generate a new weather pattern
         if self.timeout == 0 {
             let mut rng = rand::thread_rng();
 
             let rand_element: Element = rng.gen();
-            
+
             let rand_magnitude: usize = rng.gen();
             let rand_duration: usize = rng.gen();
             let rand_func = PolyFunc::new(rand_magnitude, rand_duration, cur_tick);

@@ -17,11 +17,6 @@ Copyright (C) 2017 CJ McAllister
 Purpose:
     Main loop for the CastIron sample game.
 
-Changelog:
-    CJ McAllister   22 Nov 2017     File created
-    CJ McAllister   18 Jan 2018     Add main loop, weather
-    CJ McAllister   02 Sep 2018     Add basic ggez graphics
-    CJ McAllister   03 Jul 2020     Completed removal of piston-2d
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 extern crate rand;
@@ -53,7 +48,7 @@ use ggez::{
 
 ///
 // Module Declarations
-/// 
+///
 pub mod game_assets;
 use game_assets::colors::*;
 
@@ -83,10 +78,10 @@ const DEFAULT_FILL_COLOR: ggez_gfx::Color = GREY;
 /* Hex Grid */
 const GRID_CELL_SIZE: f32 = 25.0;
 // CENTER_TO_SIDE_DIST = GRID_CELL_SIZE * sin(pi/3)
-// Distance from centerpoint of hex to center of a side 
+// Distance from centerpoint of hex to center of a side
 static CENTER_TO_SIDE_DIST: f32 = GRID_CELL_SIZE * 0.86602540378;
 // CENTER_TO_VERTEX_DIST = GRID_CELL_SIZE * cos(pi/3)
-// Distance from centerpoint of hex to center of a side 
+// Distance from centerpoint of hex to center of a side
 static CENTER_TO_VERTEX_DIST: f32 = GRID_CELL_SIZE * 0.5;
 
 /* Mechanics */
@@ -142,7 +137,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
 
     fn draw(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
         ggez_gfx::clear(ctx, BLACK);
-        
+
         // Draw the hex grid
         ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
 
@@ -154,7 +149,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
         let avg_fps_str = format!("Avg. FPS: {:.0}", self.avg_fps);
         let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(), 16.0));
         ggez_gfx::draw(ctx, &avg_fps_display, (avg_fps_pos, 0.0, GREEN)).unwrap();
-        
+
         let peak_fps_pos = ggez_mint::Point2 {x: 0.0, y: 20.0};
         let peak_fps_str = format!("Peak FPS: {:.0}", self.peak_fps);
         let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(), 16.0));
@@ -215,21 +210,10 @@ fn main() {
     // Use built context to create a GGEZ Event Handler instance
     let mut sand_casting_game_state = SandCastingGameState::new(&mut ggez_context);
 
-    
-    //FIXME: TEST CODE, DELETE
-    // Add resources to the grid
-    // let pond = resource::Resource::new(Element::Ice, resource::State::Overflow, Coords::new(3, -1, -2).unwrap(), 1);
-    // let campfire = resource::Resource::new(Element::Fire, resource::State::Overflow, Coords::new(0, 3, -3).unwrap(), 1);
-    // let powerline = resource::Resource::new(Element::Water, resource::State::Overflow, Coords::new(-1, -2, 3).unwrap(), 1);
-    // sand_casting_game_state.resource_manager.add_resource(pond, &mut ggez_context).unwrap();
-    // sand_casting_game_state.resource_manager.add_resource(campfire, &mut ggez_context).unwrap();
-    // sand_casting_game_state.resource_manager.add_resource(powerline, &mut ggez_context).unwrap();
-
     // Create random resources
     for _i in 0..3 {
         sand_casting_game_state.resource_manager.add_rand_resouce(&mut ci_ctx, &mut ggez_context).unwrap();
     }
-
 
     // Run the game!
     match ggez_event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {

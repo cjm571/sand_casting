@@ -17,11 +17,6 @@ Copyright (C) 2018 CJ McAllister
 Purpose:
     This module defines a hexagonal grid cell for use in GGEZ graphics draw calls.
 
-Changelog:
-    CJ McAllister   16 Nov 2018     File created
-    CJ McAllister   08 Jul 2020     Renamed hexagon.rs -> hex_grid_cell.rs
-                                    Removed mentions of old n busted Piston engine
-
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use std::f32::consts::PI;
@@ -32,6 +27,14 @@ use ggez::{
     graphics as ggez_gfx,
     mint as ggez_mint
 };
+
+
+///////////////////////////////////////////////////////////////////////////////
+//  Named Constants
+///////////////////////////////////////////////////////////////////////////////
+
+/// Minimum value for alpha reduction on radials
+const MIN_ALPHA_VAL: f32 = 0.1;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -76,7 +79,7 @@ impl HexGridCell {
     ///////////////////////////////////////////////////////////////////////////
     //  Accessor Methods
     ///////////////////////////////////////////////////////////////////////////
-    
+
     pub fn get_center(&self) -> ggez_mint::Point2<f32> {
         self.center
     }
@@ -116,7 +119,7 @@ impl HexGridCell {
         // 2. Rotate its vertices by PI/6
         // 3. Inflate the hex based on current radial level
         // 4. Construct the appropriate number of hexes to fit along the lines between those vertices
-        
+
         // Copy original fill color to allow for transparentization across levels
         let mut cur_fill_color = fill_color;
 
@@ -148,7 +151,7 @@ impl HexGridCell {
                 // Create interstitial hex(es) if level requires
                 for j in 0..level {
                     let inter_hex_theta = adj_theta + 4.0*PI/6.0;
-                    
+
                     let inter_hex_center = ggez_mint::Point2 {
                         x: radial_vertices[i].x + (::CENTER_TO_SIDE_DIST*2.0*inter_hex_theta.cos()) * (j+1) as f32,
                         y: radial_vertices[i].y - (::CENTER_TO_SIDE_DIST*2.0*inter_hex_theta.sin()) * (j+1) as f32
@@ -162,8 +165,7 @@ impl HexGridCell {
             }
 
             //OPT: A logarithmic scale would probably be prettier
-            //FIXME: Need named const for the minimum alpha value
-            if has_gradient == true && cur_fill_color.a > 0.2 {
+            if has_gradient == true && cur_fill_color.a > MIN_ALPHA_VAL {
                 // Transparentize color such that we get to mostly transparent at the furthest level, but not fully transparent
                 cur_fill_color.a = cur_fill_color.a - (1.0/(radius) as f32);
             }
@@ -174,7 +176,7 @@ impl HexGridCell {
     ///////////////////////////////////////////////////////////////////////////
     //  Helper Functions
     ///////////////////////////////////////////////////////////////////////////
-    
+
     //OPT: Probably should return Result instead of panicking
     /// Adds the fill portion of a hex cell to the given Mesh
     fn add_hex_fill_to_mesh(&self, color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
