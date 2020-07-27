@@ -90,7 +90,7 @@ static CENTER_TO_SIDE_DIST: f32 = GRID_CELL_SIZE * 0.86602540378;
 static CENTER_TO_VERTEX_DIST: f32 = GRID_CELL_SIZE * 0.5;
 
 /* Mechanics */
-const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: u8 = 10;
+const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: usize = 10;
 // const DEFAULT_MAX_OBSTACLE_LENGTH: u8 = 5;
 
 
@@ -107,6 +107,7 @@ struct SandCastingGameState {
     world_grid_manager: WorldGridManager,   // World Grid Manager instance
 }
 
+//OPT: Probably needs a builder
 impl SandCastingGameState {
     pub fn new(ctx: &mut GgEzContext) -> Self {
         // Load/create resources here: images, fonts, sounds, etc.
@@ -114,7 +115,7 @@ impl SandCastingGameState {
             avg_fps: 0.0,
             peak_fps: 0.0,
             resource_manager: ResourceManager::new(ctx),
-            weather_manager: WeatherManager::new(),
+            weather_manager: WeatherManager::default(),
             world_grid_manager: WorldGridManager::new(DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ctx),
         }
     }
@@ -170,9 +171,9 @@ impl ggez_event::EventHandler for SandCastingGameState {
 
 fn main() {
     // Initialize Abilities
-    let null_abil: Ability = Ability::new("Null");
+    let null_abil: Ability = Ability::new_name_only("Null");
 
-    let mut lightning_bolt: Ability = Ability::new("Lightning Bolt");
+    let mut lightning_bolt: Ability = Ability::new_name_only("Lightning Bolt");
     lightning_bolt.set_potency(20);
     lightning_bolt.set_aesthetics(Aesthetics::Impressive);
     lightning_bolt.set_element(Element::Electric);
@@ -180,7 +181,7 @@ fn main() {
     lightning_bolt.set_morality(Morality::Neutral);
     lightning_bolt.set_school(School::Destruction);
 
-    let mut blood_drain: Ability = Ability::new("Blood Drain");
+    let mut blood_drain: Ability = Ability::new_name_only("Blood Drain");
     blood_drain.set_potency(50);
     blood_drain.set_aesthetics(Aesthetics::Ugly);
     blood_drain.set_element(Element::Dark);
@@ -189,7 +190,7 @@ fn main() {
     blood_drain.set_school(School::Destruction);
 
     // Intialize Actor
-    let mut player_one: Actor = Actor::new("CJ McAllister");
+    let mut player_one: Actor = Actor::new_name_only("CJ McAllister");
     player_one.add_ability(lightning_bolt);
     player_one.add_ability(blood_drain);
     player_one.add_ability(null_abil);

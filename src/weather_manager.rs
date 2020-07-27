@@ -26,7 +26,7 @@ Changelog:
 use cast_iron::{
     environment::{
         element::Element,
-        weather
+        weather::Weather
     },
     polyfunc::PolyFunc,
     debug_println
@@ -37,14 +37,17 @@ use ggez::{
     timer as ggez_timer
 };
 
+use rand::Rng;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Data structures
 ///////////////////////////////////////////////////////////////////////////////
 
+#[derive(Default)]
 pub struct WeatherManager {
-    active_weather:     weather::Weather, //FIXME: Needs to be public?
-    timeout:            u8
+    active_weather:     Weather,
+    timeout:            usize
 }
 
 
@@ -53,34 +56,36 @@ pub struct WeatherManager {
 ///////////////////////////////////////////////////////////////////////////////
 
 impl WeatherManager {
-    pub fn new() -> Self {
+    /// Fully-qualified constructor
+    pub fn new(active_weather: Weather, timeout: usize) -> Self {
         WeatherManager {
-            active_weather:     weather::Weather::new(
-                Element::Unset,
-                PolyFunc::new()
-            ),
-            timeout:            0
+            active_weather: active_weather,
+            timeout:        timeout
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    //  Accessor Methods
-    ///////////////////////////////////////////////////////////////////////////
+
+    ///
+    // Accessor Methods
+    ///
 
     pub fn update_weather(&mut self, ctx: &GgEzContext) {
         // Get current state info from GGEZ context
-        let cur_tick = ggez_timer::ticks(ctx) as u32;
+        let cur_tick = ggez_timer::ticks(ctx);
         
         // If current weather has timed out, randomly generate a new weather pattern
         if self.timeout == 0 {
-            let rand_element    = Element::from((rand::random::<u8>() % 8) + 1); //FIXME: this sucks
-            
-            let rand_magnitude  = rand::random::<u8>();
-            let rand_duration   = rand::random::<u8>();
-            let rand_func = PolyFunc::from(rand_magnitude, rand_duration, cur_tick);
+            let mut rng = rand::thread_rng();
 
-            self.active_weather = weather::Weather::new(rand_element, rand_func);
+            let rand_element: Element = rng.gen();
+            
+            let rand_magnitude: usize = rng.gen();
+            let rand_duration: usize = rng.gen();
+            let rand_func = PolyFunc::new(rand_magnitude, rand_duration, cur_tick);
+
+            self.active_weather = Weather::new(rand_element, rand_func);
             debug_println!(
+                //OPT: log this rather than print to console
                 "Tick {:>8}: Weather changed to Mag: {:>3}  Dur: {:>3}  Elem: {:?}",
                 cur_tick,
                 rand_magnitude,

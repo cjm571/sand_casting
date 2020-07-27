@@ -107,7 +107,7 @@ impl HexGridCell {
         &self,
         fill_color: ggez_gfx::Color,
         outline_color: ggez_gfx::Color,
-        radius: u8,
+        radius: usize,
         has_gradient: bool,
         resource_mesh_builder: &mut ggez_gfx::MeshBuilder
     ) {

@@ -38,7 +38,7 @@ use ::game_assets::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct WorldGridManager {
-    max_radial_distance: u8,       // Maximum value for an axis of the hex grid
+    max_radial_distance: usize,       // Maximum value for an axis of the hex grid
     base_grid_mesh: ggez_gfx::Mesh  // Mesh for the base hex grid
 }
 
@@ -54,7 +54,7 @@ pub struct WorldGridError;
 impl WorldGridManager {
     /// Returns a new instance of WorldGridManager, with a base grid mesh initialized based on
     /// the GGEZ context's current window dimensions.
-    pub fn new(max_radial_distance: u8, ctx: &mut GgEzContext) -> Self {
+    pub fn new(max_radial_distance: usize, ctx: &mut GgEzContext) -> Self {
         let mut world_manager = WorldGridManager {
             max_radial_distance: max_radial_distance,
             base_grid_mesh: ggez_gfx::MeshBuilder::new()
@@ -87,7 +87,7 @@ impl WorldGridManager {
     //  Accessor Methods
     ///////////////////////////////////////////////////////////////////////////
      
-    pub fn get_grid_size(&self) -> u8 {
+    pub fn get_grid_size(&self) -> usize {
         self.max_radial_distance
     }
 
