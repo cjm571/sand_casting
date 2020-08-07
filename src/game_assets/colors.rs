@@ -20,7 +20,10 @@ Purpose:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::environment::{
-    element::Element,
+    element::{
+        Element,
+        Elemental
+    },
     resource::{
         Resource,
         State
@@ -126,9 +129,10 @@ pub const TRANSPARENT: ggez_gfx::Color = ggez_gfx::Color {
 ///////////////////////////////////////////////////////////////////////////////
 //  Utility Functions
 ///////////////////////////////////////////////////////////////////////////////
-pub fn from_resource(res: &Resource) -> ggez_gfx::Color {
+
+pub fn from_element(elem: Element) -> ggez_gfx::Color {
     // Determine base color based on element of resource
-    let mut res_color: ggez_gfx::Color = match res.get_kind() {
+    match elem {
         Element::Unset      => panic!("Requested color of Unset Element!"),
         Element::Fire       => RED,
         Element::Ice        => CYAN,
@@ -138,7 +142,12 @@ pub fn from_resource(res: &Resource) -> ggez_gfx::Color {
         Element::Earth      => BROWN,
         Element::Light      => IVORY,
         Element::Dark       => INDIGO
-    };
+    }
+}
+
+pub fn from_resource(res: &Resource) -> ggez_gfx::Color {
+    // Determine base color based on element of resource
+    let mut res_color = from_element(res.get_element());
 
     // Adjust alpha based on intensity
     match res.get_state() {

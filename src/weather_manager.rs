@@ -49,7 +49,7 @@ pub struct WeatherManager {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//  Functions and Methods
+//  Object Implementation
 ///////////////////////////////////////////////////////////////////////////////
 
 impl WeatherManager {
@@ -82,7 +82,7 @@ impl WeatherManager {
 
             self.active_weather = Weather::new(rand_element, rand_func);
             debug_println!(
-                //OPT: log this rather than print to console
+                //OPT: *DESIGN* log this rather than print to console
                 "Tick {:>8}: Weather changed to Mag: {:>3}  Dur: {:>3}  Elem: {:?}",
                 cur_tick,
                 rand_magnitude,

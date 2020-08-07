@@ -16,7 +16,7 @@ Copyright (C) 2020 CJ McAllister
 
 Purpose:
     This module manages all active resources in the game, as well as providing
-    utility functions for resource drawing, moving, etc.
+    Utility Methods for resource drawing, moving, etc.
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -55,13 +55,13 @@ const MAX_RAND_RESOURCE_ATTEMPTS: usize = 10;
 pub struct ResourceError;
 
 pub struct ResourceManager {
-    resources: Vec<Resource>,
-    resource_mesh: ggez_gfx::Mesh
+    resources:      Vec<Resource>,
+    resource_mesh:  ggez_gfx::Mesh
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//  Functions and Methods
+//  Object Implementation
 ///////////////////////////////////////////////////////////////////////////////
 
 impl ResourceManager {
@@ -78,6 +78,7 @@ impl ResourceManager {
         }
     }
 
+
     ///////////////////////////////////////////////////////////////////////////
     //  Accessor Methods
     ///////////////////////////////////////////////////////////////////////////
@@ -86,11 +87,20 @@ impl ResourceManager {
         &self.resource_mesh
     }
 
+
     ///////////////////////////////////////////////////////////////////////////
-    //  Utility Functions
+    //  Utility Methods
     ///////////////////////////////////////////////////////////////////////////
 
     pub fn update_resource_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
+        debug_println!("update_resource_mesh(): Updating resource mesh...");
+
+        // Do not attempt to update the mesh if we have no resources
+        if self.resources.len() == 0 {
+            debug_println!("update_resource_mesh(): No resources! Abandoning update.");
+            return;
+        }
+
         let mut resource_mesh_builder = ggez_gfx::MeshBuilder::new();
 
         // Get window dimensions
@@ -102,12 +112,13 @@ impl ResourceManager {
 
         // Iterate through resources, adding to mesh builder along the way
         for res in &self.resources {
+            debug_println!("update_resource_mesh(): Updating with {:?}", res);
             let res_coords = res.get_coords();
 
-            //OPT: Not a great spot for this conversion logic...
+            //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
             // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
             let x_offset = res_coords.get_x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
-            let y_offset = -1.0 * (res_coords.get_y() as f32 * f32::from(HexSides::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) + 
+            let y_offset = -1.0 * (res_coords.get_y() as f32 * f32::from(HexSides::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
                            -1.0 * (res_coords.get_z() as f32 * f32::from(HexSides::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
 
             let res_center = ggez_mint::Point2 {
@@ -147,6 +158,8 @@ impl ResourceManager {
 
             // Update resource mesh
             self.update_resource_mesh(ggez_ctx);
+            debug_println!("Added resource: {:?}", self.resources.last().unwrap());
+
             Ok(())
         }
         else { // Otherwise, return an error
@@ -154,17 +167,16 @@ impl ResourceManager {
         }
     }
 
-    pub fn add_rand_resouce(&mut self, ci_ctx: &mut CIContext, ggez_ctx: &mut GgEzContext) -> Result<(), ResourceError> {
-        // Create a random resources and attempt to add them until we succeed (or fail too many times)
+    pub fn add_rand_resource(&mut self, ci_ctx: &mut CIContext, ggez_ctx: &mut GgEzContext) -> Result<(), ResourceError> {
+        // Create a random resource and attempt to add them until we succeed (or fail too many times)
         let mut attempts = 0;
         while attempts < MAX_RAND_RESOURCE_ATTEMPTS {
             let rand_resource = Resource::rand(ci_ctx);
             match self.add_resource(rand_resource, ggez_ctx) {
-                Ok(())              => {        
-                    debug_println!("Added resource: {:?}", rand_resource);
-                    break;   // Successfully added resource, break loop
+                Ok(())              => {
+                    break;                  // Successfully added resource, break loop
                 },
-                Err(ResourceError)  => ()       // Failed to add resource, continue
+                Err(ResourceError)  => ()   // Failed to add resource, continue
             }
 
             attempts = attempts + 1;

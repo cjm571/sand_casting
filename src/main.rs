@@ -29,7 +29,12 @@ use cast_iron::{
     },
     actor::Actor,
     context::Context as CastIronContext,
-    environment::element::Element
+    environment::{
+        element::Element,
+        coords::Coords,
+        obstacle::Obstacle
+    },
+    debug_println
 };
 // use cast_iron::environment::resource;
 // use cast_iron::environment::coords::Coords;
@@ -51,6 +56,9 @@ use ggez::{
 ///
 pub mod game_assets;
 use game_assets::colors::*;
+
+pub mod obstacle_manager;
+use obstacle_manager::ObstacleManager;
 
 pub mod resource_manager;
 use resource_manager::ResourceManager;
@@ -93,24 +101,27 @@ const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: usize = 10;
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
+//OPT: *STYLE* This should move to its own file
 /// Primary Game Struct
 struct SandCastingGameState {
-    avg_fps: f64,                           // Average FPS for display
-    peak_fps: f64,                          // Peak FPS for display
-    resource_manager: ResourceManager,      // Resource Manager instance
-    weather_manager: WeatherManager,        // Weather Manager instance
+    avg_fps:            f64,                // Average FPS for display
+    peak_fps:           f64,                // Peak FPS for display
+    obstacle_manager:   ObstacleManager,    // Obstacle Manager instance
+    resource_manager:   ResourceManager,    // Resource Manager instance
+    weather_manager:    WeatherManager,     // Weather Manager instance
     world_grid_manager: WorldGridManager,   // World Grid Manager instance
 }
 
-//OPT: Probably needs a builder
+//OPT: *STYLE* Probably needs a builder
 impl SandCastingGameState {
     pub fn new(ctx: &mut GgEzContext) -> Self {
         // Load/create resources here: images, fonts, sounds, etc.
         SandCastingGameState{
-            avg_fps: 0.0,
-            peak_fps: 0.0,
-            resource_manager: ResourceManager::new(ctx),
-            weather_manager: WeatherManager::default(),
+            avg_fps:            0.0,
+            peak_fps:           0.0,
+            obstacle_manager:   ObstacleManager::new(ctx),
+            resource_manager:   ResourceManager::new(ctx),
+            weather_manager:    WeatherManager::default(),
             world_grid_manager: WorldGridManager::new(DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ctx),
         }
     }
@@ -119,11 +130,20 @@ impl SandCastingGameState {
 impl ggez_event::EventHandler for SandCastingGameState {
     fn update(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
         while ggez_timer::check_update_time(ctx, DESIRED_FPS) {
+            debug_println!("update(): Updating weather...");
             // Update weather
             self.weather_manager.update_weather(ctx);
+            debug_println!("update(): Weather updated.");
 
             // Update the resource mesh
+            debug_println!("update(): Updating resource mesh...");
             self.resource_manager.update_resource_mesh(ctx);
+            debug_println!("update(): Resource mesh updated.");
+
+            // Update the obstacle mesh
+            debug_println!("update(): Updating obstacle mesh...");
+            self.obstacle_manager.update_obstacle_mesh(ctx);
+            debug_println!("update(): Obstacle mesh updated.");
 
             // Update FPS
             self.avg_fps = ggez_timer::fps(ctx);
@@ -141,8 +161,11 @@ impl ggez_event::EventHandler for SandCastingGameState {
         // Draw the hex grid
         ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
 
-        // Draw the resource grid
+        // Draw resources
         ggez_gfx::draw(ctx, self.resource_manager.get_resource_mesh(), ggez_gfx::DrawParam::default())?;
+
+        // Draw obstacles
+        ggez_gfx::draw(ctx, self.obstacle_manager.get_obstacle_mesh(), ggez_gfx::DrawParam::default())?;
 
         // Draw the FPS counters
         let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
@@ -161,7 +184,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//  Functions and Methods
+//  Object Implementation
 ///////////////////////////////////////////////////////////////////////////////
 
 fn main() {
@@ -212,8 +235,20 @@ fn main() {
 
     // Create random resources
     for _i in 0..3 {
-        sand_casting_game_state.resource_manager.add_rand_resouce(&mut ci_ctx, &mut ggez_context).unwrap();
+        sand_casting_game_state.resource_manager.add_rand_resource(&mut ci_ctx, &mut ggez_context).unwrap();
     }
+
+    //TODO: randomize!
+    // Create an obstacle and add it to the game
+    let mut river_coords: Vec<Coords> = Vec::new();
+    river_coords.push(Coords::new(0, 0, 0).unwrap());
+    river_coords.push(Coords::new(1, 0, -1).unwrap());
+    river_coords.push(Coords::new(2, 0, -2).unwrap());
+    river_coords.push(Coords::new(3, 0, -3).unwrap());
+    
+    let river = Obstacle::new(river_coords, Element::Water);
+
+    sand_casting_game_state.obstacle_manager.add_obstacle(river, &mut ggez_context).unwrap();
 
     // Run the game!
     match ggez_event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {

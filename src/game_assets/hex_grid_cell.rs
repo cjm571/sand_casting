@@ -50,7 +50,7 @@ pub struct HexGridCell {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//  Functions and Methods
+//  Object Implementation
 ///////////////////////////////////////////////////////////////////////////////
 impl HexGridCell {
     /// Constructor
@@ -164,7 +164,7 @@ impl HexGridCell {
                 i = i + 1;
             }
 
-            //OPT: A logarithmic scale would probably be prettier
+            //OPT: *DESIGN* A logarithmic scale would probably be prettier
             if has_gradient == true && cur_fill_color.a > MIN_ALPHA_VAL {
                 // Transparentize color such that we get to mostly transparent at the furthest level, but not fully transparent
                 cur_fill_color.a = cur_fill_color.a - (1.0/(radius) as f32);
@@ -177,7 +177,7 @@ impl HexGridCell {
     //  Helper Functions
     ///////////////////////////////////////////////////////////////////////////
 
-    //OPT: Probably should return Result instead of panicking
+    //OPT: *STYLE* Probably should return Result instead of panicking
     /// Adds the fill portion of a hex cell to the given Mesh
     fn add_hex_fill_to_mesh(&self, color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
         match mesh_builder.polygon(ggez_gfx::DrawMode::fill(), &self.vertices, color) {
@@ -186,7 +186,7 @@ impl HexGridCell {
         }
     }
 
-    //OPT: Probably should return Result instead of panicking
+    //OPT: *STYLE* Probably should return Result instead of panicking
     /// Adds the outline portion of a hex cell to the given Mesh
     fn add_hex_outline_to_mesh(&self, color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
         // Build up an array of lines for use in the outline

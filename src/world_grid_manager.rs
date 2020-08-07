@@ -48,7 +48,7 @@ pub struct WorldGridError;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//  Functions and Methods
+//  Object Implementation
 ///////////////////////////////////////////////////////////////////////////////
 
 impl WorldGridManager {
@@ -123,4 +123,6 @@ impl WorldGridManager {
             central_hex_cell.add_to_mesh(colors::TRANSPARENT, colors::GREEN, mesh_builder)
         };
     }
+
+    //FIXME: Would be nice to have a global tracker of all occupied hexes in the grid, to simplify collision checking
 }
