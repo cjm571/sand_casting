@@ -24,7 +24,7 @@ use cast_iron::{
     context::Context as CIContext,
     environment::resource::Resource,
     hex_direction_provider::*,
-    debug_println
+    debug_println, function_name
 };
 
 use ggez::{

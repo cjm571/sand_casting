@@ -27,7 +27,7 @@ use cast_iron::{
         obstacle::Obstacle
     },
     hex_direction_provider::*,
-    debug_println
+    debug_println, function_name
 };
 
 use ggez::{

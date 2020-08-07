@@ -29,12 +29,8 @@ use cast_iron::{
     },
     actor::Actor,
     context::Context as CastIronContext,
-    environment::{
-        element::Element,
-        coords::Coords,
-        obstacle::Obstacle
-    },
-    debug_println
+    environment::element::Element,
+    debug_println, function_name
 };
 // use cast_iron::environment::resource;
 // use cast_iron::environment::coords::Coords;
@@ -238,17 +234,10 @@ fn main() {
         sand_casting_game_state.resource_manager.add_rand_resource(&mut ci_ctx, &mut ggez_context).unwrap();
     }
 
-    //TODO: randomize!
-    // Create an obstacle and add it to the game
-    let mut river_coords: Vec<Coords> = Vec::new();
-    river_coords.push(Coords::new(0, 0, 0).unwrap());
-    river_coords.push(Coords::new(1, 0, -1).unwrap());
-    river_coords.push(Coords::new(2, 0, -2).unwrap());
-    river_coords.push(Coords::new(3, 0, -3).unwrap());
-    
-    let river = Obstacle::new(river_coords, Element::Water);
-
-    sand_casting_game_state.obstacle_manager.add_obstacle(river, &mut ggez_context).unwrap();
+    // Create random obstacles
+    for _i in 0..1 {
+        sand_casting_game_state.obstacle_manager.add_rand_obstacle(&mut ci_ctx, &mut ggez_context).unwrap();
+    }
 
     // Run the game!
     match ggez_event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {

@@ -26,7 +26,7 @@ use cast_iron::{
         weather::Weather
     },
     polyfunc::PolyFunc,
-    debug_println
+    debug_println, function_name
 };
 
 use ggez::{
