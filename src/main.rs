@@ -41,14 +41,10 @@ use cast_iron::{
 
 extern crate ggez;
 use ggez::{
-    Context as GgEzContext,
     ContextBuilder as GgEzContextBuilder,
-    GameResult,
     conf as ggez_conf,
     event as ggez_event,
     graphics as ggez_gfx,
-    mint as ggez_mint,
-    timer as ggez_timer
 };
 
 ///
@@ -58,16 +54,12 @@ pub mod game_assets;
 use game_assets::colors::*;
 
 pub mod obstacle_manager;
-use obstacle_manager::ObstacleManager;
-
 pub mod resource_manager;
-use resource_manager::ResourceManager;
-
 pub mod weather_manager;
-use weather_manager::WeatherManager;
-
 pub mod world_grid_manager;
-use world_grid_manager::*;
+
+pub mod sand_casting_game_state;
+use sand_casting_game_state::SandCastingGameState;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -97,100 +89,15 @@ const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: usize = 10;
 // const DEFAULT_MAX_OBSTACLE_LENGTH: u8 = 5;
 
 
-///////////////////////////////////////////////////////////////////////////////
-//  Data Structures
-///////////////////////////////////////////////////////////////////////////////
-
-//FIXME: *STYLE* This should move to its own file
-/// Primary Game Struct
-struct SandCastingGameState {
-    avg_fps:            f64,                // Average FPS for display
-    peak_fps:           f64,                // Peak FPS for display
-    logger:             LoggerInstance,     // Instance of CastIron Logger
-    obstacle_manager:   ObstacleManager,    // Obstacle Manager instance
-    resource_manager:   ResourceManager,    // Resource Manager instance
-    weather_manager:    WeatherManager,     // Weather Manager instance
-    world_grid_manager: WorldGridManager,   // World Grid Manager instance
-}
-
-//FIXME: *STYLE* Needs a builder
-impl SandCastingGameState {
-    pub fn new(logger: &LoggerInstance, ggez_ctx: &mut GgEzContext) -> Self {
-        //NOTE: Load/create resources here: images, fonts, sounds, etc.
-
-        // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger.clone();
-
-        SandCastingGameState{
-            avg_fps:            0.0,
-            peak_fps:           0.0,
-            logger:             logger_clone,
-            obstacle_manager:   ObstacleManager::new(logger, ggez_ctx),
-            resource_manager:   ResourceManager::new(logger, ggez_ctx),
-            weather_manager:    WeatherManager::new_logger_only(logger),
-            world_grid_manager: WorldGridManager::new(logger, DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ggez_ctx),
-        }
-    }
-}
-
-impl ggez_event::EventHandler for SandCastingGameState {
-    fn update(&mut self, ggez_ctx: &mut GgEzContext) -> GameResult<()> {
-        while ggez_timer::check_update_time(ggez_ctx, DESIRED_FPS) {
-            // Update weather
-            ci_log!(self.logger, LogLevel::TRACE, "Updating weather...");
-            self.weather_manager.update_weather(ggez_ctx);
-
-            // Update the resource mesh
-            ci_log!(self.logger, LogLevel::TRACE, "Retreiving resource mesh...");
-            self.resource_manager.get_resource_mesh();
-
-            // Update the obstacle mesh
-            ci_log!(self.logger, LogLevel::TRACE, "Retreiving obstacle mesh...");
-            self.obstacle_manager.get_obstacle_mesh();
-
-            // Update FPS
-            self.avg_fps = ggez_timer::fps(ggez_ctx);
-            if self.avg_fps > self.peak_fps {
-                self.peak_fps = self.avg_fps;
-            }
-        }
-
-        Ok(())
-    }
-
-    fn draw(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
-        ggez_gfx::clear(ctx, BLACK);
-
-        // Draw the hex grid
-        ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
-
-        // Draw resources
-        ggez_gfx::draw(ctx, self.resource_manager.get_resource_mesh(), ggez_gfx::DrawParam::default())?;
-
-        // Draw obstacles
-        ggez_gfx::draw(ctx, self.obstacle_manager.get_obstacle_mesh(), ggez_gfx::DrawParam::default())?;
-
-        // Draw the FPS counters
-        let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
-        let avg_fps_str = format!("Avg. FPS: {:.0}", self.avg_fps);
-        let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(), 16.0));
-        ggez_gfx::draw(ctx, &avg_fps_display, (avg_fps_pos, 0.0, GREEN)).unwrap();
-
-        let peak_fps_pos = ggez_mint::Point2 {x: 0.0, y: 20.0};
-        let peak_fps_str = format!("Peak FPS: {:.0}", self.peak_fps);
-        let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(), 16.0));
-        ggez_gfx::draw(ctx, &peak_fps_display, (peak_fps_pos, 0.0, GREEN)).unwrap();
-
-        ggez_gfx::present(ctx)
-    }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//  Object Implementation
-///////////////////////////////////////////////////////////////////////////////
-
 fn main() {
+    // Create logger instance
+    let mut logger_original = LoggerInstance::default();
+    logger_original.set_filter(LogLevel::INFO as u8);
+
+    // Create CastIron game context
+    let ci_ctx = CastIronContext::default();
+    ci_log!(logger_original, LogLevel::DEBUG, "CastIron context created.");
+
     // Initialize Abilities
     let null_abil: Ability = Ability::new_name_only("Null");
 
@@ -229,25 +136,22 @@ fn main() {
                                                     )
                                                   .build()
                                                   .unwrap();
-    
-    // Create logger instance
-    let mut logger = LoggerInstance::default();
-    logger.set_filter(LogLevel::INFO as u8);
-                                                  
-    // Create CastIron game context
-    let ci_ctx = CastIronContext::new_logger_only(logger.clone());
+    ci_log!(logger_original, LogLevel::DEBUG, "ggez context, event loop created.");
 
     // Use built context to create a GGEZ Event Handler instance
-    let mut sand_casting_game_state = SandCastingGameState::new(ci_ctx.get_logger_ref(), &mut ggez_context);
+    let mut sand_casting_game_state = SandCastingGameState::new(&logger_original, &mut ggez_context);
+
     // Create random resources
     for _i in 0..3 {
-        sand_casting_game_state.resource_manager.add_rand_resource(&ci_ctx, &mut ggez_context).unwrap();
+        sand_casting_game_state.get_resource_manager().add_rand_resource(&ci_ctx, &mut ggez_context).unwrap();
     }
+    ci_log!(logger_original, LogLevel::DEBUG, "Resources generated.");
 
     // Create random obstacles
     for _i in 0..1 {
-        sand_casting_game_state.obstacle_manager.add_rand_obstacle(&ci_ctx, &mut ggez_context).unwrap();
+        sand_casting_game_state.get_obstacle_manager().add_rand_obstacle(&ci_ctx, &mut ggez_context).unwrap();
     }
+    ci_log!(logger_original, LogLevel::DEBUG, "Obstacles generated.");
 
     // Run the game!
     match ggez_event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {
