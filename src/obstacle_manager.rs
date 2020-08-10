@@ -21,13 +21,17 @@ Purpose:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::{
-    context::Context as CIContext,
+    context::Context as CastIronContext,
     environment::{
         element::Elemental,
         obstacle::Obstacle
     },
     hex_direction_provider::*,
-    debug_println, function_name
+    logger::{
+        LoggerInstance,
+        LogLevel
+    },
+    ci_log
 };
 
 use ggez::{
@@ -58,8 +62,9 @@ const MAX_RAND_OBSTACLE_ATTEMPTS: usize = 10;
 pub struct ObstacleError;
 
 pub struct ObstacleManager {
+    logger:         LoggerInstance,
     obstacles:      Vec<Obstacle>,
-    obstacle_mesh:  ggez_gfx::Mesh
+    obstacle_mesh:  ggez_gfx::Mesh,
 }
 
 
@@ -69,15 +74,16 @@ pub struct ObstacleManager {
 
 impl ObstacleManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(ctx: &mut GgEzContext) -> Self {
+    pub fn new(logger: LoggerInstance, ctx: &mut GgEzContext) -> Self {
         ObstacleManager {
-            obstacles: Vec::new(),
-            obstacle_mesh: ggez_gfx::Mesh::new_line(
-                ctx,
-                &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                ::DEFAULT_LINE_WIDTH,
-                ::DEFAULT_LINE_COLOR)
-                .unwrap()
+            logger:         logger,
+            obstacles:      Vec::new(),
+            obstacle_mesh:  ggez_gfx::Mesh::new_line(
+                                ctx,
+                                &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
+                                ::DEFAULT_LINE_WIDTH,
+                                ::DEFAULT_LINE_COLOR)
+                                .unwrap(),
         }
     }
 
@@ -97,11 +103,11 @@ impl ObstacleManager {
     ///////////////////////////////////////////////////////////////////////////
  
     pub fn update_obstacle_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
-        debug_println!("update_obstacle_mesh(): Updating obstacle mesh...");
+        ci_log!(self.logger, LogLevel::DEBUG, "Updating obstacle mesh...");
 
         // Do not attempt to update the mesh if we have no obstacles
         if self.obstacles.len() == 0 {
-            debug_println!("update_resource_mesh(): No obstacles! Abandoning update.");
+            ci_log!(self.logger, LogLevel::DEBUG, "No obstacles! Abandoning update.");
             return;
         }
 
@@ -116,12 +122,12 @@ impl ObstacleManager {
 
         // Iterate through obstacles, adding to mesh builder along the way
         for obstacle in &self.obstacles {
-            debug_println!("update_obstacle_mesh(): Updating with {:?}", obstacle);
+            ci_log!(self.logger, LogLevel::DEBUG, "Updating with {:?}", obstacle);
             let all_obstacle_coords = obstacle.get_all_coords();
 
             // Iterate through current obstacle's coords, adding hexes to the mesh for each
             for obstacle_coords in all_obstacle_coords {
-                debug_println!("update_obstacle_mesh(): Adding hex at {:?}", obstacle_coords);
+                ci_log!(self.logger, LogLevel::DEBUG, "Adding hex at {:?}", obstacle_coords);
                 //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
                 // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
                 let x_offset = obstacle_coords.get_x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
@@ -146,6 +152,8 @@ impl ObstacleManager {
     }
 
     pub fn add_obstacle(&mut self, new_obstacle: Obstacle, ggez_ctx: &mut GgEzContext) -> Result<(), ObstacleError> {
+        //TODO: Should this function also sanity check against a CastIron context?
+        
         // OPT: *PERFORMANCE* oof, this is probably super slow
         // Verify that no obstacle already exists along the new obstacle's path
         let mut coords_occupied = false;
@@ -164,7 +172,7 @@ impl ObstacleManager {
 
             // Update obstacle mesh
             self.update_obstacle_mesh(ggez_ctx);
-            debug_println!("Added obstacle: {:?}", self.obstacles.last().unwrap());
+            ci_log!(self.logger, LogLevel::DEBUG, "Added obstacle: {:?}", self.obstacles.last().unwrap());
 
             Ok(())
         }
@@ -173,7 +181,7 @@ impl ObstacleManager {
         }
     }
 
-    pub fn add_rand_obstacle(&mut self, ci_ctx: &mut CIContext, ggez_ctx: &mut GgEzContext) -> Result<(), ObstacleError> {
+    pub fn add_rand_obstacle(&mut self, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Result<(), ObstacleError> {
         // Create a random obstacle and attempt to add them until we succeed (or fail too many times)
         let mut attempts = 0;
         while attempts < MAX_RAND_OBSTACLE_ATTEMPTS {

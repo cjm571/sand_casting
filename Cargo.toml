@@ -1,10 +1,10 @@
 [package]
 name = "sand_casting"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["CJ McAllister <cjm571@gmail.com>"]
 
 [dependencies]
-cast_iron = { path = "../cast_iron", version = "^0.3.0" }
+cast_iron = { path = "../cast_iron", version = "^0.4.0" }
 lazy_static = "1.2.0"
 ggez = "0.5.1"
 rand = "0.7.3"

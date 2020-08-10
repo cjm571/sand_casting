@@ -21,10 +21,14 @@ Purpose:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::{
-    context::Context as CIContext,
+    context::Context as CastIronContext,
     environment::resource::Resource,
     hex_direction_provider::*,
-    debug_println, function_name
+    logger::{
+        LoggerInstance,
+        LogLevel
+    },
+    ci_log
 };
 
 use ggez::{
@@ -55,8 +59,9 @@ const MAX_RAND_RESOURCE_ATTEMPTS: usize = 10;
 pub struct ResourceError;
 
 pub struct ResourceManager {
+    logger:         LoggerInstance,
     resources:      Vec<Resource>,
-    resource_mesh:  ggez_gfx::Mesh
+    resource_mesh:  ggez_gfx::Mesh,
 }
 
 
@@ -66,15 +71,16 @@ pub struct ResourceManager {
 
 impl ResourceManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(ctx: &mut GgEzContext) -> Self {
+    pub fn new(logger: LoggerInstance, ctx: &mut GgEzContext) -> Self {
         ResourceManager {
-            resources: Vec::new(),
-            resource_mesh: ggez_gfx::Mesh::new_line(
-                ctx,
-                &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                ::DEFAULT_LINE_WIDTH,
-                ::DEFAULT_LINE_COLOR)
-                .unwrap()
+            logger:         logger,
+            resources:      Vec::new(),
+            resource_mesh:  ggez_gfx::Mesh::new_line(
+                            ctx,
+                            &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
+                            ::DEFAULT_LINE_WIDTH,
+                            ::DEFAULT_LINE_COLOR)
+                            .unwrap(),
         }
     }
 
@@ -93,11 +99,11 @@ impl ResourceManager {
     ///////////////////////////////////////////////////////////////////////////
 
     pub fn update_resource_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
-        debug_println!("update_resource_mesh(): Updating resource mesh...");
+        ci_log!(self.logger, LogLevel::DEBUG, "update_resource_mesh(): Updating resource mesh...");
 
         // Do not attempt to update the mesh if we have no resources
         if self.resources.len() == 0 {
-            debug_println!("update_resource_mesh(): No resources! Abandoning update.");
+            ci_log!(self.logger, LogLevel::DEBUG, "update_resource_mesh(): No resources! Abandoning update.");
             return;
         }
 
@@ -112,7 +118,7 @@ impl ResourceManager {
 
         // Iterate through resources, adding to mesh builder along the way
         for res in &self.resources {
-            debug_println!("update_resource_mesh(): Updating with {:?}", res);
+            ci_log!(self.logger, LogLevel::DEBUG, "update_resource_mesh(): Updating with {:?}", res);
             let res_coords = res.get_coords();
 
             //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
@@ -142,6 +148,7 @@ impl ResourceManager {
         self.resource_mesh = resource_mesh_builder.build(ggez_ctx).unwrap();
     }
 
+    //OPT: *DESIGN* Should probably not have radial reach across (most) obstacles
     pub fn add_resource(&mut self, new_res: Resource, ggez_ctx: &mut GgEzContext) -> Result<(), ResourceError> {
         // Verify that no resource already exists in the same location
         let mut coords_occupied = false;
@@ -158,7 +165,7 @@ impl ResourceManager {
 
             // Update resource mesh
             self.update_resource_mesh(ggez_ctx);
-            debug_println!("Added resource: {:?}", self.resources.last().unwrap());
+            ci_log!(self.logger, LogLevel::DEBUG, "Added resource: {:?}", self.resources.last().unwrap());
 
             Ok(())
         }
@@ -167,7 +174,7 @@ impl ResourceManager {
         }
     }
 
-    pub fn add_rand_resource(&mut self, ci_ctx: &mut CIContext, ggez_ctx: &mut GgEzContext) -> Result<(), ResourceError> {
+    pub fn add_rand_resource(&mut self, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Result<(), ResourceError> {
         // Create a random resource and attempt to add them until we succeed (or fail too many times)
         let mut attempts = 0;
         while attempts < MAX_RAND_RESOURCE_ATTEMPTS {

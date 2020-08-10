@@ -30,7 +30,11 @@ use cast_iron::{
     actor::Actor,
     context::Context as CastIronContext,
     environment::element::Element,
-    debug_println, function_name
+    logger::{
+        LoggerInstance,
+        LogLevel
+    },
+    ci_log
 };
 // use cast_iron::environment::resource;
 // use cast_iron::environment::coords::Coords;
@@ -97,52 +101,60 @@ const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: usize = 10;
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
-//OPT: *STYLE* This should move to its own file
+//FIXME: *STYLE* This should move to its own file
 /// Primary Game Struct
 struct SandCastingGameState {
     avg_fps:            f64,                // Average FPS for display
     peak_fps:           f64,                // Peak FPS for display
+    logger:             LoggerInstance,     // Instance of CastIron Logger
     obstacle_manager:   ObstacleManager,    // Obstacle Manager instance
     resource_manager:   ResourceManager,    // Resource Manager instance
     weather_manager:    WeatherManager,     // Weather Manager instance
     world_grid_manager: WorldGridManager,   // World Grid Manager instance
 }
 
-//OPT: *STYLE* Probably needs a builder
+//FIXME: *STYLE* Needs a builder
 impl SandCastingGameState {
-    pub fn new(ctx: &mut GgEzContext) -> Self {
-        // Load/create resources here: images, fonts, sounds, etc.
+    pub fn new(logger: &LoggerInstance, ggez_ctx: &mut GgEzContext) -> Self {
+        println!("SandCastingGameState::new()");
+        //TODO: Load/create resources here: images, fonts, sounds, etc.
+
+        //FIXME: Disgusting style...
+        // Clone the logger instance for each module that will use it
+        let logger_clone0 = logger.clone();
+        let logger_clone1 = logger.clone();
+        let logger_clone2 = logger.clone();
+        let logger_clone3 = logger.clone();
+
         SandCastingGameState{
             avg_fps:            0.0,
             peak_fps:           0.0,
-            obstacle_manager:   ObstacleManager::new(ctx),
-            resource_manager:   ResourceManager::new(ctx),
-            weather_manager:    WeatherManager::default(),
-            world_grid_manager: WorldGridManager::new(DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ctx),
+            logger:             logger_clone0,
+            obstacle_manager:   ObstacleManager::new(logger_clone1, ggez_ctx),
+            resource_manager:   ResourceManager::new(logger_clone2, ggez_ctx),
+            weather_manager:    WeatherManager::new_logger_only(logger_clone3),
+            world_grid_manager: WorldGridManager::new(DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ggez_ctx),
         }
     }
 }
 
 impl ggez_event::EventHandler for SandCastingGameState {
-    fn update(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
-        while ggez_timer::check_update_time(ctx, DESIRED_FPS) {
-            debug_println!("update(): Updating weather...");
+    fn update(&mut self, ggez_ctx: &mut GgEzContext) -> GameResult<()> {
+        while ggez_timer::check_update_time(ggez_ctx, DESIRED_FPS) {
             // Update weather
-            self.weather_manager.update_weather(ctx);
-            debug_println!("update(): Weather updated.");
+            ci_log!(self.logger, LogLevel::TRACE, "Updating weather...");
+            self.weather_manager.update_weather(ggez_ctx);
 
             // Update the resource mesh
-            debug_println!("update(): Updating resource mesh...");
-            self.resource_manager.update_resource_mesh(ctx);
-            debug_println!("update(): Resource mesh updated.");
+            ci_log!(self.logger, LogLevel::TRACE, "Retreiving resource mesh...");
+            self.resource_manager.get_resource_mesh();
 
             // Update the obstacle mesh
-            debug_println!("update(): Updating obstacle mesh...");
-            self.obstacle_manager.update_obstacle_mesh(ctx);
-            debug_println!("update(): Obstacle mesh updated.");
+            ci_log!(self.logger, LogLevel::TRACE, "Retreiving obstacle mesh...");
+            self.obstacle_manager.get_obstacle_mesh();
 
             // Update FPS
-            self.avg_fps = ggez_timer::fps(ctx);
+            self.avg_fps = ggez_timer::fps(ggez_ctx);
             if self.avg_fps > self.peak_fps {
                 self.peak_fps = self.avg_fps;
             }
@@ -209,9 +221,6 @@ fn main() {
     player_one.add_ability(blood_drain);
     player_one.add_ability(null_abil);
 
-    // Create CastIron Context
-    let mut ci_ctx = CastIronContext::default();
-
     // Create a GGEZ Context and EventLoop
     let (mut ggez_context, mut ggez_event_loop) = GgEzContextBuilder::new("sand_casting", "CJ McAllister")
                                                   .window_setup(
@@ -225,18 +234,24 @@ fn main() {
                                                     )
                                                   .build()
                                                   .unwrap();
+    
+    // Create logger instance
+    let mut logger = LoggerInstance::default();
+    logger.set_filter(LogLevel::DEBUG as u8);
+                                                  
+    // Create CastIron game context
+    let ci_ctx = CastIronContext::new_logger_only(logger.clone());
 
     // Use built context to create a GGEZ Event Handler instance
-    let mut sand_casting_game_state = SandCastingGameState::new(&mut ggez_context);
-
+    let mut sand_casting_game_state = SandCastingGameState::new(ci_ctx.get_logger_ref(), &mut ggez_context);
     // Create random resources
     for _i in 0..3 {
-        sand_casting_game_state.resource_manager.add_rand_resource(&mut ci_ctx, &mut ggez_context).unwrap();
+        sand_casting_game_state.resource_manager.add_rand_resource(&ci_ctx, &mut ggez_context).unwrap();
     }
 
     // Create random obstacles
     for _i in 0..1 {
-        sand_casting_game_state.obstacle_manager.add_rand_obstacle(&mut ci_ctx, &mut ggez_context).unwrap();
+        sand_casting_game_state.obstacle_manager.add_rand_obstacle(&ci_ctx, &mut ggez_context).unwrap();
     }
 
     // Run the game!

@@ -26,7 +26,11 @@ use cast_iron::{
         weather::Weather
     },
     polyfunc::PolyFunc,
-    debug_println, function_name
+    logger::{
+        LoggerInstance,
+        LogLevel
+    },
+    ci_log
 };
 
 use ggez::{
@@ -41,10 +45,10 @@ use rand::Rng;
 // Data structures
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Default)]
 pub struct WeatherManager {
-    active_weather:     Weather,
-    timeout:            usize
+    logger:         LoggerInstance,
+    active_weather: Weather,
+    timeout:        usize,
 }
 
 
@@ -54,10 +58,20 @@ pub struct WeatherManager {
 
 impl WeatherManager {
     /// Fully-qualified constructor
-    pub fn new(active_weather: Weather, timeout: usize) -> Self {
+    pub fn new(logger: LoggerInstance, active_weather: Weather, timeout: usize) -> Self {
         WeatherManager {
+            logger:         logger,
             active_weather: active_weather,
-            timeout:        timeout
+            timeout:        timeout,
+        }
+    }
+
+    /// Logger-only constructor
+    pub fn new_logger_only(logger: LoggerInstance) -> Self {
+        WeatherManager {
+            logger:         logger,
+            active_weather: Weather::default(),
+            timeout:        usize::default(),
         }
     }
 
@@ -66,9 +80,9 @@ impl WeatherManager {
     // Accessor Methods
     ///
 
-    pub fn update_weather(&mut self, ctx: &GgEzContext) {
+    pub fn update_weather(&mut self, ggez_ctx: &GgEzContext) {
         // Get current state info from GGEZ context
-        let cur_tick = ggez_timer::ticks(ctx);
+        let cur_tick = ggez_timer::ticks(ggez_ctx);
 
         // If current weather has timed out, randomly generate a new weather pattern
         if self.timeout == 0 {
@@ -81,8 +95,7 @@ impl WeatherManager {
             let rand_func = PolyFunc::new(rand_magnitude, rand_duration, cur_tick);
 
             self.active_weather = Weather::new(rand_element, rand_func);
-            debug_println!(
-                //OPT: *DESIGN* log this rather than print to console
+            ci_log!(self.logger, LogLevel::DEBUG, 
                 "Tick {:>8}: Weather changed to Mag: {:>3}  Dur: {:>3}  Elem: {:?}",
                 cur_tick,
                 rand_magnitude,
