@@ -20,7 +20,14 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use cast_iron::debug_exec;
+use cast_iron::{
+    logger::{
+        LoggerInstance,
+        LogLevel
+    },
+    ci_log,
+    debug_exec
+};
 
 use ggez::{
     Context as GgEzContext,
@@ -38,8 +45,9 @@ use ::game_assets::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct WorldGridManager {
-    max_radial_distance: usize,       // Maximum value for an axis of the hex grid
-    base_grid_mesh: ggez_gfx::Mesh  // Mesh for the base hex grid
+    logger:                 LoggerInstance,
+    max_radial_distance:    usize,          // Maximum value for an axis of the hex grid
+    base_grid_mesh:         ggez_gfx::Mesh, // Mesh for the base hex grid
 }
 
 //TODO: Proper implementation of an error type
@@ -54,18 +62,22 @@ pub struct WorldGridError;
 impl WorldGridManager {
     /// Returns a new instance of WorldGridManager, with a base grid mesh initialized based on
     /// the GGEZ context's current window dimensions.
-    pub fn new(max_radial_distance: usize, ctx: &mut GgEzContext) -> Self {
+    pub fn new(logger: &LoggerInstance, max_radial_distance: usize, ctx: &mut GgEzContext) -> Self {
+        // Clone the logger instance so this module has its own sender to use
+        let logger_clone = logger.clone();
+
         let mut world_manager = WorldGridManager {
-            max_radial_distance: max_radial_distance,
-            base_grid_mesh: ggez_gfx::MeshBuilder::new()
-                                .line(
-                                    &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                    ::DEFAULT_LINE_WIDTH,
-                                    ::DEFAULT_LINE_COLOR
-                                )
-                                .unwrap()
-                                .build(ctx)
-                                .unwrap()
+            logger:                 logger_clone,
+            max_radial_distance:    max_radial_distance,
+            base_grid_mesh:         ggez_gfx::MeshBuilder::new()
+                                        .line(
+                                            &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
+                                            ::DEFAULT_LINE_WIDTH,
+                                            ::DEFAULT_LINE_COLOR
+                                        )
+                                    .unwrap()
+                                    .build(ctx)
+                                    .unwrap()
         };
 
         // Get window dimensions
@@ -76,7 +88,7 @@ impl WorldGridManager {
         let mut base_grid_mesh_builder = ggez_gfx::MeshBuilder::new();
         world_manager.build_base_grid(center, &mut base_grid_mesh_builder);
 
-        // Build the base hex grid mesh and draw it
+        // Build the base hex grid mesh
         world_manager.base_grid_mesh = base_grid_mesh_builder.build(ctx).unwrap();
 
         world_manager
@@ -122,6 +134,8 @@ impl WorldGridManager {
             // Add central hex with a green outline for visibility
             central_hex_cell.add_to_mesh(colors::TRANSPARENT, colors::GREEN, mesh_builder)
         };
+
+        ci_log!(self.logger, LogLevel::DEBUG, "Base hex grid built.");
     }
 
     //FIXME: Would be nice to have a global tracker of all occupied hexes in the grid, to simplify collision checking

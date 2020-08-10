@@ -58,18 +58,24 @@ pub struct WeatherManager {
 
 impl WeatherManager {
     /// Fully-qualified constructor
-    pub fn new(logger: LoggerInstance, active_weather: Weather, timeout: usize) -> Self {
+    pub fn new(logger: &LoggerInstance, active_weather: Weather, timeout: usize) -> Self {
+        // Clone the logger instance so this module has its own sender to use
+        let logger_clone = logger.clone();
+
         WeatherManager {
-            logger:         logger,
+            logger:         logger_clone,
             active_weather: active_weather,
             timeout:        timeout,
         }
     }
 
     /// Logger-only constructor
-    pub fn new_logger_only(logger: LoggerInstance) -> Self {
+    pub fn new_logger_only(logger: &LoggerInstance) -> Self {
+        // Clone the logger instance so this module has its own sender to use
+        let logger_clone = logger.clone();
+
         WeatherManager {
-            logger:         logger,
+            logger:         logger_clone,
             active_weather: Weather::default(),
             timeout:        usize::default(),
         }

@@ -71,9 +71,12 @@ pub struct ResourceManager {
 
 impl ResourceManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(logger: LoggerInstance, ctx: &mut GgEzContext) -> Self {
+    pub fn new(logger: &LoggerInstance, ctx: &mut GgEzContext) -> Self {
+        // Clone the logger instance so this module has its own sender to use
+        let logger_clone = logger.clone();
+
         ResourceManager {
-            logger:         logger,
+            logger:         logger_clone,
             resources:      Vec::new(),
             resource_mesh:  ggez_gfx::Mesh::new_line(
                             ctx,

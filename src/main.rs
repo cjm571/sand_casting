@@ -116,24 +116,19 @@ struct SandCastingGameState {
 //FIXME: *STYLE* Needs a builder
 impl SandCastingGameState {
     pub fn new(logger: &LoggerInstance, ggez_ctx: &mut GgEzContext) -> Self {
-        println!("SandCastingGameState::new()");
-        //TODO: Load/create resources here: images, fonts, sounds, etc.
+        //NOTE: Load/create resources here: images, fonts, sounds, etc.
 
-        //FIXME: Disgusting style...
-        // Clone the logger instance for each module that will use it
-        let logger_clone0 = logger.clone();
-        let logger_clone1 = logger.clone();
-        let logger_clone2 = logger.clone();
-        let logger_clone3 = logger.clone();
+        // Clone the logger instance so this module has its own sender to use
+        let logger_clone = logger.clone();
 
         SandCastingGameState{
             avg_fps:            0.0,
             peak_fps:           0.0,
-            logger:             logger_clone0,
-            obstacle_manager:   ObstacleManager::new(logger_clone1, ggez_ctx),
-            resource_manager:   ResourceManager::new(logger_clone2, ggez_ctx),
-            weather_manager:    WeatherManager::new_logger_only(logger_clone3),
-            world_grid_manager: WorldGridManager::new(DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ggez_ctx),
+            logger:             logger_clone,
+            obstacle_manager:   ObstacleManager::new(logger, ggez_ctx),
+            resource_manager:   ResourceManager::new(logger, ggez_ctx),
+            weather_manager:    WeatherManager::new_logger_only(logger),
+            world_grid_manager: WorldGridManager::new(logger, DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ggez_ctx),
         }
     }
 }
@@ -237,7 +232,7 @@ fn main() {
     
     // Create logger instance
     let mut logger = LoggerInstance::default();
-    logger.set_filter(LogLevel::DEBUG as u8);
+    logger.set_filter(LogLevel::INFO as u8);
                                                   
     // Create CastIron game context
     let ci_ctx = CastIronContext::new_logger_only(logger.clone());

@@ -74,9 +74,12 @@ pub struct ObstacleManager {
 
 impl ObstacleManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(logger: LoggerInstance, ctx: &mut GgEzContext) -> Self {
+    pub fn new(logger: &LoggerInstance, ctx: &mut GgEzContext) -> Self {
+        // Clone the logger instance so this module has its own sender to use
+        let logger_clone = logger.clone();
+        
         ObstacleManager {
-            logger:         logger,
+            logger:         logger_clone,
             obstacles:      Vec::new(),
             obstacle_mesh:  ggez_gfx::Mesh::new_line(
                                 ctx,
@@ -185,7 +188,7 @@ impl ObstacleManager {
         // Create a random obstacle and attempt to add them until we succeed (or fail too many times)
         let mut attempts = 0;
         while attempts < MAX_RAND_OBSTACLE_ATTEMPTS {
-            let rand_obstacle = Obstacle::rand(ci_ctx);
+            let rand_obstacle = Obstacle::rand(&self.logger, ci_ctx);
             match self.add_obstacle(rand_obstacle, ggez_ctx) {
                 Ok(())              => {
                     break;                  // Successfully added obstacle, break loop
