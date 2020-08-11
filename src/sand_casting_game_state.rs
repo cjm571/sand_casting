@@ -67,7 +67,7 @@ pub struct SandCastingGameState {
 //  Object Implementation
 ///////////////////////////////////////////////////////////////////////////////
 
-//FIXME: *STYLE* Needs a builder
+/// Constructor
 impl SandCastingGameState {
     pub fn new(logger: &LoggerInstance, ggez_ctx: &mut GgEzContext) -> Self {
         //NOTE: Load/create resources here: images, fonts, sounds, etc.
@@ -119,14 +119,6 @@ impl ggez_event::EventHandler for SandCastingGameState {
             // Update weather
             ci_log!(self.logger, LogLevel::TRACE, "Updating weather...");
             self.weather_manager.update_weather(ggez_ctx);
-
-            // Update the resource mesh
-            ci_log!(self.logger, LogLevel::TRACE, "Retreiving resource mesh...");
-            self.resource_manager.get_resource_mesh();
-
-            // Update the obstacle mesh
-            ci_log!(self.logger, LogLevel::TRACE, "Retreiving obstacle mesh...");
-            self.obstacle_manager.get_obstacle_mesh();
 
             // Update FPS
             self.avg_fps = ggez_timer::fps(ggez_ctx);

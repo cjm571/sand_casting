@@ -124,7 +124,7 @@ fn main() {
     player_one.add_ability(null_abil);
 
     // Create a GGEZ Context and EventLoop
-    let (mut ggez_context, mut ggez_event_loop) = GgEzContextBuilder::new("sand_casting", "CJ McAllister")
+    let (mut ggez_ctx, mut ggez_event_loop) = GgEzContextBuilder::new("sand_casting", "CJ McAllister")
                                                   .window_setup(
                                                       ggez_conf::WindowSetup::default()
                                                       .title("Sand Casting - A CastIron Sandbox Game")
@@ -139,22 +139,22 @@ fn main() {
     ci_log!(logger_original, LogLevel::DEBUG, "ggez context, event loop created.");
 
     // Use built context to create a GGEZ Event Handler instance
-    let mut sand_casting_game_state = SandCastingGameState::new(&logger_original, &mut ggez_context);
+    let mut sand_casting_game_state = SandCastingGameState::new(&logger_original, &mut ggez_ctx);
 
     // Create random resources
     for _i in 0..3 {
-        sand_casting_game_state.get_resource_manager().add_rand_resource(&ci_ctx, &mut ggez_context).unwrap();
+        sand_casting_game_state.get_resource_manager().add_rand_resource(&ci_ctx, &mut ggez_ctx).unwrap();
     }
     ci_log!(logger_original, LogLevel::DEBUG, "Resources generated.");
 
     // Create random obstacles
-    for _i in 0..1 {
-        sand_casting_game_state.get_obstacle_manager().add_rand_obstacle(&ci_ctx, &mut ggez_context).unwrap();
+    for _i in 0..3 {
+        sand_casting_game_state.get_obstacle_manager().add_rand_obstacle(&ci_ctx, &mut ggez_ctx).unwrap();
     }
     ci_log!(logger_original, LogLevel::DEBUG, "Obstacles generated.");
 
     // Run the game!
-    match ggez_event::run(&mut ggez_context, &mut ggez_event_loop, &mut sand_casting_game_state) {
+    match ggez_event::run(&mut ggez_ctx, &mut ggez_event_loop, &mut sand_casting_game_state) {
         Ok(_)   => println!("Exited cleanly."),
         Err(e)  => println!("Error occured: {}", e)
     }

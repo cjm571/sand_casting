@@ -148,7 +148,6 @@ impl ObstacleManager {
 
                 //FIXME: Need to match the outline shared with previous hex to element color to create a continuous obstacle
             }
-
         }
 
         self.obstacle_mesh = obstacle_mesh_builder.build(ggez_ctx).unwrap();
