@@ -5,3 +5,6 @@ Cargo.lock
 
 # Data Files
 *.dat
+
+# Log Files
+/logs/

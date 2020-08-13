@@ -130,10 +130,10 @@ impl WorldGridManager {
             false,
             mesh_builder);
 
-        debug_exec!{
+        debug_exec!(
             // Add central hex with a green outline for visibility
             central_hex_cell.add_to_mesh(colors::TRANSPARENT, colors::GREEN, mesh_builder)
-        };
+        );
 
         ci_log!(self.logger, LogLevel::DEBUG, "Base hex grid built.");
     }
