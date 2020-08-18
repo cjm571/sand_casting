@@ -26,18 +26,17 @@ use cast_iron::{
         LogLevel
     },
     ci_log,
-    debug_exec
 };
 
 use ggez::{
     Context as GgEzContext,
     graphics as ggez_gfx,
-    mint as ggez_mint
+    mint as ggez_mint,
 };
 
 use ::game_assets::{
     colors,
-    hex_grid_cell::HexGridCell
+    hex_grid_cell::HexGridCell,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -130,11 +129,9 @@ impl WorldGridManager {
             false,
             mesh_builder);
 
-        debug_exec!(
-            // Add central hex with a green outline for visibility
-            central_hex_cell.add_to_mesh(colors::TRANSPARENT, colors::GREEN, mesh_builder)
-        );
-
+        // Add central hex with a green outline for visibility
+        central_hex_cell.add_to_mesh(colors::TRANSPARENT, colors::GREEN, mesh_builder);
+        
         ci_log!(self.logger, LogLevel::DEBUG, "Base hex grid built.");
     }
 

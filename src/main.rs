@@ -34,7 +34,7 @@ use cast_iron::{
         LoggerInstance,
         LogLevel
     },
-    ci_log
+    ci_log,
 };
 // use cast_iron::environment::resource;
 // use cast_iron::environment::coords::Coords;
@@ -91,8 +91,7 @@ const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: usize = 10;
 
 fn main() {
     // Create logger instance
-    let mut logger_original = LoggerInstance::default();
-    logger_original.set_filter(LogLevel::INFO as u8);
+    let logger_original = LoggerInstance::default();
 
     // Create CastIron game context
     let ci_ctx = CastIronContext::default();
@@ -136,7 +135,7 @@ fn main() {
                                                     )
                                                   .build()
                                                   .unwrap();
-    ci_log!(logger_original, LogLevel::DEBUG, "ggez context, event loop created.");
+    ci_log!(logger_original, LogLevel::INFO, "ggez context, event loop created.");
 
     // Use built context to create a GGEZ Event Handler instance
     let mut sand_casting_game_state = SandCastingGameState::new(&logger_original, &mut ggez_ctx);
@@ -145,13 +144,13 @@ fn main() {
     for _i in 0..3 {
         sand_casting_game_state.get_resource_manager().add_rand_resource(&ci_ctx, &mut ggez_ctx).unwrap();
     }
-    ci_log!(logger_original, LogLevel::DEBUG, "Resources generated.");
+    ci_log!(logger_original, LogLevel::INFO, "Resources generated.");
 
     // Create random obstacles
     for _i in 0..3 {
         sand_casting_game_state.get_obstacle_manager().add_rand_obstacle(&ci_ctx, &mut ggez_ctx).unwrap();
     }
-    ci_log!(logger_original, LogLevel::DEBUG, "Obstacles generated.");
+    ci_log!(logger_original, LogLevel::INFO, "Obstacles generated.");
 
     // Run the game!
     match ggez_event::run(&mut ggez_ctx, &mut ggez_event_loop, &mut sand_casting_game_state) {

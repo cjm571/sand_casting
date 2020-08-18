@@ -81,7 +81,7 @@ impl SandCastingGameState {
             logger:             logger_clone,
             obstacle_manager:   ObstacleManager::new(logger, ggez_ctx),
             resource_manager:   ResourceManager::new(logger, ggez_ctx),
-            weather_manager:    WeatherManager::new_logger_only(logger),
+            weather_manager:    WeatherManager::default(logger),
             world_grid_manager: WorldGridManager::new(logger, ::DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ggez_ctx),
         }
     }
