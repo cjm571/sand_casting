@@ -25,7 +25,7 @@ use cast_iron::hex_direction_provider::*;
 
 use ggez::{
     graphics as ggez_gfx,
-    mint as ggez_mint
+    mint as ggez_mint,
 };
 
 
@@ -54,7 +54,7 @@ pub struct HexGridCell {
 ///////////////////////////////////////////////////////////////////////////////
 impl HexGridCell {
     /// Constructor
-    pub fn new(center: ggez_mint::Point2<f32>, size: f32) -> Self {
+    pub fn new(center: ggez_mint::Point2<f32>, color: ggez_gfx::Color, size: f32) -> Self {
         // Compute vertices components
         let x_offset = size * (PI/3.0).cos();
         let y_offset = size * (PI/3.0).sin();
@@ -68,11 +68,7 @@ impl HexGridCell {
         vertices[4] = ggez_mint::Point2{ x: center.x - x_offset,   y: center.y + y_offset};
         vertices[5] = ggez_mint::Point2{ x: center.x + x_offset,   y: center.y + y_offset};
 
-        HexGridCell {
-            center:     center,
-            color:      ::DEFAULT_FILL_COLOR,
-            vertices:   vertices,
-        }
+        Self {center, color, vertices}
     }
 
 
@@ -80,15 +76,15 @@ impl HexGridCell {
     //  Accessor Methods
     ///////////////////////////////////////////////////////////////////////////
 
-    pub fn get_center(&self) -> ggez_mint::Point2<f32> {
+    pub fn center(&self) -> ggez_mint::Point2<f32> {
         self.center
     }
 
-    pub fn get_color(&self) -> ggez_gfx::Color {
+    pub fn color(&self) -> ggez_gfx::Color {
         self.color
     }
 
-    pub fn get_vertices(&self) -> [ggez_mint::Point2<f32>; 6] {
+    pub fn vertices(&self) -> [ggez_mint::Point2<f32>; 6] {
         self.vertices
     }
 
@@ -124,14 +120,13 @@ impl HexGridCell {
         let mut cur_fill_color = fill_color;
 
         // Get origin hex vertices
-        let origin_centerpoint = self.get_center();
+        let origin_centerpoint = self.center();
         let mut radial_vertices = [ggez_mint::Point2{x: 0.0, y: 0.0}; 6];
 
         for level in 0..radius {
             // Create an iterator starting at the East vertex and going COUNTER-CLOCKWISE as required by GGEZ draw calls
-            let mut i = 0;
             let direction_provider: HexDirectionProvider<HexVertices> = HexDirectionProvider::new(HexVertices::EAST);
-            for vertex in direction_provider {
+            for (i, vertex) in direction_provider.enumerate() {
                 let theta: f32 = vertex.into();
                 // Add PI/6 to theta to rotate the standard flat-up hex to point-up
                 // This is important as all radial groups of hexes will effectively be large point-up hexes
@@ -141,11 +136,11 @@ impl HexGridCell {
                 radial_vertices[i].y = origin_centerpoint.y - (::CENTER_TO_SIDE_DIST*2.0*adj_theta.sin());
 
                 // Inflate the vertices based on level
-                radial_vertices[i].x = radial_vertices[i].x + (::CENTER_TO_SIDE_DIST*2.0*adj_theta.cos()) * level as f32;
-                radial_vertices[i].y = radial_vertices[i].y - (::CENTER_TO_SIDE_DIST*2.0*adj_theta.sin()) * level as f32;
+                radial_vertices[i].x += (::CENTER_TO_SIDE_DIST*2.0*adj_theta.cos()) * level as f32;
+                radial_vertices[i].y -= (::CENTER_TO_SIDE_DIST*2.0*adj_theta.sin()) * level as f32;
 
                 // Create hex cells at each vertex
-                let vert_hex = HexGridCell::new(radial_vertices[i], ::GRID_CELL_SIZE);
+                let vert_hex = HexGridCell::new(radial_vertices[i], ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
                 vert_hex.add_to_mesh(cur_fill_color, outline_color, resource_mesh_builder);
 
                 // Create interstitial hex(es) if level requires
@@ -157,17 +152,15 @@ impl HexGridCell {
                         y: radial_vertices[i].y - (::CENTER_TO_SIDE_DIST*2.0*inter_hex_theta.sin()) * (j+1) as f32
                     };
 
-                    let inter_hex = HexGridCell::new(inter_hex_center, ::GRID_CELL_SIZE);
+                    let inter_hex = HexGridCell::new(inter_hex_center, ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
                     inter_hex.add_to_mesh(cur_fill_color, outline_color, resource_mesh_builder);
                 }
-
-                i = i + 1;
             }
 
             //FEAT: *DESIGN* A logarithmic scale would probably be prettier
-            if has_gradient == true && cur_fill_color.a > MIN_ALPHA_VAL {
+            if has_gradient && cur_fill_color.a > MIN_ALPHA_VAL {
                 // Transparentize color such that we get to mostly transparent at the furthest level, but not fully transparent
-                cur_fill_color.a = cur_fill_color.a - (1.0/(radius) as f32);
+                cur_fill_color.a -= 1.0/(radius) as f32;
             }
         }
     }
@@ -192,16 +185,14 @@ impl HexGridCell {
         // Build up an array of lines for use in the outline
         let mut lines: [[ggez_mint::Point2<f32>; 2]; 6] = [[ggez_mint::Point2 {x: 0.0, y: 0.0}; 2]; 6];
 
-        for i in 0 ..=4 {
-            lines[i] = [ggez_mint::Point2 {x: self.vertices[i].x,   y: self.vertices[i].y},
-                        ggez_mint::Point2 {x: self.vertices[i+1].x, y: self.vertices[i+1].y}];
+        for (i, line) in lines.iter_mut().enumerate() {
+            *line = [ggez_mint::Point2 {x: self.vertices[i].x,   y: self.vertices[i].y},
+                     ggez_mint::Point2 {x: self.vertices[(i+1) % 6].x, y: self.vertices[(i+1) % 6].y}];
         }
-        lines[5] = [ggez_mint::Point2 {x: self.vertices[5].x, y: self.vertices[5].y},
-                    ggez_mint::Point2 {x: self.vertices[0].x, y: self.vertices[0].y}];
 
         // Add the outline of hexagon
-        for i in 0 ..=5 {
-            match mesh_builder.line(&lines[i], 1.0, color) {
+        for line in &lines {
+            match mesh_builder.line(line, 1.0, color) {
                 Ok(_mb) => (),
                 _       => panic!("Failed to add line to mesh_builder")
             }

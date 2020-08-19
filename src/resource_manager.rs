@@ -24,22 +24,19 @@ use cast_iron::{
     context::Context as CastIronContext,
     environment::resource::Resource,
     hex_direction_provider::*,
-    logger::{
-        LoggerInstance,
-        LogLevel
-    },
-    ci_log
+    logger,
+    ci_log,
 };
 
 use ggez::{
     Context as GgEzContext,
     graphics as ggez_gfx,
-    mint as ggez_mint
+    mint as ggez_mint,
 };
 
 use ::game_assets::{
     colors,
-    hex_grid_cell::HexGridCell
+    hex_grid_cell::HexGridCell,
 };
 
 
@@ -59,7 +56,7 @@ const MAX_RAND_RESOURCE_ATTEMPTS: usize = 10;
 pub struct ResourceError;
 
 pub struct ResourceManager {
-    logger:         LoggerInstance,
+    logger:         logger::Instance,
     resources:      Vec<Resource>,
     resource_mesh:  ggez_gfx::Mesh,
 }
@@ -71,9 +68,9 @@ pub struct ResourceManager {
 
 impl ResourceManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(logger: &LoggerInstance, ctx: &mut GgEzContext) -> Self {
+    pub fn new(logger_original: &logger::Instance, ctx: &mut GgEzContext) -> Self {
         // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger.clone();
+        let logger_clone = logger_original.clone();
 
         ResourceManager {
             logger:         logger_clone,
@@ -92,7 +89,7 @@ impl ResourceManager {
     //  Accessor Methods
     ///////////////////////////////////////////////////////////////////////////
 
-    pub fn get_resource_mesh(&self) -> &ggez_gfx::Mesh {
+    pub fn resource_mesh(&self) -> &ggez_gfx::Mesh {
         &self.resource_mesh
     }
 
@@ -102,11 +99,11 @@ impl ResourceManager {
     ///////////////////////////////////////////////////////////////////////////
 
     pub fn update_resource_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
-        ci_log!(self.logger, LogLevel::DEBUG, "update_resource_mesh(): Updating resource mesh...");
+        ci_log!(self.logger, logger::FilterLevel::Debug, "update_resource_mesh(): Updating resource mesh...");
 
         // Do not attempt to update the mesh if we have no resources
-        if self.resources.len() == 0 {
-            ci_log!(self.logger, LogLevel::DEBUG, "update_resource_mesh(): No resources! Abandoning update.");
+        if self.resources.is_empty() {
+            ci_log!(self.logger, logger::FilterLevel::Debug, "update_resource_mesh(): No resources! Abandoning update.");
             return;
         }
 
@@ -121,14 +118,14 @@ impl ResourceManager {
 
         // Iterate through resources, adding to mesh builder along the way
         for res in &self.resources {
-            ci_log!(self.logger, LogLevel::DEBUG, "update_resource_mesh(): Updating with {:?}", res);
-            let res_coords = res.get_coords();
+            ci_log!(self.logger, logger::FilterLevel::Debug, "update_resource_mesh(): Updating with {:?}", res);
+            let res_coords = res.coords();
 
             //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
             // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
-            let x_offset = res_coords.get_x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
-            let y_offset = -1.0 * (res_coords.get_y() as f32 * f32::from(HexSides::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
-                           -1.0 * (res_coords.get_z() as f32 * f32::from(HexSides::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
+            let x_offset = res_coords.x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
+            let y_offset = (-res_coords.y() as f32 * f32::from(HexSides::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
+                           (-res_coords.z() as f32 * f32::from(HexSides::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
 
             let res_center = ggez_mint::Point2 {
                 x: window_center.x + x_offset,
@@ -136,14 +133,14 @@ impl ResourceManager {
             };
 
             // Create a HexGridCell object and add it to the mesh builder
-            let cur_hex = HexGridCell::new(res_center, ::GRID_CELL_SIZE);
+            let cur_hex = HexGridCell::new(res_center, ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
             cur_hex.add_to_mesh(colors::from_resource(&res), colors::WHITE, &mut resource_mesh_builder);
 
             // Create radial HexGridCells as necessary
             cur_hex.add_radials_to_mesh(
                 colors::from_resource(res),
                 colors::WHITE,
-                res.get_radius(),
+                res.radius(),
                 true,
                 &mut resource_mesh_builder);
         }
@@ -156,19 +153,19 @@ impl ResourceManager {
         // Verify that no resource already exists in the same location
         let mut coords_occupied = false;
         for existing_res in &self.resources {
-            if existing_res.get_coords() == new_res.get_coords() {
+            if existing_res.coords() == new_res.coords() {
                 coords_occupied = true;
                 break;
             }
         }
 
         // If the new resource's coordinates are unoccupied, add it
-        if coords_occupied == false {
+        if !coords_occupied {
             self.resources.push(new_res);
 
             // Update resource mesh
             self.update_resource_mesh(ggez_ctx);
-            ci_log!(self.logger, LogLevel::DEBUG, "Added resource: {:?}", self.resources.last().unwrap());
+            ci_log!(self.logger, logger::FilterLevel::Debug, "Added resource: {:?}", self.resources.last().unwrap());
 
             Ok(())
         }
@@ -189,15 +186,13 @@ impl ResourceManager {
                 Err(ResourceError)  => ()   // Failed to add resource, continue
             }
 
-            attempts = attempts + 1;
+            attempts += 1;
         }
 
         // If attempts maxed out - return error, otherwise Ok()
         if attempts == MAX_RAND_RESOURCE_ATTEMPTS {
             Err(ResourceError)
-        }
-        else
-        {
+        } else {
             Ok(())
         }
     }

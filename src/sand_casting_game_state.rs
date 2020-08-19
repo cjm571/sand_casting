@@ -22,11 +22,8 @@ Purpose:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::{
-    logger::{
-        LoggerInstance,
-        LogLevel
-    },
-    ci_log
+    logger,
+    ci_log,
 };
 
 use ggez::{
@@ -35,7 +32,7 @@ use ggez::{
     event as ggez_event,
     graphics as ggez_gfx,
     mint as ggez_mint,
-    timer as ggez_timer
+    timer as ggez_timer,
 };
 
 use crate::{
@@ -55,7 +52,7 @@ use crate::{
 pub struct SandCastingGameState {
     avg_fps:            f64,                // Average FPS for display
     peak_fps:           f64,                // Peak FPS for display
-    logger:             LoggerInstance,     // Instance of CastIron Logger
+    logger:             logger::Instance,     // Instance of CastIron Logger
     obstacle_manager:   ObstacleManager,    // Obstacle Manager instance
     resource_manager:   ResourceManager,    // Resource Manager instance
     weather_manager:    WeatherManager,     // Weather Manager instance
@@ -69,20 +66,20 @@ pub struct SandCastingGameState {
 
 /// Constructor
 impl SandCastingGameState {
-    pub fn new(logger: &LoggerInstance, ggez_ctx: &mut GgEzContext) -> Self {
+    pub fn new(logger_original: &logger::Instance, ggez_ctx: &mut GgEzContext) -> Self {
         //NOTE: Load/create resources here: images, fonts, sounds, etc.
 
         // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger.clone();
+        let logger_clone = logger_original.clone();
 
         SandCastingGameState{
             avg_fps:            0.0,
             peak_fps:           0.0,
             logger:             logger_clone,
-            obstacle_manager:   ObstacleManager::new(logger, ggez_ctx),
-            resource_manager:   ResourceManager::new(logger, ggez_ctx),
-            weather_manager:    WeatherManager::default(logger),
-            world_grid_manager: WorldGridManager::new(logger, ::DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ggez_ctx),
+            obstacle_manager:   ObstacleManager::new(logger_original, ggez_ctx),
+            resource_manager:   ResourceManager::new(logger_original, ggez_ctx),
+            weather_manager:    WeatherManager::default(logger_original),
+            world_grid_manager: WorldGridManager::new(logger_original, ::DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ggez_ctx),
         }
     }
 
@@ -91,19 +88,19 @@ impl SandCastingGameState {
      *  Accessor Methods  *
     \*  *  *  *  *  *  *  */
 
-    pub fn get_obstacle_manager(&mut self) -> &mut ObstacleManager {
+    pub fn obstacle_manager(&mut self) -> &mut ObstacleManager {
         &mut self.obstacle_manager
     }
 
-    pub fn get_resource_manager(&mut self) -> &mut ResourceManager {
+    pub fn resource_manager(&mut self) -> &mut ResourceManager {
         &mut self.resource_manager
     }
 
-    pub fn get_weather_manager(&mut self) -> &mut WeatherManager {
+    pub fn weather_manager(&mut self) -> &mut WeatherManager {
         &mut self.weather_manager
     }
 
-    pub fn get_world_grid_manager(&mut self) -> &mut WorldGridManager {
+    pub fn world_grid_manager(&mut self) -> &mut WorldGridManager {
         &mut self.world_grid_manager
     }
 }
@@ -117,7 +114,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
     fn update(&mut self, ggez_ctx: &mut GgEzContext) -> GameResult<()> {
         while ggez_timer::check_update_time(ggez_ctx, ::DESIRED_FPS) {
             // Update weather
-            ci_log!(self.logger, LogLevel::TRACE, "Updating weather...");
+            ci_log!(self.logger, logger::FilterLevel::Trace, "Updating weather...");
             self.weather_manager.update_weather(ggez_ctx);
 
             // Update FPS
@@ -134,13 +131,13 @@ impl ggez_event::EventHandler for SandCastingGameState {
         ggez_gfx::clear(ctx, BLACK);
 
         // Draw the hex grid
-        ggez_gfx::draw(ctx, self.world_grid_manager.get_base_grid_mesh(), ggez_gfx::DrawParam::default())?;
+        ggez_gfx::draw(ctx, self.world_grid_manager.base_grid_mesh(), ggez_gfx::DrawParam::default())?;
 
         // Draw resources
-        ggez_gfx::draw(ctx, self.resource_manager.get_resource_mesh(), ggez_gfx::DrawParam::default())?;
+        ggez_gfx::draw(ctx, self.resource_manager.resource_mesh(), ggez_gfx::DrawParam::default())?;
 
         // Draw obstacles
-        ggez_gfx::draw(ctx, self.obstacle_manager.get_obstacle_mesh(), ggez_gfx::DrawParam::default())?;
+        ggez_gfx::draw(ctx, self.obstacle_manager.obstacle_mesh(), ggez_gfx::DrawParam::default())?;
 
         // Draw the FPS counters
         let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};

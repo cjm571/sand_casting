@@ -25,16 +25,13 @@ use cast_iron::{
         element::Elemental,
         weather::Weather
     },
-    logger::{
-        LoggerInstance,
-        LogLevel
-    },
-    ci_log
+    logger,
+    ci_log,
 };
 
 use ggez::{
     Context as GgEzContext,
-    timer as ggez_timer
+    timer as ggez_timer,
 };
 
 
@@ -43,7 +40,7 @@ use ggez::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct WeatherManager {
-    logger:         LoggerInstance,
+    logger:         logger::Instance,
     active_weather: Weather,
     timeout_tick:   usize,
 }
@@ -55,21 +52,20 @@ pub struct WeatherManager {
 
 impl WeatherManager {
     /// Fully-qualified constructor
-    pub fn new(logger: &LoggerInstance, active_weather: Weather, timeout_tick: usize) -> Self {
+    pub fn new(logger_original: &logger::Instance, active_weather: Weather, timeout_tick: usize) -> Self {
         // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger.clone();
+        let logger_clone = logger_original.clone();
 
         WeatherManager {
-            logger:         logger_clone,
-            active_weather: active_weather,
-            timeout_tick:   timeout_tick,
-        }
+            logger: logger_clone,
+            active_weather,
+            timeout_tick}
     }
 
     /// Default constructor
-    pub fn default(logger: &LoggerInstance) -> Self {
+    pub fn default(logger_original: &logger::Instance) -> Self {
         // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger.clone();
+        let logger_clone = logger_original.clone();
 
         WeatherManager {
             logger:         logger_clone,
@@ -92,15 +88,15 @@ impl WeatherManager {
         // If current weather has timed out, randomly generate a new weather pattern
         if cur_tick >= self.timeout_tick {
             self.active_weather = Weather::rand_starting_at(cur_tick);
-            ci_log!(self.logger, LogLevel::INFO,
+            ci_log!(self.logger, logger::FilterLevel::Info,
                 "Tick {:>8}: Weather changed to Elem: {:?}, Duration: {}",
                 cur_tick,
-                self.active_weather.get_element(),
-                self.active_weather.get_duration()
+                self.active_weather.element(),
+                self.active_weather.duration()
             );
             
             // Set the timeout to the duration of the new weather pattern
-            self.timeout_tick = cur_tick + self.active_weather.get_duration();
+            self.timeout_tick = cur_tick + self.active_weather.duration();
         }
     }
 }

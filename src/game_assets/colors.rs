@@ -22,11 +22,11 @@ Purpose:
 use cast_iron::environment::{
     element::{
         Element,
-        Elemental
+        Elemental,
     },
     resource::{
         Resource,
-        State
+        State,
     }
 };
 
@@ -147,10 +147,10 @@ pub fn from_element(elem: Element) -> ggez_gfx::Color {
 
 pub fn from_resource(res: &Resource) -> ggez_gfx::Color {
     // Determine base color based on element of resource
-    let mut res_color = from_element(res.get_element());
+    let mut res_color = from_element(res.element());
 
     // Adjust alpha based on intensity
-    match res.get_state() {
+    match res.state() {
         State::Depleted => res_color.a = 0.000,
         State::Low      => res_color.a = 0.050,
         State::Partial  => res_color.a = 0.100,
