@@ -146,7 +146,7 @@ impl ObstacleManager {
                 let cur_hex = HexGridCell::new(obstacle_center, ::GRID_CELL_SIZE);
                 cur_hex.add_to_mesh(colors::from_element(obstacle.get_element()), colors::RED, &mut obstacle_mesh_builder);
 
-                //FIXME: Need to match the outline shared with previous hex to element color to create a continuous obstacle
+                //FEAT: Need to match the outline shared with previous hex to element color to create a continuous obstacle
             }
         }
 

@@ -83,6 +83,9 @@ impl WeatherManager {
     // Utility Methods
     ///
 
+    //FEAT: Change background color to represent active weather element and intensity
+    //      Alternatively, create a box to contain info/graphics on active weather
+    /// Updates the active weather if the current effect has timed out
     pub fn update_weather(&mut self, ggez_ctx: &GgEzContext) {
         let cur_tick = ggez_timer::ticks(ggez_ctx);
 
