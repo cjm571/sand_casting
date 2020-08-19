@@ -144,16 +144,12 @@ impl ObstacleManager {
                 cur_hex.add_to_mesh(colors::from_element(obstacle.element()), colors::DARKGREY, &mut obstacle_mesh_builder);
 
                 //OPT: *DESIGN* This is basically an adjacency check, which would be a very useful function for the Coords module
-
                 // Draw a line over the hex side between the new and previous obstacle cell for all but the first cell
                 if i > 0 {
                     let prev_obstacle_coords = all_obstacle_coords.get(i-1).unwrap();
-                    println!("obstacle_coords: {:?}", obstacle_coords);
-                    println!("prev_obstacle_coords: {:?}", prev_obstacle_coords);
 
                     // Determine direction of hex side that should be overwritten
                     let coords_delta = *prev_obstacle_coords - *obstacle_coords;
-                    println!("coords_delta: {:?}", coords_delta);
 
                     let direction = match (coords_delta.x(), coords_delta.y(), coords_delta.z()) {
                         (1, 0, -1)  => HexSides::NORTHEAST,
@@ -164,7 +160,6 @@ impl ObstacleManager {
                         (1, -1, 0)  => HexSides::SOUTHEAST,
                         _           => panic!("Invalid coords delta"),
                     };
-                    println!("Direction: {:?}\n", direction);
 
                     //OPT: *STYLE* oh my god...
                     // Get the vertices for the direction's side
@@ -172,6 +167,7 @@ impl ObstacleManager {
                                        *cur_hex.vertices().get(usize::from(HexSides::get_adjacent_vertices(direction).1)).unwrap()];
 
                     obstacle_mesh_builder.line(&shared_line, ::DEFAULT_LINE_WIDTH, colors::from_element(obstacle.element())).unwrap();
+                    ci_log!(self.logger, logger::FilterLevel::Trace, "Drew connection to the {:?}", direction);
                 }
             }
         }
