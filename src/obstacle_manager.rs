@@ -74,7 +74,7 @@ impl ObstacleManager {
     pub fn new(logger_original: &logger::Instance, ctx: &mut GgEzContext) -> Self {
         // Clone the logger instance so this module has its own sender to use
         let logger_clone = logger_original.clone();
-        
+
         ObstacleManager {
             logger:         logger_clone,
             obstacles:      Vec::new(),
@@ -95,13 +95,13 @@ impl ObstacleManager {
     pub fn obstacle_mesh(&self) -> &ggez_gfx::Mesh {
         &self.obstacle_mesh
     }
-    
+
 
     //OPT: *STYLE* These are very similar to the Resource Manager's utility methods...
     ///////////////////////////////////////////////////////////////////////////
     //  Utility Methods
     ///////////////////////////////////////////////////////////////////////////
- 
+
     pub fn update_obstacle_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
         ci_log!(self.logger, logger::FilterLevel::Debug, "Updating obstacle mesh...");
 
@@ -122,16 +122,16 @@ impl ObstacleManager {
 
         // Iterate through obstacles, adding to mesh builder along the way
         for obstacle in &self.obstacles {
-            ci_log!(self.logger, logger::FilterLevel::Debug, "Updating with {:?}", obstacle);
+            ci_log!(self.logger, logger::FilterLevel::Trace, "Updating with {:?}", obstacle);
             let all_obstacle_coords = obstacle.all_coords();
 
             // Iterate through current obstacle's coords, adding hexes to the mesh for each
-            for obstacle_coords in all_obstacle_coords {
-                ci_log!(self.logger, logger::FilterLevel::Debug, "Adding hex at {:?}", obstacle_coords);
+            for (i, obstacle_coords) in all_obstacle_coords.iter().enumerate() {
+                ci_log!(self.logger, logger::FilterLevel::Trace, "Adding hex at {:?}", obstacle_coords);
                 //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
                 // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
                 let x_offset = obstacle_coords.x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
-                let y_offset = (-obstacle_coords.y() as f32 * f32::from(HexSides::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) + 
+                let y_offset = (-obstacle_coords.y() as f32 * f32::from(HexSides::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
                                (-obstacle_coords.z() as f32 * f32::from(HexSides::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
 
                 let obstacle_center = ggez_mint::Point2 {
@@ -141,9 +141,38 @@ impl ObstacleManager {
 
                 // Create a HexGridCell object and add it to the mesh builder
                 let cur_hex = HexGridCell::new(obstacle_center, ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
-                cur_hex.add_to_mesh(colors::from_element(obstacle.element()), colors::RED, &mut obstacle_mesh_builder);
+                cur_hex.add_to_mesh(colors::from_element(obstacle.element()), colors::DARKGREY, &mut obstacle_mesh_builder);
 
-                //FEAT: Need to match the outline shared with previous hex to element color to create a continuous obstacle
+                //OPT: *DESIGN* This is basically an adjacency check, which would be a very useful function for the Coords module
+
+                // Draw a line over the hex side between the new and previous obstacle cell for all but the first cell
+                if i > 0 {
+                    let prev_obstacle_coords = all_obstacle_coords.get(i-1).unwrap();
+                    println!("obstacle_coords: {:?}", obstacle_coords);
+                    println!("prev_obstacle_coords: {:?}", prev_obstacle_coords);
+
+                    // Determine direction of hex side that should be overwritten
+                    let coords_delta = *prev_obstacle_coords - *obstacle_coords;
+                    println!("coords_delta: {:?}", coords_delta);
+
+                    let direction = match (coords_delta.x(), coords_delta.y(), coords_delta.z()) {
+                        (1, 0, -1)  => HexSides::NORTHEAST,
+                        (0, 1, -1)  => HexSides::NORTH,
+                        (-1, 1, 0)  => HexSides::NORTHWEST,
+                        (-1, 0, 1)  => HexSides::SOUTHWEST,
+                        (0, -1, 1)  => HexSides::SOUTH,
+                        (1, -1, 0)  => HexSides::SOUTHEAST,
+                        _           => panic!("Invalid coords delta"),
+                    };
+                    println!("Direction: {:?}\n", direction);
+
+                    //OPT: *STYLE* oh my god...
+                    // Get the vertices for the direction's side
+                    let shared_line = [*cur_hex.vertices().get(usize::from(HexSides::get_adjacent_vertices(direction).0)).unwrap(),
+                                       *cur_hex.vertices().get(usize::from(HexSides::get_adjacent_vertices(direction).1)).unwrap()];
+
+                    obstacle_mesh_builder.line(&shared_line, ::DEFAULT_LINE_WIDTH, colors::from_element(obstacle.element())).unwrap();
+                }
             }
         }
 
@@ -152,7 +181,7 @@ impl ObstacleManager {
 
     pub fn add_obstacle(&mut self, new_obstacle: Obstacle, ggez_ctx: &mut GgEzContext) -> Result<(), ObstacleError> {
         //TODO: Should this function also sanity check against a CastIron context?
-        
+
         // OPT: *PERFORMANCE* oof, this is probably super slow
         // Verify that no obstacle already exists along the new obstacle's path
         let mut coords_occupied = false;

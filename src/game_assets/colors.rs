@@ -46,6 +46,12 @@ pub const GREY:     ggez_gfx::Color = ggez_gfx::Color {
     b: 0.500,
     a: 1.000
 };
+pub const DARKGREY: ggez_gfx::Color = ggez_gfx::Color {
+    r: 0.333,
+    g: 0.333,
+    b: 0.333,
+    a: 1.000
+};
 
 /* ROYGBIV Rainbow (values from wikipedia) */
 pub const RED:      ggez_gfx::Color = ggez_gfx::Color {

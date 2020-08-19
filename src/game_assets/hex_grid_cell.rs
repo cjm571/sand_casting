@@ -192,7 +192,7 @@ impl HexGridCell {
 
         // Add the outline of hexagon
         for line in &lines {
-            match mesh_builder.line(line, 1.0, color) {
+            match mesh_builder.line(line, ::DEFAULT_LINE_WIDTH, color) {
                 Ok(_mb) => (),
                 _       => panic!("Failed to add line to mesh_builder")
             }
