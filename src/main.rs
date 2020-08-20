@@ -64,13 +64,14 @@ use sand_casting_game_state::SandCastingGameState;
 ///////////////////////////////////////////////////////////////////////////////
 
 /* Appearence */
-const DEFAULT_WINDOW_SIZE_X: f32 = 1000.0;
-const DEFAULT_WINDOW_SIZE_Y: f32 = 1000.0;
-const DESIRED_FPS: u32 = 60;
+const DEFAULT_WINDOW_SIZE_X:    f32 = 1000.0;
+const DEFAULT_WINDOW_SIZE_Y:    f32 = 1000.0;
+const DESIRED_FPS:              u32 = 60;
 
-const DEFAULT_LINE_WIDTH: f32 = 2.0;
-const DEFAULT_LINE_COLOR: ggez_gfx::Color = WHITE;
-const DEFAULT_FILL_COLOR: ggez_gfx::Color = GREY;
+const DEFAULT_TEXT_SIZE:        f32 = 16.0;
+const DEFAULT_LINE_WIDTH:       f32 = 2.0;
+const DEFAULT_LINE_COLOR:       ggez_gfx::Color = WHITE;
+const DEFAULT_FILL_COLOR:       ggez_gfx::Color = GREY;
 
 /* Hex Grid */
 const GRID_CELL_SIZE: f32 = 25.0;
@@ -113,6 +114,7 @@ fn main() {
     blood_drain.set_morality(Morality::Evil);
     blood_drain.set_school(School::Destruction);
 
+    //FEAT: Make actors do stuff
     // Intialize Actor
     let mut player_one: Actor = Actor::new_name_only("CJ McAllister");
     player_one.add_ability(lightning_bolt);

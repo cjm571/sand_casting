@@ -155,7 +155,7 @@ pub fn from_resource(res: &Resource) -> ggez_gfx::Color {
     // Determine base color based on element of resource
     let mut res_color = from_element(res.element());
 
-    // Adjust alpha based on intensity
+    // Adjust alpha based on state
     match res.state() {
         State::Depleted => res_color.a = 0.000,
         State::Low      => res_color.a = 0.050,

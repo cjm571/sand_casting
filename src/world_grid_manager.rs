@@ -31,7 +31,7 @@ use ggez::{
     mint as ggez_mint,
 };
 
-use ::game_assets::{
+use crate::game_assets::{
     colors,
     hex_grid_cell::HexGridCell,
 };
@@ -105,15 +105,13 @@ impl WorldGridManager {
 
 
     ///////////////////////////////////////////////////////////////////////////
-    //  Helper Functions
+    //  Helper Methods
     ///////////////////////////////////////////////////////////////////////////
 
     /// Builds a baseline hex grid to the graphics window.
-    fn build_base_grid(
-        &self,
-        center: ggez_mint::Point2<f32>,
-        mesh_builder: &mut ggez_gfx::MeshBuilder
-    ) {
+    fn build_base_grid(&self,
+                       center: ggez_mint::Point2<f32>,
+                       mesh_builder: &mut ggez_gfx::MeshBuilder) {
         // Construct the central hex cell
         let central_hex_cell = HexGridCell::new(center, ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
     
@@ -126,6 +124,7 @@ impl WorldGridManager {
             false,
             mesh_builder);
 
+        //OPT: *DESIGN* Move this to the last part of the ggez draw call
         // Add central hex with a green outline for visibility
         central_hex_cell.add_to_mesh(colors::TRANSPARENT, colors::GREEN, mesh_builder);
         

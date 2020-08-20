@@ -49,6 +49,9 @@ pub struct HexGridCell {
     vertices:   [ggez_mint::Point2<f32>; 6],
 }
 
+//TODO: Proper implementation of an error type
+pub struct HexGridCellError;
+
 ///////////////////////////////////////////////////////////////////////////////
 //  Object Implementation
 ///////////////////////////////////////////////////////////////////////////////
@@ -160,7 +163,7 @@ impl HexGridCell {
             //FEAT: *DESIGN* A logarithmic scale would probably be prettier
             if has_gradient && cur_fill_color.a > MIN_ALPHA_VAL {
                 // Transparentize color such that we get to mostly transparent at the furthest level, but not fully transparent
-                cur_fill_color.a -= 1.0/(radius) as f32;
+                cur_fill_color.a -= 1.0/radius as f32;
             }
         }
     }
@@ -170,33 +173,14 @@ impl HexGridCell {
     //  Helper Functions
     ///////////////////////////////////////////////////////////////////////////
 
-    //OPT: *STYLE* Probably should return Result instead of panicking
     /// Adds the fill portion of a hex cell to the given Mesh
     fn add_hex_fill_to_mesh(&self, color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
-        match mesh_builder.polygon(ggez_gfx::DrawMode::fill(), &self.vertices, color) {
-            Ok(_mb) => (),
-            _       => panic!("Failed to add filled hexagon to mesh_builder")
-        }
+        mesh_builder.polygon(ggez_gfx::DrawMode::fill(), &self.vertices, color).unwrap();
     }
 
-    //OPT: *STYLE* Probably should return Result instead of panicking
     /// Adds the outline portion of a hex cell to the given Mesh
     fn add_hex_outline_to_mesh(&self, color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
-        // Build up an array of lines for use in the outline
-        let mut lines: [[ggez_mint::Point2<f32>; 2]; 6] = [[ggez_mint::Point2 {x: 0.0, y: 0.0}; 2]; 6];
-
-        for (i, line) in lines.iter_mut().enumerate() {
-            *line = [ggez_mint::Point2 {x: self.vertices[i].x,   y: self.vertices[i].y},
-                     ggez_mint::Point2 {x: self.vertices[(i+1) % 6].x, y: self.vertices[(i+1) % 6].y}];
-        }
-
-        // Add the outline of hexagon
-        for line in &lines {
-            match mesh_builder.line(line, ::DEFAULT_LINE_WIDTH, color) {
-                Ok(_mb) => (),
-                _       => panic!("Failed to add line to mesh_builder")
-            }
-        }
+        mesh_builder.polygon(ggez_gfx::DrawMode::stroke(::DEFAULT_LINE_WIDTH), &self.vertices, color).unwrap();
     }
 }
 ///////////////////////////////////////////////////////////////////////////////

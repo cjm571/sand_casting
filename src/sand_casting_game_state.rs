@@ -28,7 +28,7 @@ use cast_iron::{
 
 use ggez::{
     Context as GgEzContext,
-    GameResult,
+    GameResult as GgEzGameResult,
     event as ggez_event,
     graphics as ggez_gfx,
     mint as ggez_mint,
@@ -78,7 +78,7 @@ impl SandCastingGameState {
             logger:             logger_clone,
             obstacle_manager:   ObstacleManager::new(logger_original, ggez_ctx),
             resource_manager:   ResourceManager::new(logger_original, ggez_ctx),
-            weather_manager:    WeatherManager::default(logger_original),
+            weather_manager:    WeatherManager::default(logger_original, ggez_ctx),
             world_grid_manager: WorldGridManager::new(logger_original, ::DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ggez_ctx),
         }
     }
@@ -110,8 +110,10 @@ impl SandCastingGameState {
 //  Trait Implementations
 ///////////////////////////////////////////////////////////////////////////////
 
+//FEAT: Handle mouse events
+//FEAT: Handle keyboard events, '~' for a debug view would be cool
 impl ggez_event::EventHandler for SandCastingGameState {
-    fn update(&mut self, ggez_ctx: &mut GgEzContext) -> GameResult<()> {
+    fn update(&mut self, ggez_ctx: &mut GgEzContext) -> GgEzGameResult<()> {
         while ggez_timer::check_update_time(ggez_ctx, ::DESIRED_FPS) {
             // Update weather
             ci_log!(self.logger, logger::FilterLevel::Trace, "Updating weather...");
@@ -127,9 +129,13 @@ impl ggez_event::EventHandler for SandCastingGameState {
         Ok(())
     }
 
-    fn draw(&mut self, ctx: &mut GgEzContext) -> GameResult<()> {
+    fn draw(&mut self, ctx: &mut GgEzContext) -> GgEzGameResult<()> {
         ggez_gfx::clear(ctx, BLACK);
 
+        // Draw the weather HUD
+        self.weather_manager.draw(ctx);
+
+        //OPT: *DESIGN* Other managers should have a draw() call like weather manager
         // Draw the hex grid
         ggez_gfx::draw(ctx, self.world_grid_manager.base_grid_mesh(), ggez_gfx::DrawParam::default())?;
 
@@ -139,15 +145,16 @@ impl ggez_event::EventHandler for SandCastingGameState {
         // Draw obstacles
         ggez_gfx::draw(ctx, self.obstacle_manager.obstacle_mesh(), ggez_gfx::DrawParam::default())?;
 
+        //OPT: *DESIGN* Could make a 'performance manager' or something to encapsulate things like FPS counters
         // Draw the FPS counters
         let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
         let avg_fps_str = format!("Avg. FPS: {:.0}", self.avg_fps);
-        let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(), 16.0));
+        let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
         ggez_gfx::draw(ctx, &avg_fps_display, (avg_fps_pos, 0.0, GREEN)).unwrap();
 
         let peak_fps_pos = ggez_mint::Point2 {x: 0.0, y: 20.0};
         let peak_fps_str = format!("Peak FPS: {:.0}", self.peak_fps);
-        let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(), 16.0));
+        let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
         ggez_gfx::draw(ctx, &peak_fps_display, (peak_fps_pos, 0.0, GREEN)).unwrap();
 
         ggez_gfx::present(ctx)
