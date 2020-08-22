@@ -23,7 +23,7 @@ Purpose:
 use cast_iron::{
     context::Context as CastIronContext,
     environment::resource::Resource,
-    hex_direction_provider::*,
+    hex_directions,
     logger,
     ci_log,
 };
@@ -124,8 +124,8 @@ impl ResourceManager {
             //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
             // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
             let x_offset = res_coords.x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
-            let y_offset = (-res_coords.y() as f32 * f32::from(HexSides::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
-                           (-res_coords.z() as f32 * f32::from(HexSides::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
+            let y_offset = (-res_coords.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
+                           (-res_coords.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
 
             let res_center = ggez_mint::Point2 {
                 x: window_center.x + x_offset,

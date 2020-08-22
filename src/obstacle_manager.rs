@@ -26,7 +26,7 @@ use cast_iron::{
         element::Elemental,
         obstacle::Obstacle,
     },
-    hex_direction_provider::*,
+    hex_directions,
     logger,
     ci_log,
 };
@@ -131,8 +131,8 @@ impl ObstacleManager {
                 //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
                 // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
                 let x_offset = obstacle_coords.x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
-                let y_offset = (-obstacle_coords.y() as f32 * f32::from(HexSides::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
-                               (-obstacle_coords.z() as f32 * f32::from(HexSides::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
+                let y_offset = (-obstacle_coords.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
+                               (-obstacle_coords.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
 
                 let obstacle_center = ggez_mint::Point2 {
                     x: window_center.x + x_offset,
@@ -148,23 +148,13 @@ impl ObstacleManager {
                 if i > 0 {
                     let prev_obstacle_coords = all_obstacle_coords.get(i-1).unwrap();
 
+                    let direction = hex_directions::Side::from(*prev_obstacle_coords - *obstacle_coords);
                     // Determine direction of hex side that should be overwritten
-                    let coords_delta = *prev_obstacle_coords - *obstacle_coords;
-
-                    let direction = match (coords_delta.x(), coords_delta.y(), coords_delta.z()) {
-                        (1, 0, -1)  => HexSides::NORTHEAST,
-                        (0, 1, -1)  => HexSides::NORTH,
-                        (-1, 1, 0)  => HexSides::NORTHWEST,
-                        (-1, 0, 1)  => HexSides::SOUTHWEST,
-                        (0, -1, 1)  => HexSides::SOUTH,
-                        (1, -1, 0)  => HexSides::SOUTHEAST,
-                        _           => panic!("Invalid coords delta"),
-                    };
 
                     //OPT: *STYLE* oh my god...
                     // Get the vertices for the direction's side
-                    let shared_line = [*cur_hex.vertices().get(usize::from(HexSides::get_adjacent_vertices(direction).0)).unwrap(),
-                                       *cur_hex.vertices().get(usize::from(HexSides::get_adjacent_vertices(direction).1)).unwrap()];
+                    let shared_line = [*cur_hex.vertices().get(usize::from(hex_directions::Side::get_adjacent_vertices(direction).0)).unwrap(),
+                                       *cur_hex.vertices().get(usize::from(hex_directions::Side::get_adjacent_vertices(direction).1)).unwrap()];
 
                     obstacle_mesh_builder.line(&shared_line, ::DEFAULT_LINE_WIDTH, colors::from_element(obstacle.element())).unwrap();
                     ci_log!(self.logger, logger::FilterLevel::Trace, "Drew connection to the {:?}", direction);

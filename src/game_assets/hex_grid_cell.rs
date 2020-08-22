@@ -21,7 +21,7 @@ Purpose:
 
 use std::f32::consts::PI;
 
-use cast_iron::hex_direction_provider::*;
+use cast_iron::hex_directions;
 
 use ggez::{
     graphics as ggez_gfx,
@@ -128,7 +128,7 @@ impl HexGridCell {
 
         for level in 0..radius {
             // Create an iterator starting at the East vertex and going COUNTER-CLOCKWISE as required by GGEZ draw calls
-            let direction_provider: HexDirectionProvider<HexVertices> = HexDirectionProvider::new(HexVertices::EAST);
+            let direction_provider: hex_directions::Provider<hex_directions::Vertex> = hex_directions::Provider::new(hex_directions::Vertex::EAST);
             for (i, vertex) in direction_provider.enumerate() {
                 let theta: f32 = vertex.into();
                 // Add PI/6 to theta to rotate the standard flat-up hex to point-up
