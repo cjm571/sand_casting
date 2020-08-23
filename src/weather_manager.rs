@@ -26,10 +26,7 @@ use cast_iron::{
             Element,
             Elemental,
         },
-        weather::{
-            Intensity,
-            Weather,
-        },
+        weather,
     },
     logger,
     ci_log,
@@ -51,21 +48,13 @@ use crate::game_assets::{
 // Named Constants
 ///////////////////////////////////////////////////////////////////////////////
 
-/// Default line width for the weather HUD outline
-const DEFAULT_HUD_OUTLINE_LINE_WIDTH:   f32 = 3.0;
-const DEFAULT_HUD_INT_BAR_LINE_WIDTH:   f32 = 5.0;
+// Default line features for the weather HUD
+const HUD_OUTLINE_LINE_WIDTH:   f32 = 3.0;
+const HUD_INT_BAR_LINE_WIDTH:   f32 = 5.0;
+const HUD_OUTLINE_LINE_COLOR:   ggez_gfx::Color = colors::MAGENTA;
 
-const DEFAULT_HUD_OUTLINE_LINE_COLOR:   ggez_gfx::Color = colors::MAGENTA;
-
-const DEFAULT_HUD_LEFT_EDGE_POS:        f32 = 800.0;
-const DEFAULT_HUD_TOP_EDGE_POS:         f32 = 64.0;
-const DEFAULT_HUD_WIDTH:                f32 = 128.0;
-const DEFAULT_HUD_HEIGHT:               f32 = DEFAULT_HUD_WIDTH;
-
-const DEFAULT_INT_TEXT_POS:     ggez_mint::Point2<f32> = ggez_mint::Point2 {x: DEFAULT_HUD_LEFT_EDGE_POS,
-                                                                            y: DEFAULT_HUD_TOP_EDGE_POS + DEFAULT_HUD_HEIGHT + 5.0};
-const DEFAULT_ELEM_TEXT_POS:    ggez_mint::Point2<f32> = ggez_mint::Point2 {x: DEFAULT_HUD_LEFT_EDGE_POS,
-                                                                            y: DEFAULT_HUD_TOP_EDGE_POS - 20.0};
+// Offset of text from HUD frame
+const HUD_TEXT_OFFSET:          f32 = 5.0;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -74,21 +63,25 @@ const DEFAULT_ELEM_TEXT_POS:    ggez_mint::Point2<f32> = ggez_mint::Point2 {x: D
 
 pub struct WeatherManager {
     logger:         logger::Instance,
-    active_weather: Weather,
+    active_weather: weather::Event,
     timeout_tick:   usize,
     prev_element:   Element,
-    prev_intensity: Intensity,
+    prev_intensity: weather::Intensity,
     hud_elements:   HudElements
 }
 
 struct HudElements {
+    pub frame_pos:      ggez_mint::Point2<f32>,
+    pub frame_size:     f32,
     pub frame_mesh:     ggez_gfx::Mesh,
     pub content_mesh:   ggez_gfx::Mesh,
     pub int_bar_mesh:   ggez_gfx::Mesh,
-    pub text_int_str:   String,
-    pub text_int_obj:   ggez_gfx::Text,
+    pub text_elem_pos:  ggez_mint::Point2<f32>,
     pub text_elem_str:  String,
     pub text_elem_obj:  ggez_gfx::Text,
+    pub text_int_pos:   ggez_mint::Point2<f32>,
+    pub text_int_str:   String,
+    pub text_int_obj:   ggez_gfx::Text,
 }
 
 
@@ -99,7 +92,7 @@ struct HudElements {
 impl WeatherManager {
     /// Fully-qualified constructor
     pub fn new(logger_original: &logger::Instance,
-               active_weather:  Weather,
+               active_weather:  weather::Event,
                timeout_tick:    usize,
                ggez_ctx:        &mut GgEzContext) -> Self {
         // Clone the logger instance so this module has its own sender to use
@@ -110,22 +103,22 @@ impl WeatherManager {
             active_weather, 
             timeout_tick,   
             prev_element:   Element::default(),
-            prev_intensity: Intensity::default(),
+            prev_intensity: weather::Intensity::default(),
             hud_elements:   HudElements::default(ggez_ctx),
         }
     }
 
-    /// Default constructor
+    /// Default staticructor
     pub fn default(logger_original: &logger::Instance, ggez_ctx: &mut GgEzContext) -> Self {
         // Clone the logger instance so this module has its own sender to use
         let logger_clone = logger_original.clone();
 
         WeatherManager {
             logger:         logger_clone,
-            active_weather: Weather::default(),
+            active_weather: weather::Event::default(),
             timeout_tick:   usize::default(),
             prev_element:   Element::default(),
-            prev_intensity: Intensity::default(),
+            prev_intensity: weather::Intensity::default(),
             hud_elements:   HudElements::default(ggez_ctx),
         }
     }
@@ -139,7 +132,7 @@ impl WeatherManager {
 
         // If current weather has timed out, randomly generate a new weather pattern
         if cur_tick >= self.timeout_tick {
-            self.active_weather = Weather::rand_starting_at(cur_tick);
+            self.active_weather = weather::Event::rand_starting_at(cur_tick);
             ci_log!(self.logger, logger::FilterLevel::Info,
                 "Tick {:>8}: Weather changed to Elem: {:?}, Duration: {}",
                 cur_tick,
@@ -172,24 +165,25 @@ impl WeatherManager {
     }
 
     pub fn draw(&self, ggez_ctx: &mut GgEzContext) {
-        // Draw content mesh behind frame mesh
-        ggez_gfx::draw(ggez_ctx, &self.hud_elements.content_mesh, ggez_gfx::DrawParam::default()).unwrap();
-        ggez_gfx::draw(ggez_ctx, &self.hud_elements.frame_mesh, ggez_gfx::DrawParam::default()).unwrap();
-
-        // Draw status text
-        ggez_gfx::draw(ggez_ctx, &self.hud_elements.text_int_obj, (DEFAULT_INT_TEXT_POS, 0.0, colors::GREEN)).unwrap();
-        ggez_gfx::draw(ggez_ctx, &self.hud_elements.text_elem_obj, (DEFAULT_ELEM_TEXT_POS, 0.0, colors::GREEN)).unwrap();
-
-        // Draw intensity bar
-        ggez_gfx::draw(ggez_ctx, &self.hud_elements.int_bar_mesh, ggez_gfx::DrawParam::default()).unwrap();
+        // Draw HUD elements
+        self.hud_elements.draw(ggez_ctx);
     }
 }
 
 
 impl HudElements {
-    /// Default constructor
+    /// Default staticructor
     fn default(ggez_ctx: &mut GgEzContext) -> Self {
+        // Grab window dimensions so we can place the HUD appropriately
+        let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
+
+        let calc_frame_pos = ggez_mint::Point2{ x: 3.0 * window_x / 4.0,
+                                                y: window_y / 16.0};
+        let calc_frame_size = window_x / 10.0;
+
         let mut hud_elements = Self {
+            frame_pos:      calc_frame_pos,
+            frame_size:     calc_frame_size,
             frame_mesh:     ggez_gfx::MeshBuilder::new()
                                     .line(&[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
                                           ::DEFAULT_LINE_WIDTH,
@@ -211,8 +205,12 @@ impl HudElements {
                                     .unwrap()
                                     .build(ggez_ctx)
                                     .unwrap(),
+            text_elem_pos:  ggez_mint::Point2{ x: calc_frame_pos.x,
+                                               y: calc_frame_pos.y - ::DEFAULT_TEXT_SIZE - HUD_TEXT_OFFSET},
             text_elem_str:  String::default(),
             text_elem_obj:  ggez_gfx::Text::default(),
+            text_int_pos:   ggez_mint::Point2{ x: calc_frame_pos.x,
+                                               y: calc_frame_pos.y + calc_frame_size + HUD_TEXT_OFFSET},
             text_int_str:   String::default(),
             text_int_obj:   ggez_gfx::Text::default(),
         };
@@ -221,7 +219,7 @@ impl HudElements {
         hud_elements.update_frame_mesh(ggez_ctx);
         hud_elements.update_content_mesh(colors::TRANSPARENT, ggez_ctx);
         hud_elements.update_int_bar_mesh(i32::default(), ggez_ctx);
-        hud_elements.update_text_elements(Element::default(), Intensity::default());
+        hud_elements.update_text_elements(Element::default(), weather::Intensity::default());
 
         hud_elements
     }
@@ -231,29 +229,46 @@ impl HudElements {
     // Helper Methods
     ///
 
+    pub fn draw(&self, ggez_ctx: &mut GgEzContext) {
+        // Draw status text
+        ggez_gfx::draw(ggez_ctx, &self.text_int_obj, (self.text_int_pos, 0.0, colors::GREEN)).unwrap();
+        ggez_gfx::draw(ggez_ctx, &self.text_elem_obj, (self.text_elem_pos, 0.0, colors::GREEN)).unwrap();
+    
+        // WORKAROUND - avoid flickering on intel graphics
+        ggez::graphics::pop_transform(ggez_ctx);
+        ggez::graphics::apply_transformations(ggez_ctx).unwrap();
+
+        // Draw content mesh behind frame mesh
+        ggez_gfx::draw(ggez_ctx, &self.content_mesh, ggez_gfx::DrawParam::default()).unwrap();
+        ggez_gfx::draw(ggez_ctx, &self.frame_mesh, ggez_gfx::DrawParam::default()).unwrap();
+
+        // Draw intensity bar
+        ggez_gfx::draw(ggez_ctx, &self.int_bar_mesh, ggez_gfx::DrawParam::default()).unwrap();
+    }
+
     //FEAT: Use like, a cool picture frame or something instead
     /// Updates the frame mesh for the HUD (just a square outline for now)
     fn update_frame_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
         // Build a square in the top-right of the screen to hold the weather info
-        let outline_rect = ggez_gfx::Rect::new(DEFAULT_HUD_LEFT_EDGE_POS,
-                                               DEFAULT_HUD_TOP_EDGE_POS,
-                                               DEFAULT_HUD_WIDTH,
-                                               DEFAULT_HUD_HEIGHT);
+        let outline_rect = ggez_gfx::Rect::new(self.frame_pos.x,
+                                               self.frame_pos.y,
+                                               self.frame_size,
+                                               self.frame_size);
 
         self.frame_mesh = ggez_gfx::Mesh::new_rectangle(ggez_ctx,
-                                                        ggez_gfx::DrawMode::stroke(DEFAULT_HUD_OUTLINE_LINE_WIDTH),
+                                                        ggez_gfx::DrawMode::stroke(HUD_OUTLINE_LINE_WIDTH),
                                                         outline_rect,
-                                                        DEFAULT_HUD_OUTLINE_LINE_COLOR).unwrap();
+                                                        HUD_OUTLINE_LINE_COLOR).unwrap();
     }
 
     //FEAT: Add graphics representing each element
     /// Updates the mesh for the HUD color (just a filled square for now)
     fn update_content_mesh(&mut self, color: ggez_gfx::Color, ggez_ctx: &mut GgEzContext) {
         // Build a square in the top-right of the screen to hold the weather info
-        let color_rect = ggez_gfx::Rect::new(DEFAULT_HUD_LEFT_EDGE_POS,
-                                             DEFAULT_HUD_TOP_EDGE_POS,
-                                             DEFAULT_HUD_WIDTH,
-                                             DEFAULT_HUD_HEIGHT);
+        let color_rect = ggez_gfx::Rect::new(self.frame_pos.x,
+                                             self.frame_pos.y,
+                                             self.frame_size,
+                                             self.frame_size);
 
         self.content_mesh = ggez_gfx::Mesh::new_rectangle(ggez_ctx,
                                                           ggez_gfx::DrawMode::fill(),
@@ -268,14 +283,16 @@ impl HudElements {
         let dummy_line = [ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 1.0, y: 1.0}];
         int_bar_mesh_builder.line(&dummy_line, 1.0, colors::TRANSPARENT).unwrap();
 
+        let drawable_intensity: f32 = (exact_intensity as f32 / weather::MAX_INTENSITY as f32) * self.frame_size;
+
         // Build a square in the top-right of the screen to hold the weather info
-        let int_bar_line = [ggez_mint::Point2 {x: DEFAULT_HUD_LEFT_EDGE_POS - 5.0,
-                                               y: DEFAULT_HUD_TOP_EDGE_POS + DEFAULT_HUD_HEIGHT},
-                            ggez_mint::Point2 {x: DEFAULT_HUD_LEFT_EDGE_POS - 5.0,
-                                               y: DEFAULT_HUD_TOP_EDGE_POS + DEFAULT_HUD_HEIGHT - (exact_intensity/2) as f32}];
+        let int_bar_line = [ggez_mint::Point2 {x: self.frame_pos.x - 5.0,
+                                               y: self.frame_pos.y + self.frame_size},
+                            ggez_mint::Point2 {x: self.frame_pos.x - 5.0,
+                                               y: self.frame_pos.y + self.frame_size - drawable_intensity}];
 
         self.int_bar_mesh = int_bar_mesh_builder.line(&int_bar_line,
-                                                     DEFAULT_HUD_INT_BAR_LINE_WIDTH,
+                                                     HUD_INT_BAR_LINE_WIDTH,
                                                      colors::GREEN)
                                                      .unwrap()
                                                      .build(ggez_ctx)
@@ -283,7 +300,7 @@ impl HudElements {
     }
 
     /// Updates text elements of the HUD
-    fn update_text_elements(&mut self, element: Element, intensity: Intensity) {
+    fn update_text_elements(&mut self, element: Element, intensity: weather::Intensity) {
         // Update element text
         self.text_elem_str = String::from(element);
         self.text_elem_obj = ggez_gfx::Text::new((self.text_elem_str.as_str(),

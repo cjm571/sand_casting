@@ -131,10 +131,10 @@ impl ggez_event::EventHandler for SandCastingGameState {
 
     fn draw(&mut self, ctx: &mut GgEzContext) -> GgEzGameResult<()> {
         ggez_gfx::clear(ctx, BLACK);
-
+        
         // Draw the weather HUD
         self.weather_manager.draw(ctx);
-
+        
         //OPT: *DESIGN* Other managers should have a draw() call like weather manager
         // Draw the hex grid
         ggez_gfx::draw(ctx, self.world_grid_manager.base_grid_mesh(), ggez_gfx::DrawParam::default())?;
@@ -145,7 +145,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
         // Draw obstacles
         ggez_gfx::draw(ctx, self.obstacle_manager.obstacle_mesh(), ggez_gfx::DrawParam::default())?;
 
-        //OPT: *DESIGN* Could make a 'performance manager' or something to encapsulate things like FPS counters
+        //FEAT: Could make a 'performance manager' or something to encapsulate things like FPS counters
         // Draw the FPS counters
         let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
         let avg_fps_str = format!("Avg. FPS: {:.0}", self.avg_fps);
