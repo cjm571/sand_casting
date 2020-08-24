@@ -64,7 +64,7 @@ const HUD_TEXT_OFFSET:          f32 = 5.0;
 pub struct WeatherManager {
     logger:         logger::Instance,
     active_weather: weather::Event,
-    timeout_tick:   usize,
+    timeout_ms:     f64,
     prev_element:   Element,
     prev_intensity: weather::Intensity,
     hud_elements:   HudElements
@@ -93,7 +93,7 @@ impl WeatherManager {
     /// Fully-qualified constructor
     pub fn new(logger_original: &logger::Instance,
                active_weather:  weather::Event,
-               timeout_tick:    usize,
+               timeout_ms:      f64,
                ggez_ctx:        &mut GgEzContext) -> Self {
         // Clone the logger instance so this module has its own sender to use
         let logger_clone = logger_original.clone();
@@ -101,7 +101,7 @@ impl WeatherManager {
         WeatherManager {
             logger:         logger_clone,
             active_weather, 
-            timeout_tick,   
+            timeout_ms,   
             prev_element:   Element::default(),
             prev_intensity: weather::Intensity::default(),
             hud_elements:   HudElements::default(ggez_ctx),
@@ -116,7 +116,7 @@ impl WeatherManager {
         WeatherManager {
             logger:         logger_clone,
             active_weather: weather::Event::default(),
-            timeout_tick:   usize::default(),
+            timeout_ms:     f64::default(),
             prev_element:   Element::default(),
             prev_intensity: weather::Intensity::default(),
             hud_elements:   HudElements::default(ggez_ctx),
@@ -128,24 +128,25 @@ impl WeatherManager {
 
     /// Updates the active weather if the current effect has timed out
     pub fn update_weather(&mut self, ggez_ctx: &mut GgEzContext) {
-        let cur_tick = ggez_timer::ticks(ggez_ctx);
+        //OPT: *PERFORMANCE* Would it be faster to use 2 usizes for seconds and milli/nanoseconds?
+        let elapsed_time = ggez_timer::duration_to_f64(ggez_timer::time_since_start(ggez_ctx));
 
         // If current weather has timed out, randomly generate a new weather pattern
-        if cur_tick >= self.timeout_tick {
-            self.active_weather = weather::Event::rand_starting_at(cur_tick);
+        if elapsed_time >= self.timeout_ms {
+            self.active_weather = weather::Event::rand_starting_at(elapsed_time);
             ci_log!(self.logger, logger::FilterLevel::Info,
-                "Tick {:>8}: Weather changed to Elem: {:?}, Duration: {}",
-                cur_tick,
+                "GameTime: {:.3}s: Weather changed to Elem: {:?}, Duration: {:.3}",
+                elapsed_time,
                 self.active_weather.element(),
                 self.active_weather.duration()
             );
 
             // Set the timeout to the duration of the new weather pattern
-            self.timeout_tick = cur_tick + self.active_weather.duration();
+            self.timeout_ms = elapsed_time + self.active_weather.duration();
         }
 
         // Check for change in intensity or element
-        let cur_intensity = self.active_weather.intensity(cur_tick);
+        let cur_intensity = self.active_weather.intensity(elapsed_time);
         if self.prev_intensity != cur_intensity || self.prev_element != self.active_weather.element(){
             // Update HUD content with new alpha level
             let mut content_color = colors::from_element(self.active_weather.element());
@@ -157,11 +158,11 @@ impl WeatherManager {
 
             // Update previous-state values
             self.prev_element   = self.active_weather.element();
-            self.prev_intensity = self.active_weather.intensity(cur_tick);
+            self.prev_intensity = self.active_weather.intensity(elapsed_time);
         }
 
         // Update intensity bar
-        self.hud_elements.update_int_bar_mesh(self.active_weather.intensity_exact(cur_tick), ggez_ctx);
+        self.hud_elements.update_int_bar_mesh(self.active_weather.intensity_exact(elapsed_time), ggez_ctx);
     }
 
     pub fn draw(&self, ggez_ctx: &mut GgEzContext) {
@@ -218,7 +219,7 @@ impl HudElements {
         // Do first 'updates' of the meshes so we have valid meshes from first use
         hud_elements.update_frame_mesh(ggez_ctx);
         hud_elements.update_content_mesh(colors::TRANSPARENT, ggez_ctx);
-        hud_elements.update_int_bar_mesh(i32::default(), ggez_ctx);
+        hud_elements.update_int_bar_mesh(f64::default(), ggez_ctx);
         hud_elements.update_text_elements(Element::default(), weather::Intensity::default());
 
         hud_elements
@@ -235,7 +236,6 @@ impl HudElements {
         ggez_gfx::draw(ggez_ctx, &self.text_elem_obj, (self.text_elem_pos, 0.0, colors::GREEN)).unwrap();
     
         // WORKAROUND - avoid flickering on intel graphics
-        ggez::graphics::pop_transform(ggez_ctx);
         ggez::graphics::apply_transformations(ggez_ctx).unwrap();
 
         // Draw content mesh behind frame mesh
@@ -277,7 +277,7 @@ impl HudElements {
     }
     
     /// Updates the mesh for the HUD intensity bar
-    fn update_int_bar_mesh(&mut self, exact_intensity: i32, ggez_ctx: &mut GgEzContext) {
+    fn update_int_bar_mesh(&mut self, exact_intensity: f64, ggez_ctx: &mut GgEzContext) {
         // Need a mesh builder with a dummy line to avoid an empty mesh
         let mut int_bar_mesh_builder = ggez_gfx::MeshBuilder::new();
         let dummy_line = [ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 1.0, y: 1.0}];
