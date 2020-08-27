@@ -94,10 +94,15 @@ impl ResourceManager {
     }
 
 
-    ///////////////////////////////////////////////////////////////////////////
+    ///
     //  Utility Methods
-    ///////////////////////////////////////////////////////////////////////////
+    ///
 
+    pub fn draw(&self, ggez_ctx: &mut GgEzContext) {
+        // Draw obstacle mesh
+        ggez_gfx::draw(ggez_ctx, &self.resource_mesh, ggez_gfx::DrawParam::default()).unwrap();
+    }
+    
     pub fn update_resource_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
         ci_log!(self.logger, logger::FilterLevel::Debug, "update_resource_mesh(): Updating resource mesh...");
 

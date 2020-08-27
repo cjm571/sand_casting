@@ -227,7 +227,7 @@ impl HudElements {
 
 
     ///
-    // Helper Methods
+    // Utility Methods
     ///
 
     pub fn draw(&self, ggez_ctx: &mut GgEzContext) {

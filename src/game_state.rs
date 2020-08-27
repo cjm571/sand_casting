@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
-Filename : sand_casting_game_state.rs
+Filename : game_state.rs
 
 Copyright (C) 2020 CJ McAllister
     This program is free software; you can redistribute it and/or modify
@@ -137,13 +137,13 @@ impl ggez_event::EventHandler for SandCastingGameState {
         
         //OPT: *DESIGN* Other managers should have a draw() call like weather manager
         // Draw the hex grid
-        ggez_gfx::draw(ctx, self.world_grid_manager.base_grid_mesh(), ggez_gfx::DrawParam::default())?;
+        self.world_grid_manager.draw(ctx);
 
         // Draw resources
-        ggez_gfx::draw(ctx, self.resource_manager.resource_mesh(), ggez_gfx::DrawParam::default())?;
+        self.resource_manager.draw(ctx);
 
         // Draw obstacles
-        ggez_gfx::draw(ctx, self.obstacle_manager.obstacle_mesh(), ggez_gfx::DrawParam::default())?;
+        self.obstacle_manager.draw(ctx);
 
         //FEAT: Could make a 'performance manager' or something to encapsulate things like FPS counters
         // Draw the FPS counters

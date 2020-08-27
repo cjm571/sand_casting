@@ -97,10 +97,15 @@ impl ObstacleManager {
     }
 
 
-    //OPT: *STYLE* These are very similar to the Resource Manager's utility methods...
-    ///////////////////////////////////////////////////////////////////////////
+    //FEAT: All of these managers are very similar, could likely implement a generic Manager trait
+    ///
     //  Utility Methods
-    ///////////////////////////////////////////////////////////////////////////
+    ///
+    
+    pub fn draw(&self, ggez_ctx: &mut GgEzContext) {
+        // Draw obstacle mesh
+        ggez_gfx::draw(ggez_ctx, &self.obstacle_mesh, ggez_gfx::DrawParam::default()).unwrap();
+    }
 
     pub fn update_obstacle_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
         ci_log!(self.logger, logger::FilterLevel::Debug, "Updating obstacle mesh...");

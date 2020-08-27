@@ -104,9 +104,14 @@ impl WorldGridManager {
     }
 
 
-    ///////////////////////////////////////////////////////////////////////////
-    //  Helper Methods
-    ///////////////////////////////////////////////////////////////////////////
+    ///
+    //  Utility Methods
+    ///
+
+    pub fn draw(&self, ggez_ctx: &mut GgEzContext) {
+        // Draw obstacle mesh
+        ggez_gfx::draw(ggez_ctx, &self.base_grid_mesh, ggez_gfx::DrawParam::default()).unwrap();
+    }
 
     /// Builds a baseline hex grid to the graphics window.
     fn build_base_grid(&self,

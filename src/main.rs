@@ -55,8 +55,8 @@ pub mod resource_manager;
 pub mod weather_manager;
 pub mod world_grid_manager;
 
-pub mod sand_casting_game_state;
-use sand_casting_game_state::SandCastingGameState;
+pub mod game_state;
+use game_state::SandCastingGameState;
 
 
 ///////////////////////////////////////////////////////////////////////////////
