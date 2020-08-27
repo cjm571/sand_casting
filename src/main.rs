@@ -48,12 +48,10 @@ use ggez::{
 // Module Declarations
 ///
 pub mod game_assets;
-use game_assets::colors::*;
+use game_assets::colors;
 
-pub mod obstacle_manager;
-pub mod resource_manager;
-pub mod weather_manager;
-pub mod world_grid_manager;
+pub mod game_managers;
+use game_managers::*;
 
 pub mod game_state;
 use game_state::SandCastingGameState;
@@ -70,8 +68,8 @@ const DESIRED_FPS:              u32 = 60;
 
 const DEFAULT_TEXT_SIZE:        f32 = 16.0;
 const DEFAULT_LINE_WIDTH:       f32 = 2.0;
-const DEFAULT_LINE_COLOR:       ggez_gfx::Color = WHITE;
-const DEFAULT_FILL_COLOR:       ggez_gfx::Color = GREY;
+const DEFAULT_LINE_COLOR:       ggez_gfx::Color = colors::WHITE;
+const DEFAULT_FILL_COLOR:       ggez_gfx::Color = colors::GREY;
 
 /* Hex Grid */
 const GRID_CELL_SIZE: f32 = 25.0;
