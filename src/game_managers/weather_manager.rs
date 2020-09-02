@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
-Filename : weather_manager.rs
+Filename : game_managers/weather_manager.rs
 
 Copyright (C) 2020 CJ McAllister
     This program is free software; you can redistribute it and/or modify

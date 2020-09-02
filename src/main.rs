@@ -51,7 +51,6 @@ pub mod game_assets;
 use game_assets::colors;
 
 pub mod game_managers;
-use game_managers::*;
 
 pub mod game_state;
 use game_state::SandCastingGameState;

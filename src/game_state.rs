@@ -36,11 +36,14 @@ use ggez::{
 };
 
 use crate::{
-    game_assets::colors::*,
-    obstacle_manager::ObstacleManager,
-    resource_manager::ResourceManager,
-    weather_manager::WeatherManager,
-    world_grid_manager::WorldGridManager,
+    game_assets::colors,
+    game_managers::{
+        DrawableMechanic,
+        obstacle_manager::ObstacleManager,
+        resource_manager::ResourceManager,
+        weather_manager::WeatherManager,
+        world_grid_manager::WorldGridManager,
+    },
 };
 
 
@@ -130,7 +133,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
     }
 
     fn draw(&mut self, ctx: &mut GgEzContext) -> GgEzGameResult<()> {
-        ggez_gfx::clear(ctx, BLACK);
+        ggez_gfx::clear(ctx, colors::BLACK);
         
         // Draw the weather HUD
         self.weather_manager.draw(ctx);
@@ -150,12 +153,12 @@ impl ggez_event::EventHandler for SandCastingGameState {
         let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
         let avg_fps_str = format!("Avg. FPS: {:.0}", self.avg_fps);
         let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
-        ggez_gfx::draw(ctx, &avg_fps_display, (avg_fps_pos, 0.0, GREEN)).unwrap();
+        ggez_gfx::draw(ctx, &avg_fps_display, (avg_fps_pos, 0.0, colors::GREEN)).unwrap();
 
         let peak_fps_pos = ggez_mint::Point2 {x: 0.0, y: 20.0};
         let peak_fps_str = format!("Peak FPS: {:.0}", self.peak_fps);
         let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
-        ggez_gfx::draw(ctx, &peak_fps_display, (peak_fps_pos, 0.0, GREEN)).unwrap();
+        ggez_gfx::draw(ctx, &peak_fps_display, (peak_fps_pos, 0.0, colors::GREEN)).unwrap();
 
         ggez_gfx::present(ctx)
     }
