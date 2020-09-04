@@ -185,6 +185,7 @@ impl DrawableMechanic for ObstacleManager {
         // Get all coords for current obstacle instance
         let all_obstacle_coords = instance.all_coords();
 
+        //OPT: *PERFORMANCE* Do this in advance and pass in
         // Get window dimensions
         let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
         let window_center = ggez_mint::Point2 {

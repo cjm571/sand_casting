@@ -22,7 +22,6 @@ Purpose:
 use ggez::{
     Context as GgEzContext,
     graphics as ggez_gfx,
-    mint as ggez_mint,
 };
 
 
@@ -41,27 +40,6 @@ pub mod world_grid_manager;
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
-
-pub struct DrawableMechanicManager<T> {
-    instances:  Vec<T>,
-    mesh:       ggez_gfx::Mesh,
-}
-
-impl<T> DrawableMechanicManager<T> {
-    /// Default constructor
-    pub fn default(ggez_ctx: &mut GgEzContext) -> Self {
-        Self  {
-            instances:  Vec::new(),
-            mesh:       ggez_gfx::Mesh::new_line(
-                            ggez_ctx,
-                            &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                            ::DEFAULT_LINE_WIDTH,
-                            ::DEFAULT_LINE_COLOR)
-                            .unwrap(),
-        }
-    }
-    
-}
 
 //OPT: *STYLE* Better named VisualMechanic/VisibleMechanic?
 pub trait DrawableMechanic {

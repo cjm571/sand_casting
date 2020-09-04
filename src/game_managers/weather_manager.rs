@@ -135,7 +135,7 @@ impl WeatherManager {
         if elapsed_time >= self.timeout_ms {
             self.active_weather = weather::Event::rand_starting_at(elapsed_time);
             ci_log!(self.logger, logger::FilterLevel::Info,
-                "GameTime: {:.3}s: Weather changed to Elem: {:?}, Duration: {:.3}",
+                "GameTime: {:.3}s: Weather changed to Elem: {:?}, Duration: {:.3}s",
                 elapsed_time,
                 self.active_weather.element(),
                 self.active_weather.duration()

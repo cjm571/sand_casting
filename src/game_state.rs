@@ -113,6 +113,7 @@ impl SandCastingGameState {
 //  Trait Implementations
 ///////////////////////////////////////////////////////////////////////////////
 
+//FEAT: Add performance metrics to update, draw
 //FEAT: Handle mouse events
 //FEAT: Handle keyboard events, '~' for a debug view would be cool
 impl ggez_event::EventHandler for SandCastingGameState {

@@ -34,9 +34,12 @@ use ggez::{
     mint as ggez_mint,
 };
 
-use ::game_assets::{
+use crate::{
+    game_assets::{
     colors,
     hex_grid_cell::HexGridCell,
+    },
+    game_managers::DrawableMechanic,
 };
 
 
@@ -84,74 +87,9 @@ impl ResourceManager {
         }
     }
 
-
-    ///////////////////////////////////////////////////////////////////////////
-    //  Accessor Methods
-    ///////////////////////////////////////////////////////////////////////////
-
-    pub fn resource_mesh(&self) -> &ggez_gfx::Mesh {
-        &self.resource_mesh
-    }
-
-
     ///
     //  Utility Methods
     ///
-
-    pub fn draw(&self, ggez_ctx: &mut GgEzContext) {
-        // Draw obstacle mesh
-        ggez_gfx::draw(ggez_ctx, &self.resource_mesh, ggez_gfx::DrawParam::default()).unwrap();
-    }
-    
-    pub fn update_resource_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
-        ci_log!(self.logger, logger::FilterLevel::Debug, "update_resource_mesh(): Updating resource mesh...");
-
-        // Do not attempt to update the mesh if we have no resources
-        if self.resources.is_empty() {
-            ci_log!(self.logger, logger::FilterLevel::Debug, "update_resource_mesh(): No resources! Abandoning update.");
-            return;
-        }
-
-        let mut resource_mesh_builder = ggez_gfx::MeshBuilder::new();
-
-        // Get window dimensions
-        let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
-        let window_center = ggez_mint::Point2 {
-            x: window_x / 2.0,
-            y: window_y / 2.0
-        };
-
-        // Iterate through resources, adding to mesh builder along the way
-        for res in &self.resources {
-            ci_log!(self.logger, logger::FilterLevel::Debug, "update_resource_mesh(): Updating with {:?}", res);
-            let res_coords = res.coords();
-
-            //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
-            // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
-            let x_offset = res_coords.x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
-            let y_offset = (-res_coords.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
-                           (-res_coords.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
-
-            let res_center = ggez_mint::Point2 {
-                x: window_center.x + x_offset,
-                y: window_center.y + y_offset
-            };
-
-            // Create a HexGridCell object and add it to the mesh builder
-            let cur_hex = HexGridCell::new(res_center, ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
-            cur_hex.add_to_mesh(colors::from_resource(&res), colors::WHITE, &mut resource_mesh_builder);
-
-            // Create radial HexGridCells as necessary
-            cur_hex.add_radials_to_mesh(
-                colors::from_resource(res),
-                colors::WHITE,
-                res.radius(),
-                true,
-                &mut resource_mesh_builder);
-        }
-
-        self.resource_mesh = resource_mesh_builder.build(ggez_ctx).unwrap();
-    }
 
     //OPT: *DESIGN* Should probably not have radial reach across (most) obstacles
     pub fn add_resource(&mut self, new_res: Resource, ggez_ctx: &mut GgEzContext) -> Result<(), ResourceError> {
@@ -169,7 +107,7 @@ impl ResourceManager {
             self.resources.push(new_res);
 
             // Update resource mesh
-            self.update_resource_mesh(ggez_ctx);
+            self.update_mesh(ggez_ctx);
             ci_log!(self.logger, logger::FilterLevel::Debug, "Added resource: {:?}", self.resources.last().unwrap());
 
             Ok(())
@@ -200,5 +138,67 @@ impl ResourceManager {
         } else {
             Ok(())
         }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//  Trait Implementations
+///////////////////////////////////////////////////////////////////////////////
+
+impl DrawableMechanic for ResourceManager {
+    type Instance = Resource;
+    type ErrorType = ResourceError;
+
+    fn instances(&self) -> &Vec<Self::Instance> {
+        &self.resources
+    }
+
+    fn mesh(&self) -> &ggez_gfx::Mesh {
+        &self.resource_mesh
+    }
+
+    fn set_mesh(&mut self, mesh: ggez_gfx::Mesh) {
+        self.resource_mesh = mesh;
+    }
+
+    fn add_instance_to_mesh(instance: &Self::Instance,
+                            mesh_builder: &mut ggez_gfx::MeshBuilder,
+                            ggez_ctx: &mut GgEzContext) -> Result<(), Self::ErrorType> {
+        // Get all coords for current resource instance
+        let res_coords = instance.coords();
+
+        //OPT: *PERFORMANCE* Do this in advance and pass in
+        // Get window dimensions
+        let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
+        let window_center = ggez_mint::Point2 {
+            x: window_x / 2.0,
+            y: window_y / 2.0
+        };
+
+        //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
+        // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
+        let x_offset = res_coords.x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
+        let y_offset = (-res_coords.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
+                        (-res_coords.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
+
+        let res_center = ggez_mint::Point2 {
+            x: window_center.x + x_offset,
+            y: window_center.y + y_offset
+        };
+
+        // Create a HexGridCell object and add it to the mesh builder
+        let cur_hex = HexGridCell::new(res_center, ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
+        cur_hex.add_to_mesh(colors::from_resource(instance), colors::WHITE, mesh_builder);
+
+        // Create radial HexGridCells as necessary
+        cur_hex.add_radials_to_mesh(
+            colors::from_resource(instance),
+            colors::WHITE,
+            instance.radius(),
+            true,
+            mesh_builder);
+
+        Ok(())
     }
 }
