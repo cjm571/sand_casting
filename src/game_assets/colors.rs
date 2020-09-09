@@ -19,15 +19,17 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use cast_iron::environment::{
+use cast_iron::{
     element::{
         Element,
         Elemental,
     },
-    resource::{
-        Resource,
-        State,
-    }
+    mechanics::{
+        resource::{
+            Resource,
+            State,
+        },
+    },
 };
 
 use ggez::graphics as ggez_gfx;

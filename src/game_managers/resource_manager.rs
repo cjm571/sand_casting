@@ -21,11 +21,11 @@ Purpose:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::{
-    context::Context as CastIronContext,
-    environment::resource::Resource,
+    element::Elemental,
     hex_directions,
     logger,
-    ci_log,
+    mechanics::resource::Resource,
+    Locatable,
 };
 
 use ggez::{
@@ -36,18 +36,12 @@ use ggez::{
 
 use crate::{
     game_assets::{
-    colors,
-    hex_grid_cell::HexGridCell,
+        colors,
+        hex_grid_cell::HexGridCell,
     },
     game_managers::DrawableMechanic,
+    ci_log,
 };
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Constants
-///////////////////////////////////////////////////////////////////////////////
-
-const MAX_RAND_RESOURCE_ATTEMPTS: usize = 10;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -86,59 +80,6 @@ impl ResourceManager {
                             .unwrap(),
         }
     }
-
-    ///
-    //  Utility Methods
-    ///
-
-    //OPT: *DESIGN* Should probably not have radial reach across (most) obstacles
-    pub fn add_resource(&mut self, new_res: Resource, ggez_ctx: &mut GgEzContext) -> Result<(), ResourceError> {
-        // Verify that no resource already exists in the same location
-        let mut coords_occupied = false;
-        for existing_res in &self.resources {
-            if existing_res.coords() == new_res.coords() {
-                coords_occupied = true;
-                break;
-            }
-        }
-
-        // If the new resource's coordinates are unoccupied, add it
-        if !coords_occupied {
-            self.resources.push(new_res);
-
-            // Update resource mesh
-            self.update_mesh(ggez_ctx);
-            ci_log!(self.logger, logger::FilterLevel::Debug, "Added resource: {:?}", self.resources.last().unwrap());
-
-            Ok(())
-        }
-        else { // Otherwise, return an error
-            Err(ResourceError)
-        }
-    }
-
-    pub fn add_rand_resource(&mut self, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Result<(), ResourceError> {
-        // Create a random resource and attempt to add them until we succeed (or fail too many times)
-        let mut attempts = 0;
-        while attempts < MAX_RAND_RESOURCE_ATTEMPTS {
-            let rand_resource = Resource::rand(ci_ctx);
-            match self.add_resource(rand_resource, ggez_ctx) {
-                Ok(())              => {
-                    break;                  // Successfully added resource, break loop
-                },
-                Err(ResourceError)  => ()   // Failed to add resource, continue
-            }
-
-            attempts += 1;
-        }
-
-        // If attempts maxed out - return error, otherwise Ok()
-        if attempts == MAX_RAND_RESOURCE_ATTEMPTS {
-            Err(ResourceError)
-        } else {
-            Ok(())
-        }
-    }
 }
 
 
@@ -154,6 +95,16 @@ impl DrawableMechanic for ResourceManager {
         &self.resources
     }
 
+    fn push_instance(&mut self, instance: Self::Instance) {
+        ci_log!(self.logger,
+            logger::FilterLevel::Debug,
+            "Adding {} resource starting at {} to mesh.",
+            String::from(instance.element()),
+            instance.all_coords()[0]);
+
+        self.resources.push(instance);
+    }
+
     fn mesh(&self) -> &ggez_gfx::Mesh {
         &self.resource_mesh
     }
@@ -162,9 +113,9 @@ impl DrawableMechanic for ResourceManager {
         self.resource_mesh = mesh;
     }
 
-    fn add_instance_to_mesh(instance: &Self::Instance,
-                            mesh_builder: &mut ggez_gfx::MeshBuilder,
-                            ggez_ctx: &mut GgEzContext) -> Result<(), Self::ErrorType> {
+    fn add_instance_to_mesh_builder(instance: &Self::Instance,
+                                    mesh_builder: &mut ggez_gfx::MeshBuilder,
+                                    ggez_ctx: &mut GgEzContext) -> Result<(), Self::ErrorType> {
         // Get all coords for current resource instance
         let res_coords = instance.coords();
 

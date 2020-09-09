@@ -22,6 +22,7 @@ Purpose:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::{
+    context::Context as CastIronContext, 
     logger,
     ci_log,
 };
@@ -53,9 +54,11 @@ use crate::{
 
 /// Primary Game Struct
 pub struct SandCastingGameState {
+    initialized:        bool,               // Flag indicating if game has been initialized
     avg_fps:            f64,                // Average FPS for display
     peak_fps:           f64,                // Peak FPS for display
-    logger:             logger::Instance,     // Instance of CastIron Logger
+    ci_ctx:             CastIronContext,    // CastIron engine context
+    logger:             logger::Instance,   // Instance of CastIron Logger
     obstacle_manager:   ObstacleManager,    // Obstacle Manager instance
     resource_manager:   ResourceManager,    // Resource Manager instance
     weather_manager:    WeatherManager,     // Weather Manager instance
@@ -69,19 +72,24 @@ pub struct SandCastingGameState {
 
 /// Constructor
 impl SandCastingGameState {
-    pub fn new(logger_original: &logger::Instance, ggez_ctx: &mut GgEzContext) -> Self {
+    pub fn new(logger_original: &logger::Instance, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Self {
         //NOTE: Load/create resources here: images, fonts, sounds, etc.
 
         // Clone the logger instance so this module has its own sender to use
         let logger_clone = logger_original.clone();
 
+        // Clone context for use by submodules
+        let ctx_clone = ci_ctx.clone();
+
         SandCastingGameState{
+            initialized:        false,
             avg_fps:            0.0,
             peak_fps:           0.0,
+            ci_ctx:             ctx_clone,
             logger:             logger_clone,
             obstacle_manager:   ObstacleManager::new(logger_original, ggez_ctx),
             resource_manager:   ResourceManager::new(logger_original, ggez_ctx),
-            weather_manager:    WeatherManager::default(logger_original, ggez_ctx),
+            weather_manager:    WeatherManager::default(logger_original, ci_ctx, ggez_ctx),
             world_grid_manager: WorldGridManager::new(logger_original, ::DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ggez_ctx),
         }
     }
@@ -90,6 +98,10 @@ impl SandCastingGameState {
     /*  *  *  *  *  *  *  *\
      *  Accessor Methods  *
     \*  *  *  *  *  *  *  */
+
+    pub fn initialized(&mut self) -> bool {
+        self.initialized
+    }
 
     pub fn obstacle_manager(&mut self) -> &mut ObstacleManager {
         &mut self.obstacle_manager
@@ -106,6 +118,28 @@ impl SandCastingGameState {
     pub fn world_grid_manager(&mut self) -> &mut WorldGridManager {
         &mut self.world_grid_manager
     }
+
+
+    /*  *  *  *  *  *  *\
+     *  Utiliy Methods *
+    \*  *  *  *  *  *  */
+
+    fn initialize(&mut self, ggez_ctx: &mut GgEzContext) {
+        // Create random resources
+        for _i in 0..3 {
+            self.resource_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
+        }
+        ci_log!(self.logger, logger::FilterLevel::Info, "Resources generated.");
+
+        // Create random obstacles
+        for _i in 0..3 {
+            self.obstacle_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
+        }
+        ci_log!(self.logger, logger::FilterLevel::Info, "Obstacles generated.");
+        
+        ci_log!(self.logger, logger::FilterLevel::Info, "First-frame initialization complete.");
+        self.initialized = true;
+    }
 }
 
 
@@ -118,10 +152,16 @@ impl SandCastingGameState {
 //FEAT: Handle keyboard events, '~' for a debug view would be cool
 impl ggez_event::EventHandler for SandCastingGameState {
     fn update(&mut self, ggez_ctx: &mut GgEzContext) -> GgEzGameResult<()> {
+        // Check if first-frame initialization is required
+        if !self.initialized() {
+            self.initialize(ggez_ctx);
+        }
+
+        // Check if we've reached an update
         while ggez_timer::check_update_time(ggez_ctx, ::DESIRED_FPS) {
             // Update weather
             ci_log!(self.logger, logger::FilterLevel::Trace, "Updating weather...");
-            self.weather_manager.update_weather(ggez_ctx);
+            self.weather_manager.update_weather(&self.ci_ctx, ggez_ctx);
 
             // Update FPS
             self.avg_fps = ggez_timer::fps(ggez_ctx);

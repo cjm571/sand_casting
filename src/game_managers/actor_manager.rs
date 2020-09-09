@@ -19,14 +19,54 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+use cast_iron::{
+    actor::Actor,
+    logger,
+    ci_log,
+};
+
+use ggez::{
+    Context as GgEzContext,
+    graphics as ggez_gfx,
+    mint as ggez_mint,
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
+//TODO: Proper implementation of an error type
+#[derive(Debug)]
+pub struct ActorError;
+
 pub struct ActorManager {
-    
+    logger:     logger::Instance,
+    actors:     Vec<Actor>,
+    actor_mesh: ggez_gfx::Mesh,
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+//  Object Implementation
+///////////////////////////////////////////////////////////////////////////////
+
+impl ActorManager {
+    /// Generic Constructor - creates an empty instance
+    pub fn new(logger_original: &logger::Instance, ctx: &mut GgEzContext) -> Self {
+        // Clone the logger instance so this module has its own sender to use
+        let logger_clone = logger_original.clone();
+
+        ActorManager {
+            logger:     logger_clone,
+            actors:     Vec::new(),
+            actor_mesh: ggez_gfx::Mesh::new_line(ctx,
+                                                 &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
+                                                 ::DEFAULT_LINE_WIDTH,
+                                                 ::DEFAULT_LINE_COLOR)
+                                                 .unwrap(),
+        }
+    }
+}
 
 

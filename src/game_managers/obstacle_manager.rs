@@ -21,14 +21,11 @@ Purpose:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::{
-    context::Context as CastIronContext,
-    environment::{
-        element::Elemental,
-        obstacle::Obstacle,
-    },
+    element::Elemental,
     hex_directions,
     logger,
-    ci_log,
+    mechanics::obstacle::Obstacle,
+    Locatable,
 };
 
 use ggez::{
@@ -43,14 +40,8 @@ use crate::{
         hex_grid_cell::HexGridCell,
     },
     game_managers::DrawableMechanic,
+    ci_log,
 };
-
-
-///////////////////////////////////////////////////////////////////////////////
-//  Named Constants
-///////////////////////////////////////////////////////////////////////////////
-
-const MAX_RAND_OBSTACLE_ATTEMPTS: usize = 10;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -89,73 +80,6 @@ impl ObstacleManager {
                                 .unwrap(),
         }
     }
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    //  Accessor Methods
-    ///////////////////////////////////////////////////////////////////////////
-
-    pub fn obstacle_mesh(&self) -> &ggez_gfx::Mesh {
-        &self.obstacle_mesh
-    }
-
-
-    ///
-    //  Utility Methods
-    ///
-
-    pub fn add_obstacle(&mut self, new_obstacle: Obstacle, ggez_ctx: &mut GgEzContext) -> Result<(), ObstacleError> {
-        //TODO: Should this function also sanity check against a CastIron context?
-
-        // OPT: *PERFORMANCE* oof, this is probably super slow
-        // Verify that no obstacle already exists along the new obstacle's path
-        let mut coords_occupied = false;
-        for existing_obstacle in &self.obstacles {
-            for existing_obstacle_coords in existing_obstacle.all_coords() {
-                if new_obstacle.all_coords().contains(existing_obstacle_coords) {
-                    coords_occupied = true;
-                    break;
-                }
-            }
-        }
-
-        // If the new obstacle's coordinates are unoccupied, add it
-        if !coords_occupied {
-            self.obstacles.push(new_obstacle);
-
-            // Update obstacle mesh
-            self.update_mesh(ggez_ctx);
-            ci_log!(self.logger, logger::FilterLevel::Debug, "Added obstacle: {:?}", self.obstacles.last().unwrap());
-
-            Ok(())
-        }
-        else { // Otherwise, return an error
-            Err(ObstacleError)
-        }
-    }
-
-    pub fn add_rand_obstacle(&mut self, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Result<(), ObstacleError> {
-        // Create a random obstacle and attempt to add them until we succeed (or fail too many times)
-        let mut attempts = 0;
-        while attempts < MAX_RAND_OBSTACLE_ATTEMPTS {
-            let rand_obstacle = Obstacle::rand(&self.logger, ci_ctx);
-            match self.add_obstacle(rand_obstacle, ggez_ctx) {
-                Ok(())              => {
-                    break;                  // Successfully added obstacle, break loop
-                },
-                Err(ObstacleError)  => ()   // Failed to add obstacle, continue
-            }
-
-            attempts += 1;
-        }
-
-        // If attempts maxed out - return error, otherwise Ok()
-        if attempts == MAX_RAND_OBSTACLE_ATTEMPTS {
-            Err(ObstacleError)
-        } else {
-            Ok(())
-        }
-    }
 }
 
 
@@ -171,6 +95,17 @@ impl DrawableMechanic for ObstacleManager {
         &self.obstacles
     }
 
+    fn push_instance(&mut self, instance: Self::Instance) {
+        ci_log!(self.logger,
+            logger::FilterLevel::Debug,
+            "Adding {} obstacle starting at {} to mesh.",
+            String::from(instance.element()),
+            instance.all_coords()[0]);
+
+        self.obstacles.push(instance);
+        
+    }
+
     fn mesh(&self) -> &ggez_gfx::Mesh {
         &self.obstacle_mesh
     }
@@ -179,9 +114,9 @@ impl DrawableMechanic for ObstacleManager {
         self.obstacle_mesh = mesh;
     }
 
-    fn add_instance_to_mesh(instance: &Self::Instance,
-                            mesh_builder: &mut ggez_gfx::MeshBuilder,
-                            ggez_ctx: &mut GgEzContext) -> Result<(),Self::ErrorType> {
+    fn add_instance_to_mesh_builder(instance: &Self::Instance,
+                                    mesh_builder: &mut ggez_gfx::MeshBuilder,
+                                    ggez_ctx: &mut GgEzContext) -> Result<(),Self::ErrorType> {
         // Get all coords for current obstacle instance
         let all_obstacle_coords = instance.all_coords();
 
@@ -221,7 +156,7 @@ impl DrawableMechanic for ObstacleManager {
                 //OPT: *STYLE* oh my god...
                 // Get the vertices for the direction's side
                 let shared_line = [*cur_hex.vertices().get(usize::from(hex_directions::Side::get_adjacent_vertices(direction).0)).unwrap(),
-                                    *cur_hex.vertices().get(usize::from(hex_directions::Side::get_adjacent_vertices(direction).1)).unwrap()];
+                                   *cur_hex.vertices().get(usize::from(hex_directions::Side::get_adjacent_vertices(direction).1)).unwrap()];
 
                 mesh_builder.line(&shared_line, ::DEFAULT_LINE_WIDTH, colors::from_element(instance.element())).unwrap();
             }

@@ -201,7 +201,7 @@ dependencies = [
 
 [[package]]
 name = "cast_iron"
-version = "0.4.6"
+version = "0.5.0"
 dependencies = [
  "chrono 0.4.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1621,9 +1621,9 @@ dependencies = [
 
 [[package]]
 name = "sand_casting"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
- "cast_iron 0.4.6",
+ "cast_iron 0.5.0",
  "ggez 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",

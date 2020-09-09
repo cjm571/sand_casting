@@ -29,12 +29,10 @@ use cast_iron::{
     },
     actor::Actor,
     context::Context as CastIronContext,
-    environment::element::Element,
+    element::Element,
     logger,
     ci_log,
 };
-// use cast_iron::environment::resource;
-// use cast_iron::environment::coords::Coords;
 
 extern crate ggez;
 use ggez::{
@@ -134,19 +132,7 @@ fn main() {
     ci_log!(logger_original, logger::FilterLevel::Info, "ggez context, event loop created.");
 
     // Use built context to create a GGEZ Event Handler instance
-    let mut sand_casting_game_state = SandCastingGameState::new(&logger_original, &mut ggez_ctx);
-
-    // Create random resources
-    for _i in 0..3 {
-        sand_casting_game_state.resource_manager().add_rand_resource(&ci_ctx, &mut ggez_ctx).unwrap();
-    }
-    ci_log!(logger_original, logger::FilterLevel::Info, "Resources generated.");
-
-    // Create random obstacles
-    for _i in 0..3 {
-        sand_casting_game_state.obstacle_manager().add_rand_obstacle(&ci_ctx, &mut ggez_ctx).unwrap();
-    }
-    ci_log!(logger_original, logger::FilterLevel::Info, "Obstacles generated.");
+    let mut sand_casting_game_state = SandCastingGameState::new(&logger_original, &ci_ctx, &mut ggez_ctx);
 
     // Run the game!
     match ggez_event::run(&mut ggez_ctx, &mut ggez_event_loop, &mut sand_casting_game_state) {

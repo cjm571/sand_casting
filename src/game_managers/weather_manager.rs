@@ -21,14 +21,14 @@ Purpose:
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 use cast_iron::{
-    environment::{
-        element::{
-            Element,
-            Elemental,
-        },
-        weather,
+    context::Context as CastIronContext,
+    element::{
+        Element,
+        Elemental,
     },
     logger,
+    mechanics::weather,
+    Randomizable,
     ci_log,
 };
 
@@ -94,6 +94,7 @@ impl WeatherManager {
     pub fn new(logger_original: &logger::Instance,
                active_weather:  weather::Event,
                timeout_ms:      f64,
+               ci_ctx:          &CastIronContext, 
                ggez_ctx:        &mut GgEzContext) -> Self {
         // Clone the logger instance so this module has its own sender to use
         let logger_clone = logger_original.clone();
@@ -104,12 +105,12 @@ impl WeatherManager {
             timeout_ms,   
             prev_element:   Element::default(),
             prev_intensity: weather::Intensity::default(),
-            hud_elements:   HudElements::default(ggez_ctx),
+            hud_elements:   HudElements::default(ci_ctx, ggez_ctx),
         }
     }
 
     /// Default staticructor
-    pub fn default(logger_original: &logger::Instance, ggez_ctx: &mut GgEzContext) -> Self {
+    pub fn default(logger_original: &logger::Instance, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Self {
         // Clone the logger instance so this module has its own sender to use
         let logger_clone = logger_original.clone();
 
@@ -119,7 +120,7 @@ impl WeatherManager {
             timeout_ms:     f64::default(),
             prev_element:   Element::default(),
             prev_intensity: weather::Intensity::default(),
-            hud_elements:   HudElements::default(ggez_ctx),
+            hud_elements:   HudElements::default(ci_ctx, ggez_ctx),
         }
     }
 
@@ -127,13 +128,13 @@ impl WeatherManager {
     /* Utility Methods */
 
     /// Updates the active weather if the current effect has timed out
-    pub fn update_weather(&mut self, ggez_ctx: &mut GgEzContext) {
+    pub fn update_weather(&mut self, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) {
         //OPT: *PERFORMANCE* Would it be faster to use 2 usizes for seconds and milli/nanoseconds?
         let elapsed_time = ggez_timer::duration_to_f64(ggez_timer::time_since_start(ggez_ctx));
 
         // If current weather has timed out, randomly generate a new weather pattern
         if elapsed_time >= self.timeout_ms {
-            self.active_weather = weather::Event::rand_starting_at(elapsed_time);
+            self.active_weather = weather::Event::rand(ci_ctx).starting_at(elapsed_time);
             ci_log!(self.logger, logger::FilterLevel::Info,
                 "GameTime: {:.3}s: Weather changed to Elem: {:?}, Duration: {:.3}s",
                 elapsed_time,
@@ -162,7 +163,7 @@ impl WeatherManager {
         }
 
         // Update intensity bar
-        self.hud_elements.update_int_bar_mesh(self.active_weather.intensity_exact(elapsed_time), ggez_ctx);
+        self.hud_elements.update_int_bar_mesh(self.active_weather.intensity_exact(elapsed_time), ci_ctx, ggez_ctx);
     }
 
     pub fn draw(&self, ggez_ctx: &mut GgEzContext) {
@@ -174,7 +175,7 @@ impl WeatherManager {
 
 impl HudElements {
     /// Default staticructor
-    fn default(ggez_ctx: &mut GgEzContext) -> Self {
+    fn default(ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Self {
         // Grab window dimensions so we can place the HUD appropriately
         let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
 
@@ -219,7 +220,7 @@ impl HudElements {
         // Do first 'updates' of the meshes so we have valid meshes from first use
         hud_elements.update_frame_mesh(ggez_ctx);
         hud_elements.update_content_mesh(colors::TRANSPARENT, ggez_ctx);
-        hud_elements.update_int_bar_mesh(f64::default(), ggez_ctx);
+        hud_elements.update_int_bar_mesh(f64::default(), ci_ctx, ggez_ctx);
         hud_elements.update_text_elements(Element::default(), weather::Intensity::default());
 
         hud_elements
@@ -277,13 +278,13 @@ impl HudElements {
     }
     
     /// Updates the mesh for the HUD intensity bar
-    fn update_int_bar_mesh(&mut self, exact_intensity: f64, ggez_ctx: &mut GgEzContext) {
+    fn update_int_bar_mesh(&mut self, exact_intensity: f64, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) {
         // Need a mesh builder with a dummy line to avoid an empty mesh
         let mut int_bar_mesh_builder = ggez_gfx::MeshBuilder::new();
         let dummy_line = [ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 1.0, y: 1.0}];
         int_bar_mesh_builder.line(&dummy_line, 1.0, colors::TRANSPARENT).unwrap();
 
-        let drawable_intensity: f32 = (exact_intensity as f32 / weather::MAX_INTENSITY as f32) * self.frame_size;
+        let drawable_intensity: f32 = (exact_intensity as f32 / ci_ctx.max_weather_intensity() as f32) * self.frame_size;
 
         // Build a square in the top-right of the screen to hold the weather info
         let int_bar_line = [ggez_mint::Point2 {x: self.frame_pos.x - 5.0,
