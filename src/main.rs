@@ -66,7 +66,6 @@ const DESIRED_FPS:              u32 = 60;
 const DEFAULT_TEXT_SIZE:        f32 = 16.0;
 const DEFAULT_LINE_WIDTH:       f32 = 2.0;
 const DEFAULT_LINE_COLOR:       ggez_gfx::Color = colors::WHITE;
-const DEFAULT_FILL_COLOR:       ggez_gfx::Color = colors::GREY;
 
 /* Hex Grid */
 const GRID_CELL_SIZE: f32 = 25.0;

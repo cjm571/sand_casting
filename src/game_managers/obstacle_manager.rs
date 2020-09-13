@@ -96,14 +96,12 @@ impl DrawableMechanic for ObstacleManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        ci_log!(self.logger,
-            logger::FilterLevel::Debug,
+        ci_log!(self.logger, logger::FilterLevel::Debug,
             "Adding {} obstacle starting at {} to mesh.",
             String::from(instance.element()),
-            instance.all_coords()[0]);
+            instance.origin());
 
         self.obstacles.push(instance);
-        
     }
 
     fn mesh(&self) -> &ggez_gfx::Mesh {
@@ -142,7 +140,7 @@ impl DrawableMechanic for ObstacleManager {
             };
 
             // Create a HexGridCell object and add it to the mesh builder
-            let cur_hex = HexGridCell::new(obstacle_center, ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
+            let cur_hex = HexGridCell::new(obstacle_center, ::GRID_CELL_SIZE);
             cur_hex.add_to_mesh(colors::from_element(instance.element()), colors::DARKGREY, mesh_builder);
 
             //OPT: *DESIGN* This is basically an adjacency check, which would be a very useful function for the Coords module

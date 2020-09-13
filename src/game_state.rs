@@ -40,6 +40,7 @@ use crate::{
     game_assets::colors,
     game_managers::{
         DrawableMechanic,
+        actor_manager::ActorManager,
         obstacle_manager::ObstacleManager,
         resource_manager::ResourceManager,
         weather_manager::WeatherManager,
@@ -59,6 +60,7 @@ pub struct SandCastingGameState {
     peak_fps:           f64,                // Peak FPS for display
     ci_ctx:             CastIronContext,    // CastIron engine context
     logger:             logger::Instance,   // Instance of CastIron Logger
+    actor_manager:      ActorManager,       // Actor Manager instance
     obstacle_manager:   ObstacleManager,    // Obstacle Manager instance
     resource_manager:   ResourceManager,    // Resource Manager instance
     weather_manager:    WeatherManager,     // Weather Manager instance
@@ -87,6 +89,7 @@ impl SandCastingGameState {
             peak_fps:           0.0,
             ci_ctx:             ctx_clone,
             logger:             logger_clone,
+            actor_manager:      ActorManager::new(logger_original, ggez_ctx),
             obstacle_manager:   ObstacleManager::new(logger_original, ggez_ctx),
             resource_manager:   ResourceManager::new(logger_original, ggez_ctx),
             weather_manager:    WeatherManager::default(logger_original, ci_ctx, ggez_ctx),
@@ -101,6 +104,10 @@ impl SandCastingGameState {
 
     pub fn initialized(&mut self) -> bool {
         self.initialized
+    }
+
+    pub fn actor_manager(&mut self) -> &mut ActorManager {
+        &mut self.actor_manager
     }
 
     pub fn obstacle_manager(&mut self) -> &mut ObstacleManager {
@@ -137,6 +144,12 @@ impl SandCastingGameState {
         }
         ci_log!(self.logger, logger::FilterLevel::Info, "Obstacles generated.");
         
+        // Create random actors
+        for _i in 0..3 {
+            self.actor_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
+        }
+        ci_log!(self.logger, logger::FilterLevel::Info, "Actors generated.");
+
         ci_log!(self.logger, logger::FilterLevel::Info, "First-frame initialization complete.");
         self.initialized = true;
     }
@@ -188,6 +201,9 @@ impl ggez_event::EventHandler for SandCastingGameState {
 
         // Draw obstacles
         self.obstacle_manager.draw(ctx);
+
+        // Draw actors
+        self.actor_manager.draw(ctx);
 
         //FEAT: Could make a 'performance manager' or something to encapsulate things like FPS counters
         // Draw the FPS counters

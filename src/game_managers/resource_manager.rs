@@ -100,7 +100,7 @@ impl DrawableMechanic for ResourceManager {
             logger::FilterLevel::Debug,
             "Adding {} resource starting at {} to mesh.",
             String::from(instance.element()),
-            instance.all_coords()[0]);
+            instance.origin());
 
         self.resources.push(instance);
     }
@@ -116,8 +116,8 @@ impl DrawableMechanic for ResourceManager {
     fn add_instance_to_mesh_builder(instance: &Self::Instance,
                                     mesh_builder: &mut ggez_gfx::MeshBuilder,
                                     ggez_ctx: &mut GgEzContext) -> Result<(), Self::ErrorType> {
-        // Get all coords for current resource instance
-        let res_coords = instance.coords();
+        // Get origin coords for current resource instance
+        let res_coords = instance.origin();
 
         //OPT: *PERFORMANCE* Do this in advance and pass in
         // Get window dimensions
@@ -139,7 +139,7 @@ impl DrawableMechanic for ResourceManager {
         };
 
         // Create a HexGridCell object and add it to the mesh builder
-        let cur_hex = HexGridCell::new(res_center, ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
+        let cur_hex = HexGridCell::new(res_center, ::GRID_CELL_SIZE);
         cur_hex.add_to_mesh(colors::from_resource(instance), colors::WHITE, mesh_builder);
 
         // Create radial HexGridCells as necessary

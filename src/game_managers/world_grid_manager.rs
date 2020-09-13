@@ -118,7 +118,7 @@ impl WorldGridManager {
                        center: ggez_mint::Point2<f32>,
                        mesh_builder: &mut ggez_gfx::MeshBuilder) {
         // Construct the central hex cell
-        let central_hex_cell = HexGridCell::new(center, ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
+        let central_hex_cell = HexGridCell::new(center, ::GRID_CELL_SIZE);
     
         // Add it, and its radials to the mesh
         central_hex_cell.add_to_mesh(colors::TRANSPARENT, ::DEFAULT_LINE_COLOR, mesh_builder);
@@ -135,6 +135,4 @@ impl WorldGridManager {
         
         ci_log!(self.logger, logger::FilterLevel::Debug, "Base hex grid built.");
     }
-
-    //FIXME: Would be nice to have a global tracker of all occupied hexes in the grid, to simplify collision checking
 }

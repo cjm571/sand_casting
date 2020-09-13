@@ -45,7 +45,6 @@ const MIN_ALPHA_VAL: f32 = 0.1;
 #[derive(Debug, Copy, Clone)]
 pub struct HexGridCell {
     center:     ggez_mint::Point2<f32>,
-    color:      ggez_gfx::Color,
     vertices:   [ggez_mint::Point2<f32>; 6],
 }
 
@@ -57,7 +56,7 @@ pub struct HexGridCellError;
 ///////////////////////////////////////////////////////////////////////////////
 impl HexGridCell {
     /// Constructor
-    pub fn new(center: ggez_mint::Point2<f32>, color: ggez_gfx::Color, size: f32) -> Self {
+    pub fn new(center: ggez_mint::Point2<f32>, size: f32) -> Self {
         // Compute vertices components
         let x_offset = size * (PI/3.0).cos();
         let y_offset = size * (PI/3.0).sin();
@@ -71,7 +70,7 @@ impl HexGridCell {
         vertices[4] = ggez_mint::Point2{ x: center.x - x_offset,   y: center.y + y_offset};
         vertices[5] = ggez_mint::Point2{ x: center.x + x_offset,   y: center.y + y_offset};
 
-        Self {center, color, vertices}
+        Self {center, vertices}
     }
 
 
@@ -81,10 +80,6 @@ impl HexGridCell {
 
     pub fn center(&self) -> ggez_mint::Point2<f32> {
         self.center
-    }
-
-    pub fn color(&self) -> ggez_gfx::Color {
-        self.color
     }
 
     pub fn vertices(&self) -> [ggez_mint::Point2<f32>; 6] {
@@ -111,7 +106,7 @@ impl HexGridCell {
         outline_color: ggez_gfx::Color,
         radius: usize,
         has_gradient: bool,
-        resource_mesh_builder: &mut ggez_gfx::MeshBuilder
+        mesh_builder: &mut ggez_gfx::MeshBuilder
     ) {
         // In order to reliably construct radiating hexes:
         // 1. Take the origin hex cell
@@ -143,8 +138,8 @@ impl HexGridCell {
                 radial_vertices[i].y -= (::CENTER_TO_SIDE_DIST*2.0*adj_theta.sin()) * level as f32;
 
                 // Create hex cells at each vertex
-                let vert_hex = HexGridCell::new(radial_vertices[i], ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
-                vert_hex.add_to_mesh(cur_fill_color, outline_color, resource_mesh_builder);
+                let vert_hex = HexGridCell::new(radial_vertices[i], ::GRID_CELL_SIZE);
+                vert_hex.add_to_mesh(cur_fill_color, outline_color, mesh_builder);
 
                 // Create interstitial hex(es) if level requires
                 for j in 0..level {
@@ -155,8 +150,8 @@ impl HexGridCell {
                         y: radial_vertices[i].y - (::CENTER_TO_SIDE_DIST*2.0*inter_hex_theta.sin()) * (j+1) as f32
                     };
 
-                    let inter_hex = HexGridCell::new(inter_hex_center, ::DEFAULT_FILL_COLOR, ::GRID_CELL_SIZE);
-                    inter_hex.add_to_mesh(cur_fill_color, outline_color, resource_mesh_builder);
+                    let inter_hex = HexGridCell::new(inter_hex_center, ::GRID_CELL_SIZE);
+                    inter_hex.add_to_mesh(cur_fill_color, outline_color, mesh_builder);
                 }
             }
 
@@ -183,6 +178,3 @@ impl HexGridCell {
         mesh_builder.polygon(ggez_gfx::DrawMode::stroke(::DEFAULT_LINE_WIDTH), &self.vertices, color).unwrap();
     }
 }
-///////////////////////////////////////////////////////////////////////////////
-//  Unit Tests
-///////////////////////////////////////////////////////////////////////////////

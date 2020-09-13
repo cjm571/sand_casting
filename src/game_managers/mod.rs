@@ -35,7 +35,8 @@ use ggez::{
 //  Module Declarations
 ///////////////////////////////////////////////////////////////////////////////
 
-// pub mod actor_manager;
+//FEAT: meshes should be referred to as cached meshes
+pub mod actor_manager;
 pub mod obstacle_manager;
 pub mod resource_manager;
 pub mod weather_manager;
@@ -49,6 +50,7 @@ pub mod world_grid_manager;
 
 //OPT: *STYLE* Better named VisualMechanic/VisibleMechanic?
 //OPT: *DESIGN* This may be abuse of the trait system... there's no guarantee that the implementor will do their shit correctly
+//OPT: *DESIGN* Also, this probably doesn't need to include the rand stuff
 pub trait DrawableMechanic {
 
     /*  *  *  *  *  *  *  *  *\
@@ -88,15 +90,14 @@ pub trait DrawableMechanic {
 
     /// Adds the given instance to the manager
     fn add_instance(&mut self, new_instance: Self::Instance, ggez_ctx: &mut GgEzContext) -> Result<(), ()> {
-        //OPT: *PERFORMANCE* triple-nested loop, probably reeeaaal slow
+        //FEAT: Not the right place for this collision check, need a global scope. probably using Context?
+        //FIXME: allows obstacles to overlap!
         // Verify that no instance already exists in the same location
         let mut coords_occupied = false;
         for existing_instance in self.instances() {
-            for existing_instance_coords in existing_instance.all_coords() {
-                if new_instance.all_coords().contains(existing_instance_coords) {
-                    coords_occupied = true;
-                    break;
-                }
+            if new_instance.origin() == existing_instance.origin() {
+                coords_occupied = true;
+                break;
             }
         }
 
@@ -118,8 +119,8 @@ pub trait DrawableMechanic {
         // Create a random instance and attempt to add them until we succeed (or fail too many times)
         let mut attempts = 0;
         while attempts < ci_ctx.max_rand_attempts() {
-            let rand_resource = Self::Instance::rand(ci_ctx);
-            match self.add_instance(rand_resource, ggez_ctx) {
+            let rand_instance = Self::Instance::rand(ci_ctx);
+            match self.add_instance(rand_instance, ggez_ctx) {
                 Ok(())  => {
                     break;      // Successfully added instance, break loop
                 },
