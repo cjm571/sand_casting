@@ -1619,8 +1619,8 @@ name = "sand_casting"
 version = "0.5.1"
 dependencies = [
  "cast_iron 0.5.1",
+ "chrono 0.4.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "ggez 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

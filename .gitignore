@@ -8,3 +8,4 @@ Cargo.lock
 
 # Log Files
 /logs/
+/metrics/

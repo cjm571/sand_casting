@@ -5,6 +5,6 @@ authors = ["CJ McAllister <cjm571@gmail.com>"]
 
 [dependencies]
 cast_iron = { path = "../cast_iron", version = "^0.5" }
-lazy_static = "1.2.0"
+chrono = { version = "0.4", features = ["serde"] }
 ggez = "0.5.1"
 rand = "0.7.3"

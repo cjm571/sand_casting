@@ -34,6 +34,8 @@ use cast_iron::{
     ci_log,
 };
 
+extern crate chrono;
+
 extern crate ggez;
 use ggez::{
     ContextBuilder as GgEzContextBuilder,
@@ -52,6 +54,8 @@ pub mod game_managers;
 
 pub mod game_state;
 use game_state::SandCastingGameState;
+
+pub mod profiler;
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -46,6 +46,7 @@ use crate::{
         weather_manager::WeatherManager,
         world_grid_manager::WorldGridManager,
     },
+    profiler,
 };
 
 
@@ -56,10 +57,10 @@ use crate::{
 /// Primary Game Struct
 pub struct SandCastingGameState {
     initialized:        bool,               // Flag indicating if game has been initialized
-    avg_fps:            f64,                // Average FPS for display
     peak_fps:           f64,                // Peak FPS for display
     ci_ctx:             CastIronContext,    // CastIron engine context
     logger:             logger::Instance,   // Instance of CastIron Logger
+    profiler:           profiler::Instance, // Instance of SandCasting performance profiler
     actor_manager:      ActorManager,       // Actor Manager instance
     obstacle_manager:   ObstacleManager,    // Obstacle Manager instance
     resource_manager:   ResourceManager,    // Resource Manager instance
@@ -85,10 +86,10 @@ impl SandCastingGameState {
 
         SandCastingGameState{
             initialized:        false,
-            avg_fps:            0.0,
             peak_fps:           0.0,
             ci_ctx:             ctx_clone,
             logger:             logger_clone,
+            profiler:           profiler::Instance::default(),
             actor_manager:      ActorManager::new(logger_original, ggez_ctx),
             obstacle_manager:   ObstacleManager::new(logger_original, ggez_ctx),
             resource_manager:   ResourceManager::new(logger_original, ggez_ctx),
@@ -177,9 +178,9 @@ impl ggez_event::EventHandler for SandCastingGameState {
             self.weather_manager.update_weather(&self.ci_ctx, ggez_ctx);
 
             // Update FPS
-            self.avg_fps = ggez_timer::fps(ggez_ctx);
-            if self.avg_fps > self.peak_fps {
-                self.peak_fps = self.avg_fps;
+            self.profiler.update_avg_fps(ggez_ctx).unwrap();
+            if self.profiler.avg_fps() > self.peak_fps {
+                self.peak_fps = self.profiler.avg_fps();
             }
         }
 
@@ -208,7 +209,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
         //FEAT: Could make a 'performance manager' or something to encapsulate things like FPS counters
         // Draw the FPS counters
         let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
-        let avg_fps_str = format!("Avg. FPS: {:.0}", self.avg_fps);
+        let avg_fps_str = format!("Avg. FPS: {:.0}", self.profiler.avg_fps());
         let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
         ggez_gfx::draw(ctx, &avg_fps_display, (avg_fps_pos, 0.0, colors::GREEN)).unwrap();
 
