@@ -32,6 +32,14 @@ use ggez::{
 
 
 ///////////////////////////////////////////////////////////////////////////////
+//  Named Constants
+///////////////////////////////////////////////////////////////////////////////
+
+/// Number of MetricContainer enum variants
+pub const METRIC_CONTAINER_TYPE_COUNT: usize = 5;
+
+
+///////////////////////////////////////////////////////////////////////////////
 //  Module Declarations
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -72,7 +80,7 @@ pub struct Instance {
 impl Instance {
 
     /*  *  *  *  *  *  *  *
-     *  Utility Methods   *
+     *  Accesspr Methods  *
      *  *  *  *  *  *  *  */
     
     pub fn avg_fps(&self) -> f64 {
@@ -100,6 +108,9 @@ impl Instance {
 //  Trait Implementations
 ///////////////////////////////////////////////////////////////////////////////
 
+/*  *  *  *  *  *  *  *
+ *      Instance      *
+ *  *  *  *  *  *  *  */
 impl Default for Instance {
     fn default() -> Self {
         // Create the metrics data channel
@@ -116,6 +127,22 @@ impl Default for Instance {
         Self {
             sender:         MetricsSender::new(metrics_tx),
             cached_metrics: CachedMetrics::default(),
+        }
+    }
+}
+
+
+/*  *  *  *  *  *  *  *
+ *  MetricContainer   *
+ *  *  *  *  *  *  *  */
+impl From<MetricContainer> for usize {
+    fn from(src: MetricContainer) -> Self {
+        match src {
+            MetricContainer::AvgFps(_val)                   => 0,
+            MetricContainer::FrameDeltaTime(_val)           => 1,
+            MetricContainer::DrawDeltaTime(_val)            => 2,
+            MetricContainer::UpdateDeltaTime(_val)          => 3,
+            MetricContainer::CustomDeltaTime(_label, _val)  => 4,
         }
     }
 }

@@ -47,15 +47,14 @@ pub struct MetricsReceiver {
 ///////////////////////////////////////////////////////////////////////////////
 
 impl MetricsReceiver {
-    /// Fully-qualified constructor
+    /// Generic constructor
     pub fn new(metrics_rx: mpsc::Receiver<profiler::MetricContainer>) -> Self {
         Self {metrics_rx}
     }
 
-
-    /*  *  *  *  *  *  *
-     * Utility Methods *
-     *  *  *  *  *  *  */
+    /*  *  *  *  *  *  *  *
+     *  Utility Methods   *
+     *  *  *  *  *  *  *  */
 
     /// Main loop for receiving and recording metrics data
     pub fn main(&mut self) {
@@ -116,7 +115,7 @@ impl MetricsReceiver {
 
     fn add_f64_to_csv(item: f64, csv_file: &mut fs::File) {
         // Format item for writing
-        let item_formatted = format!("{:.3},", item);
+        let item_formatted = format!("{:.0},", item);
 
         // Write to given file
         csv_file.write_all(item_formatted.as_bytes()).unwrap();
