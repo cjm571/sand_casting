@@ -188,6 +188,14 @@ impl ggez_event::EventHandler for SandCastingGameState {
     }
 
     fn draw(&mut self, ctx: &mut GgEzContext) -> GgEzGameResult<()> {
+        // After first frame, send previous frame's time delta to the profiler
+        if ggez_timer::ticks(ctx) > 0 {
+            self.profiler.send_frame_delta(ctx).unwrap();
+        }
+        else {
+            println!("Skipping frame!");
+        }
+        
         ggez_gfx::clear(ctx, colors::BLACK);
         
         // Draw the weather HUD

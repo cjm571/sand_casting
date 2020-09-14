@@ -20,18 +20,31 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use std::sync::mpsc;
-
-use std::fs;
-use std::path::PathBuf;
-use std::io::prelude::*;
+use std::{
+    fs,
+    io::prelude::*,
+    path::PathBuf,
+    sync::mpsc,
+    time::Duration,
+};
 
 use crate::profiler;
 
-use chrono::{
-    DateTime,
-    Local
-};
+use chrono::Local;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//  Named Constants
+///////////////////////////////////////////////////////////////////////////////
+
+const METRICS_FILE_NAMES: [&str; profiler::METRIC_CONTAINER_TYPE_COUNT] = [
+    "avg_fps.csv",
+    "frame_delta.csv",
+    "draw_delta.csv",
+    "update_delta.csv",
+    "custom_delta.csv",
+    ];
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
@@ -39,6 +52,7 @@ use chrono::{
 
 pub struct MetricsReceiver {
     metrics_rx: mpsc::Receiver<profiler::MetricContainer>,
+    files:      Vec<fs::File>,
 }
 
 
@@ -49,8 +63,24 @@ pub struct MetricsReceiver {
 impl MetricsReceiver {
     /// Generic constructor
     pub fn new(metrics_rx: mpsc::Receiver<profiler::MetricContainer>) -> Self {
-        Self {metrics_rx}
+        let mut files = Vec::new();
+        Self::create_files(&mut files);
+        
+        Self {
+            metrics_rx,
+            files,
+        }
     }
+
+
+    /*  *  *  *  *  *  *  *
+     *  Accessor Methods  *
+     *  *  *  *  *  *  *  */
+
+    fn file_handle(&mut self, metric: profiler::MetricContainer) -> &mut fs::File {
+        &mut self.files[usize::from(metric)]
+    }
+     
 
     /*  *  *  *  *  *  *  *
      *  Utility Methods   *
@@ -58,19 +88,18 @@ impl MetricsReceiver {
 
     /// Main loop for receiving and recording metrics data
     pub fn main(&mut self) {
-        let start_time = Local::now();
-        println!("{}: Entered MetricsReceiver thread.", start_time.format("%Y-%m-%d %T%.3f"));
-
-        //FIXME: Genericize this by returning a tuple or something
-        let mut avg_fps_file = Self::set_up_metrics_dir(start_time);
+        println!("{}: Entered MetricsReceiver thread.", Local::now().format("%Y-%m-%d %T%.3f"));
 
         loop {
             // Check channel for metrics
             if let Ok(metric_container) = self.metrics_rx.recv() {
                 // Handle metric based on container type
                 match metric_container {
-                    profiler::MetricContainer::AvgFps(avg_fps) => {
-                        Self::add_f64_to_csv(avg_fps, &mut avg_fps_file);
+                    profiler::MetricContainer::AvgFps(elapsed_time, avg_fps) => {
+                        Self::add_f64_to_csv(elapsed_time, avg_fps, 0, self.file_handle(metric_container));
+                    }
+                    profiler::MetricContainer::FrameDeltaTime(elapsed_time, delta) => {
+                        Self::add_f64_to_csv(elapsed_time, delta, 7, self.file_handle(metric_container));
                     },
                     _ => {},
                 };
@@ -83,8 +112,8 @@ impl MetricsReceiver {
      * Helper Methods  *
      *  *  *  *  *  *  */
 
-    //FIXME: Genericize this by returning a tuple or something
-    fn set_up_metrics_dir(start_time: DateTime<Local>) -> fs::File {
+    fn create_files(files: &mut Vec<fs::File>) {
+        let start_time = Local::now();
         let metrics_tld = "metrics";
         let metrics_cur = format!("{}", start_time.format("%F_%H_%M_%S%.3f"));
 
@@ -104,18 +133,26 @@ impl MetricsReceiver {
             Err(e) => panic!("Failed to create current-run metrics directory. Error: {}", e),
         }
 
-        //OPT: *DESIGN* Iterate through collection of standard metrics?
         // Create standard metrics files
-        metrics_path_buf.push("avg_fps.csv");
-        match fs::File::create(metrics_path_buf.as_path()) {
-            Ok(file) => file,
-            Err(err) => panic!("Failed to create metrics file at {}. Error: {}", metrics_path_buf.as_path().display(), err),
+        for filename in &METRICS_FILE_NAMES {
+            metrics_path_buf.push(filename);
+            match fs::File::create(metrics_path_buf.as_path()) {
+                Ok(file) => files.push(file),
+                Err(err) => panic!("Failed to create metrics file at {}. Error: {}", metrics_path_buf.as_path().display(), err),
+            }
+
+            // Pop the filename off the path buffer for the next iteration
+            metrics_path_buf.pop();
         }
     }
 
-    fn add_f64_to_csv(item: f64, csv_file: &mut fs::File) {
+    fn add_f64_to_csv(timestamp: Duration, item: f64, precision: usize, csv_file: &mut fs::File) {
         // Format item for writing
-        let item_formatted = format!("{:.0},", item);
+        let item_formatted = format!(
+            "{timestamp},{item:.precision$};",
+            timestamp=timestamp.as_millis(),
+            item=item,
+            precision=precision);
 
         // Write to given file
         csv_file.write_all(item_formatted.as_bytes()).unwrap();

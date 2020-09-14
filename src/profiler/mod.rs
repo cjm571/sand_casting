@@ -22,7 +22,8 @@ Purpose:
 
 use std::{
     sync::mpsc,
-    thread
+    thread,
+    time::Duration,
 };
 
 use ggez::{
@@ -55,11 +56,11 @@ use self::metrics_receiver::MetricsReceiver;
 
 /// Enumeration for the various kinds of performance metrics that can be recorded.
 pub enum MetricContainer {
-    AvgFps(f64),
-    FrameDeltaTime(f64),
-    DrawDeltaTime(f64),
-    UpdateDeltaTime(f64),
-    CustomDeltaTime(String, f64),
+    AvgFps(Duration, f64),
+    FrameDeltaTime(Duration, f64),
+    DrawDeltaTime(Duration, f64),
+    UpdateDeltaTime(Duration, f64),
+    CustomDeltaTime(Duration, String, f64),
 }
 
 #[derive(Default)]
@@ -93,11 +94,26 @@ impl Instance {
      *  *  *  *  *  *  *  */
 
     pub fn update_avg_fps(&mut self, ggez_ctx: &GgEzContext) -> Result<(), mpsc::SendError<MetricContainer>> {
+        // Get elapsed time
+        let elapsed_time = ggez_timer::time_since_start(ggez_ctx);
+        
         // Update cached avg. FPS
         self.cached_metrics.avg_fps = ggez_timer::fps(ggez_ctx);
         
         // Pack up FPS in a container and send
-        let metric = MetricContainer::AvgFps(self.cached_metrics.avg_fps);
+        let metric = MetricContainer::AvgFps(elapsed_time, self.cached_metrics.avg_fps);
+        self.sender.send_metric(metric)
+    }
+
+    pub fn send_frame_delta(&self, ggez_ctx: &GgEzContext) -> Result<(), mpsc::SendError<MetricContainer>> {
+        // Get elapsed time
+        let elapsed_time = ggez_timer::time_since_start(ggez_ctx);
+
+        // Get frame delta and convert to f64
+        let frame_delta = ggez_timer::duration_to_f64(ggez_timer::delta(ggez_ctx));
+
+        // Pack up frame delta in a container and send
+        let metric = MetricContainer::FrameDeltaTime(elapsed_time, frame_delta);
         self.sender.send_metric(metric)
     }
 }
@@ -138,11 +154,11 @@ impl Default for Instance {
 impl From<MetricContainer> for usize {
     fn from(src: MetricContainer) -> Self {
         match src {
-            MetricContainer::AvgFps(_val)                   => 0,
-            MetricContainer::FrameDeltaTime(_val)           => 1,
-            MetricContainer::DrawDeltaTime(_val)            => 2,
-            MetricContainer::UpdateDeltaTime(_val)          => 3,
-            MetricContainer::CustomDeltaTime(_label, _val)  => 4,
+            MetricContainer::AvgFps(_dur, _val)                     => 0,
+            MetricContainer::FrameDeltaTime(_dur, _val)             => 1,
+            MetricContainer::DrawDeltaTime(_dur, _val)              => 2,
+            MetricContainer::UpdateDeltaTime(_dur, _val)            => 3,
+            MetricContainer::CustomDeltaTime(_dur, _label, _val)    => 4,
         }
     }
 }

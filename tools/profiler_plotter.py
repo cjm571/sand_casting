@@ -29,26 +29,71 @@ if __name__ == "__main__":
     #TODO: Sanity-check CLI args
     
     # Retrieve data from csv
-    counts = []
-    fps_avgs = []
+    timestamps1 = []
+    values1 = []
 
     with open(str(sys.argv[1])) as csvDataFile:
-        csvReader = csv.reader(csvDataFile)
+        csvReader = csv.reader(csvDataFile, delimiter=';')
         for row in csvReader:
-            col_num = 0
-            for value in row:
+            for data_tuple in row:
                 # Break once we encounter an empty column
-                if value == '':
+                if data_tuple == '':
                     break
-                fps_avgs.append(int(value))
-                counts.append(col_num)
-                col_num += 1
+
+                # Split data tuples on ','
+                (timestamp, value) = data_tuple.split(',')
+
+                # Determine data type and cast accordingly
+                if '.' in value:
+                    values1.append(float(value))
+                else:
+                    values1.append(int(value))
+
+                timestamps1.append(float(timestamp))
+    
+    # Retrieve data from csv
+    timestamps2 = []
+    values2 = []
+
+    with open(str(sys.argv[2])) as csvDataFile:
+        csvReader = csv.reader(csvDataFile, delimiter=';')
+        for row in csvReader:
+            for data_tuple in row:
+                # Break once we encounter an empty column
+                if data_tuple == '':
+                    break
+
+                # Split data tuples on ','
+                (timestamp, value) = data_tuple.split(',')
+
+                # Determine data type and cast accordingly
+                if '.' in value:
+                    values2.append(float(value))
+                else:
+                    values2.append(int(value))
+
+                timestamps2.append(float(timestamp))
 
     #TODO: Set axes scale/max based on retrieved data
 
     #TODO: Set labels
-    plt.title("Average FPS over Time")
+
+    #TODO: Set axis scales
 
     # Compose and display chart
-    plt.bar(counts, fps_avgs)
+    fig, ax1 = plt.subplots()
+
+    color = 'tab:blue'
+    ax1.set_xlabel('time (ms)')
+    ax1.set_ylabel('Avg FPS', color=color)
+    ax1.bar(timestamps1, values1, color=color)
+
+    ax2 = ax1.twinx()
+    color = 'tab:red'
+    ax2.set_ylabel('Frame Delta', color=color)
+    ax2.bar(timestamps2, values2, color=color)
+
+    # plt.bar(timestamps2, values2, color='red')
+
+    fig.tight_layout()
     plt.show()
