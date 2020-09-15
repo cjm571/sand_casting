@@ -34,19 +34,6 @@ use chrono::Local;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//  Named Constants
-///////////////////////////////////////////////////////////////////////////////
-
-const METRICS_FILE_NAMES: [&str; profiler::METRIC_CONTAINER_TYPE_COUNT] = [
-    "avg_fps.csv",
-    "frame_delta.csv",
-    "draw_delta.csv",
-    "update_delta.csv",
-    "custom_delta.csv",
-    ];
-
-
-///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -133,8 +120,13 @@ impl MetricsReceiver {
             Err(e) => panic!("Failed to create current-run metrics directory. Error: {}", e),
         }
 
+        //OPT: *DESIGN* Would be cleaner if this were an iterator
         // Create standard metrics files
-        for filename in &METRICS_FILE_NAMES {
+        for metric_idx in 0 .. profiler::MetricContainer::VARIANT_COUNT {
+            // Get the current metric's filename
+            let filename = profiler::MetricContainer::from(metric_idx).filename();
+
+            // Push onto the filepath buffer and create the file
             metrics_path_buf.push(filename);
             match fs::File::create(metrics_path_buf.as_path()) {
                 Ok(file) => files.push(file),
@@ -158,5 +150,3 @@ impl MetricsReceiver {
         csv_file.write_all(item_formatted.as_bytes()).unwrap();
     }
 }
-
-

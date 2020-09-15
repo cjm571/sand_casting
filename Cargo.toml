@@ -8,3 +8,4 @@ cast_iron = { path = "../cast_iron", version = "^0.5" }
 chrono = { version = "0.4", features = ["serde"] }
 ggez = "0.5.1"
 rand = "0.7.3"
+variant_count = "*"

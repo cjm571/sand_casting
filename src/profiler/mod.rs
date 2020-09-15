@@ -31,13 +31,21 @@ use ggez::{
     timer as ggez_timer,
 };
 
+use variant_count::VariantCount;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Named Constants
 ///////////////////////////////////////////////////////////////////////////////
 
-/// Number of MetricContainer enum variants
-pub const METRIC_CONTAINER_TYPE_COUNT: usize = 5;
+/// Placeholder for bound Durations
+pub const PLACEHOLDER_DURATION: Duration = Duration::from_secs(0);
+
+/// Placeholder for bound f64s
+pub const PLACEHOLDER_F64: f64 = 0.0;
+
+/// Placeholder for bound Strings
+pub const PLACEHOLDER_STRING: String = String::new();
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -54,13 +62,10 @@ use self::metrics_receiver::MetricsReceiver;
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
-/// Enumeration for the various kinds of performance metrics that can be recorded.
-pub enum MetricContainer {
-    AvgFps(Duration, f64),
-    FrameDeltaTime(Duration, f64),
-    DrawDeltaTime(Duration, f64),
-    UpdateDeltaTime(Duration, f64),
-    CustomDeltaTime(Duration, String, f64),
+/// Instance of the SandCasting profiler module
+pub struct Instance {
+    sender:         MetricsSender,
+    cached_metrics: CachedMetrics,
 }
 
 #[derive(Default)]
@@ -68,14 +73,17 @@ struct CachedMetrics {
     pub avg_fps:    f64,
 }
 
-pub struct Instance {
-    sender:         MetricsSender,
-    cached_metrics: CachedMetrics,
+/// Enumeration for the various kinds of performance metrics that can be recorded.
+#[derive(VariantCount)]
+pub enum MetricContainer {
+    AvgFps(Duration, f64),
+    FrameDeltaTime(Duration, f64),
+    EventMarker(Duration, String),
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//  Object Implementation
+//  Object Implementations
 ///////////////////////////////////////////////////////////////////////////////
 
 impl Instance {
@@ -116,8 +124,33 @@ impl Instance {
         let metric = MetricContainer::FrameDeltaTime(elapsed_time, frame_delta);
         self.sender.send_metric(metric)
     }
+
+    pub fn mark_event(&self, event_label: String, ggez_ctx: &GgEzContext) -> Result<(), mpsc::SendError<MetricContainer>> {
+        // Get elapsed time
+        let elapsed_time = ggez_timer::time_since_start(ggez_ctx);
+
+        // Pack up event label in a container and send
+        let metric = MetricContainer::EventMarker(elapsed_time, event_label);
+        self.sender.send_metric(metric)
+    }
 }
 
+
+impl MetricContainer {
+    
+    /*  *  *  *  *  *  *  *
+     *  Utility Methods   *
+     *  *  *  *  *  *  *  */
+
+    /// Returns the filename that will store the metric's data
+    pub fn filename(&self) -> String {
+        match self {
+            MetricContainer::AvgFps(_dur, _val)         => "avg_fps.csv".to_owned(),
+            MetricContainer::FrameDeltaTime(_dur, _val) => "frame_delta.csv".to_owned(),
+            MetricContainer::EventMarker(_dur, _label)  => "event_marker.csv".to_owned(),
+        }
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -154,11 +187,19 @@ impl Default for Instance {
 impl From<MetricContainer> for usize {
     fn from(src: MetricContainer) -> Self {
         match src {
-            MetricContainer::AvgFps(_dur, _val)                     => 0,
-            MetricContainer::FrameDeltaTime(_dur, _val)             => 1,
-            MetricContainer::DrawDeltaTime(_dur, _val)              => 2,
-            MetricContainer::UpdateDeltaTime(_dur, _val)            => 3,
-            MetricContainer::CustomDeltaTime(_dur, _label, _val)    => 4,
+            MetricContainer::AvgFps(_dur, _val)         => 0,
+            MetricContainer::FrameDeltaTime(_dur, _val) => 1,
+            MetricContainer::EventMarker(_dur, _label)  => 2,
+        }
+    }
+}
+impl From<usize> for MetricContainer {
+    fn from(src: usize) -> Self {
+        match src {
+            0 => MetricContainer::AvgFps(PLACEHOLDER_DURATION, PLACEHOLDER_F64),
+            1 => MetricContainer::FrameDeltaTime(PLACEHOLDER_DURATION, PLACEHOLDER_F64),
+            2 => MetricContainer::EventMarker(PLACEHOLDER_DURATION, PLACEHOLDER_STRING),
+            _ => panic!("Invalid value ({}) for usize -> MetricContainer conversion", src),
         }
     }
 }

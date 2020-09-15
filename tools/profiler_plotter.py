@@ -50,29 +50,30 @@ if __name__ == "__main__":
                     values1.append(int(value))
 
                 timestamps1.append(float(timestamp))
-    
-    # Retrieve data from csv
-    timestamps2 = []
-    values2 = []
 
-    with open(str(sys.argv[2])) as csvDataFile:
-        csvReader = csv.reader(csvDataFile, delimiter=';')
-        for row in csvReader:
-            for data_tuple in row:
-                # Break once we encounter an empty column
-                if data_tuple == '':
-                    break
+    if len(sys.argv) > 3:
+        # Retrieve data from csv
+        timestamps2 = []
+        values2 = []
 
-                # Split data tuples on ','
-                (timestamp, value) = data_tuple.split(',')
+        with open(str(sys.argv[2])) as csvDataFile:
+            csvReader = csv.reader(csvDataFile, delimiter=';')
+            for row in csvReader:
+                for data_tuple in row:
+                    # Break once we encounter an empty column
+                    if data_tuple == '':
+                        break
 
-                # Determine data type and cast accordingly
-                if '.' in value:
-                    values2.append(float(value))
-                else:
-                    values2.append(int(value))
+                    # Split data tuples on ','
+                    (timestamp, value) = data_tuple.split(',')
 
-                timestamps2.append(float(timestamp))
+                    # Determine data type and cast accordingly
+                    if '.' in value:
+                        values2.append(float(value))
+                    else:
+                        values2.append(int(value))
+
+                    timestamps2.append(float(timestamp))
 
     #TODO: Set axes scale/max based on retrieved data
 
@@ -88,10 +89,11 @@ if __name__ == "__main__":
     ax1.set_ylabel('Avg FPS', color=color)
     ax1.bar(timestamps1, values1, color=color)
 
-    ax2 = ax1.twinx()
-    color = 'tab:red'
-    ax2.set_ylabel('Frame Delta', color=color)
-    ax2.bar(timestamps2, values2, color=color)
+    if len(sys.argv) > 3:
+        ax2 = ax1.twinx()
+        color = 'tab:red'
+        ax2.set_ylabel('Frame Delta', color=color)
+        ax2.bar(timestamps2, values2, color=color)
 
     # plt.bar(timestamps2, values2, color='red')
 

@@ -19,8 +19,6 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-extern crate rand;
-
 extern crate cast_iron;
 use cast_iron::{
     ability::{
@@ -43,6 +41,10 @@ use ggez::{
     event as ggez_event,
     graphics as ggez_gfx,
 };
+
+extern crate rand;
+
+extern crate variant_count;
 
 ///
 // Module Declarations
