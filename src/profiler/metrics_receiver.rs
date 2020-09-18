@@ -64,7 +64,7 @@ impl MetricsReceiver {
      *  Accessor Methods  *
      *  *  *  *  *  *  *  */
 
-    fn file_handle(&mut self, metric: profiler::MetricContainer) -> &mut fs::File {
+    fn file_handle(&mut self, metric: &profiler::MetricContainer) -> &mut fs::File {
         &mut self.files[usize::from(metric)]
     }
      
@@ -80,15 +80,20 @@ impl MetricsReceiver {
         loop {
             // Check channel for metrics
             if let Ok(metric_container) = self.metrics_rx.recv() {
+                // Get the appropriate file handle
+                let file_handle = self.file_handle(&metric_container);
+
                 // Handle metric based on container type
                 match metric_container {
-                    profiler::MetricContainer::AvgFps(elapsed_time, avg_fps) => {
-                        Self::add_f64_to_csv(elapsed_time, avg_fps, 0, self.file_handle(metric_container));
+                    profiler::MetricContainer::AvgFps(timestamp, avg_fps) => {
+                        Self::add_f64_to_csv(timestamp, avg_fps, 0, file_handle);
                     }
-                    profiler::MetricContainer::FrameDeltaTime(elapsed_time, delta) => {
-                        Self::add_f64_to_csv(elapsed_time, delta, 7, self.file_handle(metric_container));
+                    profiler::MetricContainer::FrameDeltaTime(timestamp, delta) => {
+                        Self::add_f64_to_csv(timestamp, delta, 7, file_handle);
                     },
-                    _ => {},
+                    profiler::MetricContainer::EventMarker(timestamp, event_label) => {
+                        Self::add_string_to_csv(timestamp, event_label, file_handle);
+                    },
                 };
             }
         }
@@ -142,11 +147,24 @@ impl MetricsReceiver {
         // Format item for writing
         let item_formatted = format!(
             "{timestamp},{item:.precision$};",
-            timestamp=timestamp.as_millis(),
-            item=item,
-            precision=precision);
+            timestamp = timestamp.as_millis(),
+            item = item,
+            precision = precision
+        );
 
         // Write to given file
         csv_file.write_all(item_formatted.as_bytes()).unwrap();
+    }
+
+    fn add_string_to_csv(timestamp: Duration, label: String, csv_file: &mut fs::File) {
+        // Format label for writing
+        let label_formatted = format!(
+            "{timestamp},{label};",
+            timestamp = timestamp.as_millis(),
+            label = label
+        );
+
+        // Write to given file
+        csv_file.write_all(label_formatted.as_bytes()).unwrap();
     }
 }

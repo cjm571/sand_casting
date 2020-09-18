@@ -75,11 +75,15 @@ pub struct SandCastingGameState {
 
 /// Constructor
 impl SandCastingGameState {
-    pub fn new(logger_original: &logger::Instance, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Self {
+    pub fn new(logger_original: &logger::Instance,
+               profiler_original: &profiler::Instance,
+               ci_ctx: &CastIronContext,
+               ggez_ctx: &mut GgEzContext) -> Self {
         //NOTE: Load/create resources here: images, fonts, sounds, etc.
 
-        // Clone the logger instance so this module has its own sender to use
+        // Clone the logger, profiler instances for use by this module
         let logger_clone = logger_original.clone();
+        let profiler_clone = profiler_original.clone();
 
         // Clone context for use by submodules
         let ctx_clone = ci_ctx.clone();
@@ -89,11 +93,11 @@ impl SandCastingGameState {
             peak_fps:           0.0,
             ci_ctx:             ctx_clone,
             logger:             logger_clone,
-            profiler:           profiler::Instance::default(),
+            profiler:           profiler_clone,
             actor_manager:      ActorManager::new(logger_original, ggez_ctx),
             obstacle_manager:   ObstacleManager::new(logger_original, ggez_ctx),
             resource_manager:   ResourceManager::new(logger_original, ggez_ctx),
-            weather_manager:    WeatherManager::default(logger_original, ci_ctx, ggez_ctx),
+            weather_manager:    WeatherManager::default(logger_original, profiler_original, ci_ctx, ggez_ctx),
             world_grid_manager: WorldGridManager::new(logger_original, ::DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE, ggez_ctx),
         }
     }

@@ -91,6 +91,9 @@ fn main() {
     // Create logger instance
     let logger_original = logger::Instance::default();
 
+    // Create profiler instance
+    let profiler_original = profiler::Instance::default();
+
     // Create CastIron game context
     let ci_ctx = CastIronContext::default();
     ci_log!(logger_original, logger::FilterLevel::Debug, "CastIron context created.");
@@ -137,7 +140,7 @@ fn main() {
     ci_log!(logger_original, logger::FilterLevel::Info, "ggez context, event loop created.");
 
     // Use built context to create a GGEZ Event Handler instance
-    let mut sand_casting_game_state = SandCastingGameState::new(&logger_original, &ci_ctx, &mut ggez_ctx);
+    let mut sand_casting_game_state = SandCastingGameState::new(&logger_original, &profiler_original, &ci_ctx, &mut ggez_ctx);
 
     // Run the game!
     match ggez_event::run(&mut ggez_ctx, &mut ggez_event_loop, &mut sand_casting_game_state) {

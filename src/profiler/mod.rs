@@ -63,12 +63,13 @@ use self::metrics_receiver::MetricsReceiver;
 ///////////////////////////////////////////////////////////////////////////////
 
 /// Instance of the SandCasting profiler module
+#[derive(Clone)]
 pub struct Instance {
     sender:         MetricsSender,
     cached_metrics: CachedMetrics,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct CachedMetrics {
     pub avg_fps:    f64,
 }
@@ -118,7 +119,7 @@ impl Instance {
         let elapsed_time = ggez_timer::time_since_start(ggez_ctx);
 
         // Get frame delta and convert to f64
-        let frame_delta = ggez_timer::duration_to_f64(ggez_timer::delta(ggez_ctx));
+        let frame_delta = ggez_timer::delta(ggez_ctx).as_secs_f64();
 
         // Pack up frame delta in a container and send
         let metric = MetricContainer::FrameDeltaTime(elapsed_time, frame_delta);
@@ -145,9 +146,9 @@ impl MetricContainer {
     /// Returns the filename that will store the metric's data
     pub fn filename(&self) -> String {
         match self {
-            MetricContainer::AvgFps(_dur, _val)         => "avg_fps.csv".to_owned(),
-            MetricContainer::FrameDeltaTime(_dur, _val) => "frame_delta.csv".to_owned(),
-            MetricContainer::EventMarker(_dur, _label)  => "event_marker.csv".to_owned(),
+            MetricContainer::AvgFps(_dur, _val)         => String::from("avg_fps.csv"),
+            MetricContainer::FrameDeltaTime(_dur, _val) => String::from("frame_delta.csv"),
+            MetricContainer::EventMarker(_dur, _label)  => String::from("event_marker.csv"),
         }
     }
 }
@@ -169,7 +170,7 @@ impl Default for Instance {
         // Initialize receiver struct, build and spawn thread
         let mut metrics_receiver = MetricsReceiver::new(metrics_rx);
         thread::Builder::new()
-            .name("metrics_receiver".to_owned())
+            .name(String::from("metrics_receiver"))
             .spawn(move || metrics_receiver.main())
             .unwrap();
 
@@ -184,8 +185,8 @@ impl Default for Instance {
 /*  *  *  *  *  *  *  *
  *  MetricContainer   *
  *  *  *  *  *  *  *  */
-impl From<MetricContainer> for usize {
-    fn from(src: MetricContainer) -> Self {
+impl From<&MetricContainer> for usize {
+    fn from(src: &MetricContainer) -> Self {
         match src {
             MetricContainer::AvgFps(_dur, _val)         => 0,
             MetricContainer::FrameDeltaTime(_dur, _val) => 1,

@@ -20,19 +20,25 @@ Purpose:
 
 " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " " """
 
-import matplotlib.pyplot as plt
-import numpy as np
 import csv
 import sys
 
-if __name__ == "__main__":
-    #TODO: Sanity-check CLI args
-    
-    # Retrieve data from csv
-    timestamps1 = []
-    values1 = []
+import matplotlib.pyplot as plt
+import numpy as np
 
-    with open(str(sys.argv[1])) as csvDataFile:
+def usage():
+    print("Usage: python profiler_plotter.py PROFILER_DATA_FILE1.csv [PROFILER_DATA_FILE2.csv]")
+
+
+def parse_numerical_data(filename):
+    # Retrieve float data from csv
+    timestamps = []
+    values = []
+
+    # Open data file for parsing
+    with open(filename) as csvDataFile:
+
+        # Use ; as delimiter to expose the (timestamp, value) tuples
         csvReader = csv.reader(csvDataFile, delimiter=';')
         for row in csvReader:
             for data_tuple in row:
@@ -44,58 +50,125 @@ if __name__ == "__main__":
                 (timestamp, value) = data_tuple.split(',')
 
                 # Determine data type and cast accordingly
-                if '.' in value:
-                    values1.append(float(value))
+                if '.' in timestamp:
+                    timestamps.append(float(timestamp))
                 else:
-                    values1.append(int(value))
+                    timestamps.append(int(timestamp))
 
-                timestamps1.append(float(timestamp))
+                # Determine data type and cast accordingly
+                if '.' in value:
+                    values.append(float(value))
+                else:
+                    values.append(int(value))
+    
+    # Return collated data tuple
+    return (timestamps, values)
 
-    if len(sys.argv) > 3:
-        # Retrieve data from csv
-        timestamps2 = []
-        values2 = []
 
-        with open(str(sys.argv[2])) as csvDataFile:
-            csvReader = csv.reader(csvDataFile, delimiter=';')
-            for row in csvReader:
-                for data_tuple in row:
-                    # Break once we encounter an empty column
-                    if data_tuple == '':
-                        break
+def parse_string_data(filename):
+    # Retrieve float data from csv
+    timestamps = []
+    dummy_vals = []
+    labels = []
 
-                    # Split data tuples on ','
-                    (timestamp, value) = data_tuple.split(',')
+    # Open data file for parsing
+    with open(filename) as csvDataFile:
 
-                    # Determine data type and cast accordingly
-                    if '.' in value:
-                        values2.append(float(value))
-                    else:
-                        values2.append(int(value))
+        # Use ; as delimiter to expose the (timestamp, value) tuples
+        csvReader = csv.reader(csvDataFile, delimiter=';')
+        for row in csvReader:
+            for data_tuple in row:
+                # Break once we encounter an empty column
+                if data_tuple == '':
+                    break
 
-                    timestamps2.append(float(timestamp))
+                # Split data tuples on ','
+                (timestamp, label) = data_tuple.split(',')
 
-    #TODO: Set axes scale/max based on retrieved data
+                # Determine data type and cast accordingly
+                if '.' in timestamp:
+                    timestamps.append(float(timestamp))
+                else:
+                    timestamps.append(int(timestamp))
+                    
+                # Add data to arrays
+                labels.append(label)
+                dummy_vals.append(1)
+    
+    # Return collated data tuple
+    return (timestamps, labels, dummy_vals)
 
-    #TODO: Set labels
 
-    #TODO: Set axis scales
+def populate_axis(axis, color, filepath):
+    # Parse CSV file based on metric type
+    filename = filepath.split('\\')[-1]
 
-    # Compose and display chart
-    fig, ax1 = plt.subplots()
+    if filename == "avg_fps.csv":
+        axis.set_ylabel('Avg FPS', color=color)
+        (timestamps, values) = parse_numerical_data(filepath)
+        axis.plot(timestamps, values, color=color)
+        
+    elif filename == "frame_delta.csv":
+        axis.set_ylabel('Frame Delta (sec)', color=color)
+        (timestamps, values) = parse_numerical_data(filepath)
+        axis.plot(timestamps, values, color=color)
 
+    elif filename == "event_marker.csv":
+        event_offset_dict = {}
+        offset = 0.0
+        (timestamps, labels, dummy_vals) = parse_string_data(filepath)
+
+        # Use timestamps and dummy values for the bar chart
+        axis.bar(timestamps, dummy_vals, color=color, width=0.5)
+        axis.set_yticks([])
+
+
+        # Annotate chart with event labels
+        for i in range(len(timestamps)):
+            # Assign offsets for each event type
+            if labels[i] not in event_offset_dict:
+                event_offset_dict[labels[i]] = offset
+                offset += 0.1
+            
+            # Place "STOP" events slightly below "START" for readability
+            if  "START" in labels[i]:
+                axis.annotate(labels[i], xy=[timestamps[i], dummy_vals[i] - event_offset_dict.get(labels[i])])
+            elif "STOP" in labels[i]:
+                axis.annotate(labels[i], xy=[timestamps[i], dummy_vals[i] - event_offset_dict.get(labels[i]) - 0.05])
+            else:
+                axis.annotate(labels[i], xy=[timestamps[i], dummy_vals[i] - event_offset_dict.get(labels[i])])
+
+    else:
+        print("Invalid file provided:" + filepath)
+        sys.exit(3)
+
+
+if __name__ == "__main__":
+    # Sanity check command-line arguments
+    if len(sys.argv) < 2:
+        usage()
+        sys.exit(2)
+
+    # Intialize chart boilerplate
+    fig, ax0 = plt.subplots()
     color = 'tab:blue'
-    ax1.set_xlabel('time (ms)')
-    ax1.set_ylabel('Avg FPS', color=color)
-    ax1.bar(timestamps1, values1, color=color)
+    ax0.set_xlabel('time (ms)')
 
-    if len(sys.argv) > 3:
-        ax2 = ax1.twinx()
+    # Populate the first chart axis
+    populate_axis(ax0, color, sys.argv[1])
+
+    # Populate the second chart axis, if file provided
+    if len(sys.argv) > 2:
+        ax1 = ax0.twinx()
         color = 'tab:red'
-        ax2.set_ylabel('Frame Delta', color=color)
-        ax2.bar(timestamps2, values2, color=color)
+        
+        populate_axis(ax1, color, sys.argv[2])
 
-    # plt.bar(timestamps2, values2, color='red')
+    # Populate the third chart axis, if file provided
+    if len(sys.argv) > 3:
+        ax2 = ax0.twinx()
+        color = 'tab:green'
+        
+        populate_axis(ax2, color, sys.argv[3])
 
-    fig.tight_layout()
     plt.show()

@@ -28,6 +28,7 @@ use crate::profiler;
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
+#[derive(Clone)]
 pub struct MetricsSender {
     metrics_tx: mpsc::Sender<profiler::MetricContainer>,
 }

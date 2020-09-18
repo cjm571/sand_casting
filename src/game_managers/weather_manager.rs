@@ -39,8 +39,9 @@ use ggez::{
     timer as ggez_timer,
 };
 
-use crate::game_assets::{
-    colors,
+use crate::{
+    game_assets::colors,
+    profiler,
 };
 
 
@@ -63,8 +64,9 @@ const HUD_TEXT_OFFSET:          f32 = 5.0;
 
 pub struct WeatherManager {
     logger:         logger::Instance,
+    profiler:       profiler::Instance,
     active_weather: weather::Event,
-    timeout_ms:     f64,
+    timeout_ms:     u128,
     prev_element:   Element,
     prev_intensity: weather::Intensity,
     hud_elements:   HudElements
@@ -91,16 +93,19 @@ struct HudElements {
 
 impl WeatherManager {
     /// Fully-qualified constructor
-    pub fn new(logger_original: &logger::Instance,
-               active_weather:  weather::Event,
-               timeout_ms:      f64,
-               ci_ctx:          &CastIronContext, 
-               ggez_ctx:        &mut GgEzContext) -> Self {
-        // Clone the logger instance so this module has its own sender to use
+    pub fn new(logger_original:     &logger::Instance,
+               profiler_original:   &profiler::Instance,
+               active_weather:      weather::Event,
+               timeout_ms:          u128,
+               ci_ctx:              &CastIronContext, 
+               ggez_ctx:            &mut GgEzContext) -> Self {
+        // Clone the logger, profiler instances for use by this module
         let logger_clone = logger_original.clone();
+        let profiler_clone = profiler_original.clone();
 
         WeatherManager {
             logger:         logger_clone,
+            profiler:       profiler_clone,
             active_weather, 
             timeout_ms,   
             prev_element:   Element::default(),
@@ -110,14 +115,19 @@ impl WeatherManager {
     }
 
     /// Default staticructor
-    pub fn default(logger_original: &logger::Instance, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Self {
-        // Clone the logger instance so this module has its own sender to use
+    pub fn default(logger_original: &logger::Instance,
+                   profiler_original:   &profiler::Instance,
+                   ci_ctx: &CastIronContext,
+                   ggez_ctx: &mut GgEzContext) -> Self {
+        // Clone the logger, profiler instances for use by this module
         let logger_clone = logger_original.clone();
+        let profiler_clone = profiler_original.clone();
 
         WeatherManager {
             logger:         logger_clone,
+            profiler:       profiler_clone,
             active_weather: weather::Event::default(),
-            timeout_ms:     f64::default(),
+            timeout_ms:     u128::default(),
             prev_element:   Element::default(),
             prev_intensity: weather::Intensity::default(),
             hud_elements:   HudElements::default(ci_ctx, ggez_ctx),
@@ -125,30 +135,43 @@ impl WeatherManager {
     }
 
 
-    /* Utility Methods */
+    /*  *  *  *  *  *  *  *
+     *  Utility Methods   *
+     *  *  *  *  *  *  *  */
 
     /// Updates the active weather if the current effect has timed out
     pub fn update_weather(&mut self, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) {
         //OPT: *PERFORMANCE* Would it be faster to use 2 usizes for seconds and milli/nanoseconds?
-        let elapsed_time = ggez_timer::duration_to_f64(ggez_timer::time_since_start(ggez_ctx));
+        let elapsed_time = ggez_timer::time_since_start(ggez_ctx);
 
         // If current weather has timed out, randomly generate a new weather pattern
-        if elapsed_time >= self.timeout_ms {
+        if elapsed_time.as_millis() >= self.timeout_ms {
+            // Send WEATHER_GEN event marker to profiler
+            self.profiler.mark_event(String::from("WEATHER_GEN_START"), ggez_ctx).unwrap();
+
             self.active_weather = weather::Event::rand(ci_ctx).starting_at(elapsed_time);
+
+            // Log weather change
             ci_log!(self.logger, logger::FilterLevel::Info,
                 "GameTime: {:.3}s: Weather changed to Elem: {:?}, Duration: {:.3}s",
-                elapsed_time,
+                elapsed_time.as_secs_f64(),
                 self.active_weather.element(),
-                self.active_weather.duration()
+                self.active_weather.duration().as_secs_f64()
             );
 
             // Set the timeout to the duration of the new weather pattern
-            self.timeout_ms = elapsed_time + self.active_weather.duration();
+            self.timeout_ms = elapsed_time.as_millis() + self.active_weather.duration().as_millis();
+            
+            // Send WEATHER_GEN event marker to profiler
+            self.profiler.mark_event(String::from("WEATHER_GEN_STOP"), ggez_ctx).unwrap();
         }
 
         // Check for change in intensity or element
-        let cur_intensity = self.active_weather.intensity(elapsed_time);
+        let cur_intensity = self.active_weather.intensity(elapsed_time.as_secs_f64());
         if self.prev_intensity != cur_intensity || self.prev_element != self.active_weather.element(){
+            // Send WEATHER_GEN event marker to profiler
+            self.profiler.mark_event(String::from("WEATHER_CHANGE_START"), ggez_ctx).unwrap();
+
             // Update HUD content with new alpha level
             let mut content_color = colors::from_element(self.active_weather.element());
             content_color.a = cur_intensity.to_alpha();
@@ -159,11 +182,14 @@ impl WeatherManager {
 
             // Update previous-state values
             self.prev_element   = self.active_weather.element();
-            self.prev_intensity = self.active_weather.intensity(elapsed_time);
+            self.prev_intensity = self.active_weather.intensity(elapsed_time.as_secs_f64());
+
+            // Send WEATHER_GEN event marker to profiler
+            self.profiler.mark_event(String::from("WEATHER_CHANGE_STOP"), ggez_ctx).unwrap();
         }
 
         // Update intensity bar
-        self.hud_elements.update_int_bar_mesh(self.active_weather.intensity_exact(elapsed_time), ci_ctx, ggez_ctx);
+        self.hud_elements.update_int_bar_mesh(self.active_weather.intensity_exact(elapsed_time.as_secs_f64()), ci_ctx, ggez_ctx);
     }
 
     pub fn draw(&self, ggez_ctx: &mut GgEzContext) {
@@ -227,9 +253,9 @@ impl HudElements {
     }
 
 
-    ///
-    // Utility Methods
-    ///
+    /*  *  *  *  *  *  *  *
+     *  Utility Methods   *
+     *  *  *  *  *  *  *  */
 
     pub fn draw(&self, ggez_ctx: &mut GgEzContext) {
         // Draw status text
