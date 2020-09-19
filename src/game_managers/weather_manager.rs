@@ -67,7 +67,6 @@ pub struct WeatherManager {
     profiler:       profiler::Instance,
     active_weather: weather::Event,
     timeout_ms:     u128,
-    prev_element:   Element,
     prev_intensity: weather::Intensity,
     hud_elements:   HudElements
 }
@@ -107,8 +106,7 @@ impl WeatherManager {
             logger:         logger_clone,
             profiler:       profiler_clone,
             active_weather, 
-            timeout_ms,   
-            prev_element:   Element::default(),
+            timeout_ms,
             prev_intensity: weather::Intensity::default(),
             hud_elements:   HudElements::default(ci_ctx, ggez_ctx),
         }
@@ -128,7 +126,6 @@ impl WeatherManager {
             profiler:       profiler_clone,
             active_weather: weather::Event::default(),
             timeout_ms:     u128::default(),
-            prev_element:   Element::default(),
             prev_intensity: weather::Intensity::default(),
             hud_elements:   HudElements::default(ci_ctx, ggez_ctx),
         }
@@ -143,6 +140,7 @@ impl WeatherManager {
     pub fn update_weather(&mut self, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) {
         //OPT: *PERFORMANCE* Would it be faster to use 2 usizes for seconds and milli/nanoseconds?
         let elapsed_time = ggez_timer::time_since_start(ggez_ctx);
+        let mut new_weather_generated = false;
 
         // If current weather has timed out, randomly generate a new weather pattern
         if elapsed_time.as_millis() >= self.timeout_ms {
@@ -161,14 +159,16 @@ impl WeatherManager {
 
             // Set the timeout to the duration of the new weather pattern
             self.timeout_ms = elapsed_time.as_millis() + self.active_weather.duration().as_millis();
+
+            new_weather_generated = true;
             
             // Send WEATHER_GEN event marker to profiler
             self.profiler.mark_event(String::from("WEATHER_GEN_STOP"), ggez_ctx).unwrap();
         }
 
-        // Check for change in intensity or element
+        // Check for change in weather event
         let cur_intensity = self.active_weather.intensity(elapsed_time.as_secs_f64());
-        if self.prev_intensity != cur_intensity || self.prev_element != self.active_weather.element(){
+        if self.prev_intensity != cur_intensity || new_weather_generated {
             // Send WEATHER_GEN event marker to profiler
             self.profiler.mark_event(String::from("WEATHER_CHANGE_START"), ggez_ctx).unwrap();
 
@@ -181,7 +181,6 @@ impl WeatherManager {
             self.hud_elements.update_text_elements(self.active_weather.element(), cur_intensity);
 
             // Update previous-state values
-            self.prev_element   = self.active_weather.element();
             self.prev_intensity = self.active_weather.intensity(elapsed_time.as_secs_f64());
 
             // Send WEATHER_GEN event marker to profiler

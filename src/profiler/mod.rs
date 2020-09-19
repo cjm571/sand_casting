@@ -47,6 +47,9 @@ pub const PLACEHOLDER_F64: f64 = 0.0;
 /// Placeholder for bound Strings
 pub const PLACEHOLDER_STRING: String = String::new();
 
+/// Placeholder for bound Strings
+pub const PLACEHOLDER_STACKED_DRAW_VEC: Vec<StackedTime> = Vec::new();
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Module Declarations
@@ -74,12 +77,19 @@ struct CachedMetrics {
     pub avg_fps:    f64,
 }
 
+//FEAT: Support multiple customDelta files
 /// Enumeration for the various kinds of performance metrics that can be recorded.
 #[derive(VariantCount)]
 pub enum MetricContainer {
     AvgFps(Duration, f64),
     FrameDeltaTime(Duration, f64),
     EventMarker(Duration, String),
+    StackedDrawTime(Duration, Vec<StackedTime>),
+}
+
+pub struct StackedTime {
+    pub label: String,
+    pub time: Duration,
 }
 
 
@@ -134,6 +144,12 @@ impl Instance {
         let metric = MetricContainer::EventMarker(elapsed_time, event_label);
         self.sender.send_metric(metric)
     }
+
+    pub fn send_stacked_draw_time(&self, start_time: Duration, stacked_times: Vec<StackedTime>) -> Result<(), mpsc::SendError<MetricContainer>> {
+        // Pack up stacked times into container and send
+        let metric = MetricContainer::StackedDrawTime(start_time, stacked_times);
+        self.sender.send_metric(metric)
+    }
 }
 
 
@@ -146,9 +162,10 @@ impl MetricContainer {
     /// Returns the filename that will store the metric's data
     pub fn filename(&self) -> String {
         match self {
-            MetricContainer::AvgFps(_dur, _val)         => String::from("avg_fps.csv"),
-            MetricContainer::FrameDeltaTime(_dur, _val) => String::from("frame_delta.csv"),
-            MetricContainer::EventMarker(_dur, _label)  => String::from("event_marker.csv"),
+            MetricContainer::AvgFps(_dur, _val)             => String::from("avg_fps.csv"),
+            MetricContainer::FrameDeltaTime(_dur, _val)     => String::from("frame_delta.csv"),
+            MetricContainer::EventMarker(_dur, _label)      => String::from("event_marker.csv"),
+            MetricContainer::StackedDrawTime(_dur, _vec)    => String::from("stacked_draw_time.csv")
         }
     }
 }
@@ -188,9 +205,10 @@ impl Default for Instance {
 impl From<&MetricContainer> for usize {
     fn from(src: &MetricContainer) -> Self {
         match src {
-            MetricContainer::AvgFps(_dur, _val)         => 0,
-            MetricContainer::FrameDeltaTime(_dur, _val) => 1,
-            MetricContainer::EventMarker(_dur, _label)  => 2,
+            MetricContainer::AvgFps(_dur, _val)             => 0,
+            MetricContainer::FrameDeltaTime(_dur, _val)     => 1,
+            MetricContainer::EventMarker(_dur, _label)      => 2,
+            MetricContainer::StackedDrawTime(_dur, _vec)    => 3,
         }
     }
 }
@@ -200,6 +218,7 @@ impl From<usize> for MetricContainer {
             0 => MetricContainer::AvgFps(PLACEHOLDER_DURATION, PLACEHOLDER_F64),
             1 => MetricContainer::FrameDeltaTime(PLACEHOLDER_DURATION, PLACEHOLDER_F64),
             2 => MetricContainer::EventMarker(PLACEHOLDER_DURATION, PLACEHOLDER_STRING),
+            3 => MetricContainer::StackedDrawTime(PLACEHOLDER_DURATION, PLACEHOLDER_STACKED_DRAW_VEC),
             _ => panic!("Invalid value ({}) for usize -> MetricContainer conversion", src),
         }
     }

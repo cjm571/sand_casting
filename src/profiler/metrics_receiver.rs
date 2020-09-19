@@ -64,6 +64,7 @@ impl MetricsReceiver {
      *  Accessor Methods  *
      *  *  *  *  *  *  *  */
 
+    //FEAT: Support multiple customDelta files
     fn file_handle(&mut self, metric: &profiler::MetricContainer) -> &mut fs::File {
         &mut self.files[usize::from(metric)]
     }
@@ -94,6 +95,9 @@ impl MetricsReceiver {
                     profiler::MetricContainer::EventMarker(timestamp, event_label) => {
                         Self::add_string_to_csv(timestamp, event_label, file_handle);
                     },
+                    profiler::MetricContainer::StackedDrawTime(timestamp, stacked_times) => {
+                        Self::add_stacked_times_to_csv(timestamp, stacked_times, 7, file_handle)
+                    }
                 };
             }
         }
@@ -143,7 +147,10 @@ impl MetricsReceiver {
         }
     }
 
-    fn add_f64_to_csv(timestamp: Duration, item: f64, precision: usize, csv_file: &mut fs::File) {
+    fn add_f64_to_csv(timestamp: Duration,
+                      item: f64,
+                      precision: usize,
+                      csv_file: &mut fs::File) {
         // Format item for writing
         let item_formatted = format!(
             "{timestamp},{item:.precision$};",
@@ -156,7 +163,9 @@ impl MetricsReceiver {
         csv_file.write_all(item_formatted.as_bytes()).unwrap();
     }
 
-    fn add_string_to_csv(timestamp: Duration, label: String, csv_file: &mut fs::File) {
+    fn add_string_to_csv(timestamp: Duration,
+                         label: String,
+                         csv_file: &mut fs::File) {
         // Format label for writing
         let label_formatted = format!(
             "{timestamp},{label};",
@@ -166,5 +175,33 @@ impl MetricsReceiver {
 
         // Write to given file
         csv_file.write_all(label_formatted.as_bytes()).unwrap();
+    }
+
+    fn add_stacked_times_to_csv(timestamp: Duration,
+                                stacked_times: Vec<profiler::StackedTime>,
+                                precision: usize,
+                                csv_file: &mut fs::File) {
+        // Initialize formatted string
+        let mut formatted_stack = format!("{},", timestamp.as_millis());
+
+        // Add each time from the stack to the string
+        let mut prev_time = timestamp;
+        for element in stacked_times {
+            let formatted_element = format!(
+                "{elem:.precision$}|",
+                elem=(element.time - prev_time).as_secs_f64(),
+                precision = precision
+            );
+            formatted_stack = format!("{}{}", formatted_stack, formatted_element);
+
+            prev_time = element.time;
+        }
+
+        // Remove trailing '|'
+        formatted_stack.pop();
+
+        // Add delimiter and write to file
+        formatted_stack.push(';');
+        csv_file.write_all(formatted_stack.as_bytes()).unwrap();
     }
 }

@@ -27,13 +27,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def usage():
-    print("Usage: python profiler_plotter.py PROFILER_DATA_FILE1.csv [PROFILER_DATA_FILE2.csv]")
+    print("Usage: python profiler_plotter.py \\path\\to\\metrics\\dir\\ PROFILER_DATA_FILE1.csv [PROFILER_DATA_FILE2.csv]")
 
 
 def parse_numerical_data(filename):
     # Retrieve float data from csv
     timestamps = []
     values = []
+
+    print("Parsing numerical data in " + filename + "...")
 
     # Open data file for parsing
     with open(filename) as csvDataFile:
@@ -71,6 +73,8 @@ def parse_string_data(filename):
     dummy_vals = []
     labels = []
 
+    print("Parsing string data in " + filename + "...")
+
     # Open data file for parsing
     with open(filename) as csvDataFile:
 
@@ -97,6 +101,58 @@ def parse_string_data(filename):
     
     # Return collated data tuple
     return (timestamps, labels, dummy_vals)
+
+
+def parse_stacked_data(filename):
+    # Retrieve float data from csv
+    timestamps = []
+    parsed_stacks = []
+
+    print("Parsing stacked data in " + filename + "...")
+
+    # Open data file for parsing
+    with open(filename) as csvDataFile:
+
+        # Use ; as delimiter to expose the (timestamp, stacks) tuples
+        csvReader = csv.reader(csvDataFile, delimiter=';')
+        for row in csvReader:
+            for data_tuple in row:
+                # Break once we encounter an empty column
+                if data_tuple == '':
+                    break
+
+                # Split data tuples on ','
+                (timestamp, stack_string) = data_tuple.split(',')
+
+                # Determine data type and cast accordingly
+                if '.' in timestamp:
+                    timestamps.append(float(timestamp))
+                else:
+                    timestamps.append(int(timestamp))
+
+                # Split stacked values on '|'
+                parsed_stack = []
+                stack_values = stack_string.split('|')
+                for value in stack_values:
+                    # Determine data type and cast accordingly
+                    if '.' in value:
+                        parsed_stack.append(float(value))
+                    else:
+                        parsed_stack.append(int(value))
+                
+                # Append parsed stack and clear for next iteration
+                parsed_stacks.append(parsed_stack)
+
+    # Return collated data tuple
+    print("Collating data...", end='')
+    collated_stacks = []
+    for i in range(len(parsed_stacks[0])):
+        collated_stack = []
+        for j in range(len(timestamps)):
+            collated_stack.append(parsed_stacks[j][i])
+        collated_stacks.append(collated_stack)
+
+    return (timestamps, collated_stacks)
 
 
 def populate_axis(axis, color, filepath):
@@ -138,6 +194,24 @@ def populate_axis(axis, color, filepath):
             else:
                 axis.annotate(labels[i], xy=[timestamps[i], dummy_vals[i] - event_offset_dict.get(labels[i])])
 
+    elif filename == "stacked_draw_time.csv":
+        axis.set_ylabel('Stacked Draw Times (sec)', color=color)
+        (timestamps, collated_stacks) = parse_stacked_data(filepath)
+        
+        # print("len(collated_stacks) = " + str(len(collated_stacks)))
+        # for stack in collated_stacks:
+        #     print(stack)
+
+        # Create list of bar charts to be stacked
+        axis.bar(timestamps, collated_stacks[0])
+        axis.bar(timestamps, collated_stacks[1], bottom=collated_stacks[0])
+        bottoms = np.add(collated_stacks[0], collated_stacks[1]).tolist()
+        axis.bar(timestamps, collated_stacks[2], bottom=bottoms)
+
+        for i in range(3, len(collated_stacks)):
+            bottoms = np.add(bottoms, collated_stacks[i-1]).tolist()
+            axis.bar(timestamps, collated_stacks[i], bottom=bottoms)
+
     else:
         print("Invalid file provided:" + filepath)
         sys.exit(3)
@@ -155,20 +229,26 @@ if __name__ == "__main__":
     ax0.set_xlabel('time (ms)')
 
     # Populate the first chart axis
-    populate_axis(ax0, color, sys.argv[1])
+    metrics_dir = sys.argv[1]
+
+    print("Populating 1st axis...")
+    populate_axis(ax0, color, metrics_dir + sys.argv[2])
 
     # Populate the second chart axis, if file provided
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 3:
+        print("Populating 2nd axis...")
         ax1 = ax0.twinx()
         color = 'tab:red'
         
-        populate_axis(ax1, color, sys.argv[2])
+        populate_axis(ax1, color, metrics_dir + sys.argv[3])
 
     # Populate the third chart axis, if file provided
-    if len(sys.argv) > 3:
+    if len(sys.argv) > 4:
+        print("Populating 3rd axis...")
         ax2 = ax0.twinx()
         color = 'tab:green'
         
-        populate_axis(ax2, color, sys.argv[3])
+        populate_axis(ax2, color, metrics_dir + sys.argv[4])
 
+    print("Constructing plot...")
     plt.show()

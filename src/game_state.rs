@@ -192,31 +192,37 @@ impl ggez_event::EventHandler for SandCastingGameState {
     }
 
     fn draw(&mut self, ctx: &mut GgEzContext) -> GgEzGameResult<()> {
-        // After first frame, send previous frame's time delta to the profiler
-        if ggez_timer::ticks(ctx) > 0 {
+        // After the first frame, send previous frame's time delta to the profiler
+        if ggez_timer::ticks(ctx) > 1 {
             self.profiler.send_frame_delta(ctx).unwrap();
         }
-        else {
-            println!("Skipping frame!");
-        }
         
+        // Get draw start time and set up vec for stacked draw time
+        let start_time = ggez_timer::time_since_start(ctx);
+        let mut draw_timings = Vec::new();
+
         ggez_gfx::clear(ctx, colors::BLACK);
+        draw_timings.push(profiler::StackedTime{label: String::from("Clear"), time: ggez_timer::time_since_start(ctx)});
         
         // Draw the weather HUD
         self.weather_manager.draw(ctx);
+        draw_timings.push(profiler::StackedTime{label: String::from("Weather"), time: ggez_timer::time_since_start(ctx)});
         
-        //OPT: *DESIGN* Other managers should have a draw() call like weather manager
         // Draw the hex grid
         self.world_grid_manager.draw(ctx);
+        draw_timings.push(profiler::StackedTime{label: String::from("WorldGrid"), time: ggez_timer::time_since_start(ctx)});
 
         // Draw resources
         self.resource_manager.draw(ctx);
+        draw_timings.push(profiler::StackedTime{label: String::from("Resources"), time: ggez_timer::time_since_start(ctx)});
 
         // Draw obstacles
         self.obstacle_manager.draw(ctx);
+        draw_timings.push(profiler::StackedTime{label: String::from("Obstacles"), time: ggez_timer::time_since_start(ctx)});
 
         // Draw actors
         self.actor_manager.draw(ctx);
+        draw_timings.push(profiler::StackedTime{label: String::from("Actors"), time: ggez_timer::time_since_start(ctx)});
 
         //FEAT: Could make a 'performance manager' or something to encapsulate things like FPS counters
         // Draw the FPS counters
@@ -230,6 +236,14 @@ impl ggez_event::EventHandler for SandCastingGameState {
         let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
         ggez_gfx::draw(ctx, &peak_fps_display, (peak_fps_pos, 0.0, colors::GREEN)).unwrap();
 
-        ggez_gfx::present(ctx)
+        draw_timings.push(profiler::StackedTime{label: String::from("FPS"), time: ggez_timer::time_since_start(ctx)});
+
+        let res = ggez_gfx::present(ctx);
+        draw_timings.push(profiler::StackedTime{label: String::from("Present"), time: ggez_timer::time_since_start(ctx)});
+
+        // Send stacked timings to profiler
+        self.profiler.send_stacked_draw_time(start_time, draw_timings).unwrap();
+        
+        res
     }
 }
