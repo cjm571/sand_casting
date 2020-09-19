@@ -32,7 +32,6 @@ use ggez::{
     GameResult as GgEzGameResult,
     event as ggez_event,
     graphics as ggez_gfx,
-    mint as ggez_mint,
     timer as ggez_timer,
 };
 
@@ -57,7 +56,6 @@ use crate::{
 /// Primary Game Struct
 pub struct SandCastingGameState {
     initialized:        bool,               // Flag indicating if game has been initialized
-    peak_fps:           f64,                // Peak FPS for display
     ci_ctx:             CastIronContext,    // CastIron engine context
     logger:             logger::Instance,   // Instance of CastIron Logger
     profiler:           profiler::Instance, // Instance of SandCasting performance profiler
@@ -90,7 +88,6 @@ impl SandCastingGameState {
 
         SandCastingGameState{
             initialized:        false,
-            peak_fps:           0.0,
             ci_ctx:             ctx_clone,
             logger:             logger_clone,
             profiler:           profiler_clone,
@@ -182,10 +179,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
             self.weather_manager.update_weather(&self.ci_ctx, ggez_ctx);
 
             // Update FPS
-            self.profiler.update_avg_fps(ggez_ctx).unwrap();
-            if self.profiler.avg_fps() > self.peak_fps {
-                self.peak_fps = self.profiler.avg_fps();
-            }
+            self.profiler.update_fps_stats(ggez_ctx).unwrap();
         }
 
         Ok(())
@@ -224,18 +218,8 @@ impl ggez_event::EventHandler for SandCastingGameState {
         self.actor_manager.draw(ctx);
         draw_timings.push(profiler::StackedTime{label: String::from("Actors"), time: ggez_timer::time_since_start(ctx)});
 
-        //FEAT: Could make a 'performance manager' or something to encapsulate things like FPS counters
-        // Draw the FPS counters
-        let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
-        let avg_fps_str = format!("Avg. FPS: {:.0}", self.profiler.avg_fps());
-        let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
-        ggez_gfx::draw(ctx, &avg_fps_display, (avg_fps_pos, 0.0, colors::GREEN)).unwrap();
-
-        let peak_fps_pos = ggez_mint::Point2 {x: 0.0, y: 20.0};
-        let peak_fps_str = format!("Peak FPS: {:.0}", self.peak_fps);
-        let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
-        ggez_gfx::draw(ctx, &peak_fps_display, (peak_fps_pos, 0.0, colors::GREEN)).unwrap();
-
+        // Draw performance stats
+        self.profiler.draw_fps_stats(ctx);
         draw_timings.push(profiler::StackedTime{label: String::from("FPS"), time: ggez_timer::time_since_start(ctx)});
 
         let res = ggez_gfx::present(ctx);

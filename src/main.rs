@@ -19,6 +19,8 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+use std::env;
+
 extern crate cast_iron;
 use cast_iron::{
     ability::{
@@ -88,11 +90,27 @@ const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: usize = 10;
 
 
 fn main() {
-    // Create logger instance
-    let logger_original = logger::Instance::default();
+    //OPT: *DESIGN* Helper function to do this cleanly
+    // Parse command line arguments
+    let args: Vec<String> = env::args().collect();
 
-    // Create profiler instance
-    let profiler_original = profiler::Instance::default();
+    // Create logger instance, or disable if required
+    let logger_original;
+    if args.contains(&String::from("-logging")) {
+        logger_original = logger::Instance::default();
+    }
+    else {
+        logger_original = logger::Instance::disabled();
+    }
+
+    // Create profiler instance, or disable if required
+    let profiler_original;
+    if args.contains(&String::from("profiling")) {
+        profiler_original = profiler::Instance::default();
+    }
+    else {
+        profiler_original = profiler::Instance::disabled();
+    }
 
     // Create CastIron game context
     let ci_ctx = CastIronContext::default();

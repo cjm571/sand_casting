@@ -1617,7 +1617,7 @@ dependencies = [
 
 [[package]]
 name = "sand_casting"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "cast_iron 0.5.2",
  "chrono 0.4.15 (registry+https://github.com/rust-lang/crates.io-index)",

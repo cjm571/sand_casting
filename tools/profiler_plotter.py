@@ -22,6 +22,7 @@ Purpose:
 
 import csv
 import sys
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,7 +36,8 @@ def parse_numerical_data(filename):
     timestamps = []
     values = []
 
-    print("Parsing numerical data in " + filename + "...")
+    print("Parsing numerical data in " + filename + "...", end='')
+    parse_start_time = time.time()
 
     # Open data file for parsing
     with open(filename) as csvDataFile:
@@ -64,6 +66,9 @@ def parse_numerical_data(filename):
                     values.append(int(value))
     
     # Return collated data tuple
+    parse_stop_time = time.time()
+    delta = parse_stop_time - parse_start_time
+    print(" Complete! (" + str(delta) + ")")
     return (timestamps, values)
 
 
@@ -73,7 +78,8 @@ def parse_string_data(filename):
     dummy_vals = []
     labels = []
 
-    print("Parsing string data in " + filename + "...")
+    print("Parsing string data in " + filename + "...", end='')
+    parse_start_time = time.time()
 
     # Open data file for parsing
     with open(filename) as csvDataFile:
@@ -100,6 +106,9 @@ def parse_string_data(filename):
                 dummy_vals.append(1)
     
     # Return collated data tuple
+    parse_stop_time = time.time()
+    delta = parse_stop_time - parse_start_time
+    print(" Complete! (" + str(delta) + ")")
     return (timestamps, labels, dummy_vals)
 
 
@@ -108,7 +117,8 @@ def parse_stacked_data(filename):
     timestamps = []
     parsed_stacks = []
 
-    print("Parsing stacked data in " + filename + "...")
+    print("Parsing stacked data in " + filename + "...", end='')
+    parse_start_time = time.time()
 
     # Open data file for parsing
     with open(filename) as csvDataFile:
@@ -143,6 +153,10 @@ def parse_stacked_data(filename):
                 # Append parsed stack and clear for next iteration
                 parsed_stacks.append(parsed_stack)
 
+    parse_stop_time = time.time()
+    delta = parse_stop_time - parse_start_time
+    print(" Complete! (" + str(delta) + ")")
+
     # Return collated data tuple
     print("Collating data...", end='')
     collated_stacks = []
@@ -152,6 +166,9 @@ def parse_stacked_data(filename):
             collated_stack.append(parsed_stacks[j][i])
         collated_stacks.append(collated_stack)
 
+    collation_stop_time = time.time()
+    delta = collation_stop_time - parse_stop_time
+    print(" Complete! (" + str(delta) + ")")
     return (timestamps, collated_stacks)
 
 
@@ -198,9 +215,8 @@ def populate_axis(axis, color, filepath):
         axis.set_ylabel('Stacked Draw Times (sec)', color=color)
         (timestamps, collated_stacks) = parse_stacked_data(filepath)
         
-        # print("len(collated_stacks) = " + str(len(collated_stacks)))
-        # for stack in collated_stacks:
-        #     print(stack)
+        print("Creating stack bar charts...", end='')
+        create_stack_start_time = time.time()
 
         # Create list of bar charts to be stacked
         axis.bar(timestamps, collated_stacks[0])
@@ -211,6 +227,10 @@ def populate_axis(axis, color, filepath):
         for i in range(3, len(collated_stacks)):
             bottoms = np.add(bottoms, collated_stacks[i-1]).tolist()
             axis.bar(timestamps, collated_stacks[i], bottom=bottoms)
+
+        create_stack_stop_time = time.time()
+        delta = create_stack_stop_time - create_stack_start_time
+        print(" Complete! (" + str(delta) + ")")
 
     else:
         print("Invalid file provided:" + filepath)
@@ -251,4 +271,9 @@ if __name__ == "__main__":
         populate_axis(ax2, color, metrics_dir + sys.argv[4])
 
     print("Constructing plot...")
+
+    # Construct figure title
+    timestamp = metrics_dir.split('\\')[-2]
+    fig.suptitle("SandCasting Performance Profiling Data (" + timestamp + ")")
+    plt.gcf().canvas.set_window_title("SandCasting Profiler Parser")
     plt.show()
