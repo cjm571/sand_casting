@@ -21,7 +21,6 @@ Purpose:
 
 use cast_iron::{
     actor::Actor,
-    hex_directions,
     logger,
     Locatable,
 };
@@ -63,14 +62,14 @@ pub struct ActorManager {
 
 impl ActorManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(logger_original: &logger::Instance, ctx: &mut GgEzContext) -> Self {
+    pub fn new(logger_original: &logger::Instance, ggez_ctx: &mut GgEzContext) -> Self {
         // Clone the logger instance so this module has its own sender to use
         let logger_clone = logger_original.clone();
 
         ActorManager {
             logger:     logger_clone,
             actors:     Vec::new(),
-            actor_mesh: ggez_gfx::Mesh::new_line(ctx,
+            actor_mesh: ggez_gfx::Mesh::new_line(ggez_ctx,
                                                  &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
                                                  ::DEFAULT_LINE_WIDTH,
                                                  ::DEFAULT_LINE_COLOR)
@@ -113,30 +112,8 @@ impl DrawableMechanic for ActorManager {
     fn add_instance_to_mesh_builder(instance: &Self::Instance,
                                     mesh_builder: &mut ggez_gfx::MeshBuilder,
                                     ggez_ctx: &mut GgEzContext) -> Result<(),Self::ErrorType> {
-        // Get actor position
-        let actor_pos = instance.origin();
-
-        //OPT: *PERFORMANCE* Do this in advance and pass in
-        // Get window dimensions
-        let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
-        let window_center = ggez_mint::Point2 {
-            x: window_x / 2.0,
-            y: window_y / 2.0
-        };
-        
-        //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
-        // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
-        let x_offset = actor_pos.x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
-        let y_offset = (-actor_pos.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
-                       (-actor_pos.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
-
-        let actor_center = ggez_mint::Point2 {
-            x: window_center.x + x_offset,
-            y: window_center.y + y_offset
-        };
-        
         // Create a HexGridCell object and add it to the mesh builder
-        let actor_hex = HexGridCell::new(actor_center, ::GRID_CELL_SIZE);
+        let actor_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::GRID_CELL_SIZE, ggez_ctx);
         
         //FEAT: Actual sprites (or images or something) for actors
         mesh_builder.circle(ggez_gfx::DrawMode::fill(), actor_hex.center(), ::GRID_CELL_SIZE/2.0, 1.0, colors::GREEN);

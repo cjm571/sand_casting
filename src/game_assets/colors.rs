@@ -133,6 +133,13 @@ pub const TRANSPARENT: ggez_gfx::Color = ggez_gfx::Color {
     a: 0.000
 };
 
+/* Highlighters (alphabetical) */
+pub const HILITE_STD: ggez_gfx::Color = ggez_gfx::Color {
+    r: 0.900,
+    g: 1.000,
+    b: 0.000,
+    a: 0.333,
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Utility Functions

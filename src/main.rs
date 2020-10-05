@@ -76,27 +76,29 @@ const DEFAULT_LINE_WIDTH:       f32 = 2.0;
 const DEFAULT_LINE_COLOR:       ggez_gfx::Color = colors::WHITE;
 
 /* Hex Grid */
+//OPT: *DESIGN* This is double-defined, check usage
 const GRID_CELL_SIZE: f32 = 25.0;
-// CENTER_TO_SIDE_DIST = GRID_CELL_SIZE * sin(pi/3)
+
 // Distance from centerpoint of hex to center of a side
 static CENTER_TO_SIDE_DIST: f32 = GRID_CELL_SIZE * 0.866_025_4;
-// CENTER_TO_VERTEX_DIST = GRID_CELL_SIZE * cos(pi/3)
+
+//OPT: *DESIGN* This is double-defined, check usage
 // Distance from centerpoint of hex to center of a side
-static CENTER_TO_VERTEX_DIST: f32 = GRID_CELL_SIZE * 0.5;
+static CENTER_TO_VERTEX_DIST: f32 = GRID_CELL_SIZE;
 
 /* Mechanics */
 const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: usize = 10;
-// const DEFAULT_MAX_OBSTACLE_LENGTH: u8 = 5;
 
 
 fn main() {
     //OPT: *DESIGN* Helper function to do this cleanly
+    //              Or replace it with some kindof CLI parsing crate...
     // Parse command line arguments
     let args: Vec<String> = env::args().collect();
 
     // Create logger instance, or disable if required
     let logger_original;
-    if args.contains(&String::from("-logging")) {
+    if args.contains(&String::from("-log")) {
         logger_original = logger::Instance::default();
     }
     else {
@@ -105,7 +107,7 @@ fn main() {
 
     // Create profiler instance, or disable if required
     let profiler_original;
-    if args.contains(&String::from("profiling")) {
+    if args.contains(&String::from("-profile")) {
         profiler_original = profiler::Instance::default();
     }
     else {

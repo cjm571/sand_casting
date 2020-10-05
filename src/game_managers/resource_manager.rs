@@ -22,7 +22,6 @@ Purpose:
 
 use cast_iron::{
     element::Elemental,
-    hex_directions,
     logger,
     mechanics::resource::Resource,
     Locatable,
@@ -116,30 +115,8 @@ impl DrawableMechanic for ResourceManager {
     fn add_instance_to_mesh_builder(instance: &Self::Instance,
                                     mesh_builder: &mut ggez_gfx::MeshBuilder,
                                     ggez_ctx: &mut GgEzContext) -> Result<(), Self::ErrorType> {
-        // Get origin coords for current resource instance
-        let res_coords = instance.origin();
-
-        //OPT: *PERFORMANCE* Do this in advance and pass in
-        // Get window dimensions
-        let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
-        let window_center = ggez_mint::Point2 {
-            x: window_x / 2.0,
-            y: window_y / 2.0
-        };
-
-        //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
-        // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
-        let x_offset = res_coords.x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
-        let y_offset = (-res_coords.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
-                        (-res_coords.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
-
-        let res_center = ggez_mint::Point2 {
-            x: window_center.x + x_offset,
-            y: window_center.y + y_offset
-        };
-
         // Create a HexGridCell object and add it to the mesh builder
-        let cur_hex = HexGridCell::new(res_center, ::GRID_CELL_SIZE);
+        let cur_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::GRID_CELL_SIZE, ggez_ctx);
         cur_hex.add_to_mesh(colors::from_resource(instance), colors::WHITE, mesh_builder);
 
         // Create radial HexGridCells as necessary

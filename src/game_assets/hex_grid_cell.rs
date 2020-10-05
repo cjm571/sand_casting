@@ -21,12 +21,19 @@ Purpose:
 
 use std::f32::consts::PI;
 
-use cast_iron::hex_directions;
+use cast_iron::{
+    context::Context as CastIronContext,
+    coords,
+    hex_directions
+};
 
 use ggez::{
+    Context as GgEzContext,
     graphics as ggez_gfx,
     mint as ggez_mint,
 };
+
+use crate::game_assets::colors;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -44,8 +51,9 @@ const MIN_ALPHA_VAL: f32 = 0.1;
 // Point array starts with the eastern-most point, and continues counter-clockwise.
 #[derive(Debug, Copy, Clone)]
 pub struct HexGridCell {
-    center:     ggez_mint::Point2<f32>,
-    vertices:   [ggez_mint::Point2<f32>; 6],
+    center:     ggez_mint::Point2<f32>,         // Pixel-coords centerpoint
+    vertices:   [ggez_mint::Point2<f32>; 6],    // Pixel-coords of vertices
+    highlight:  bool,                           // Indicates if cell should be highlighted in world grid
 }
 
 //TODO: Proper implementation of an error type
@@ -55,8 +63,8 @@ pub struct HexGridCellError;
 //  Object Implementation
 ///////////////////////////////////////////////////////////////////////////////
 impl HexGridCell {
-    /// Constructor
-    pub fn new(center: ggez_mint::Point2<f32>, size: f32) -> Self {
+    /// Pixel-coords-based constructor
+    pub fn new_from_pixel_coords(center: ggez_mint::Point2<f32>, size: f32) -> Self {
         // Compute vertices components
         let x_offset = size * (PI/3.0).cos();
         let y_offset = size * (PI/3.0).sin();
@@ -70,13 +78,21 @@ impl HexGridCell {
         vertices[4] = ggez_mint::Point2{ x: center.x - x_offset,   y: center.y + y_offset};
         vertices[5] = ggez_mint::Point2{ x: center.x + x_offset,   y: center.y + y_offset};
 
-        Self {center, vertices}
+        Self {center, vertices, highlight: false}
+    }
+
+    /// Hex-coords-based constructor
+    pub fn new_from_hex_coords(center: &coords::Position, size: f32, ggez_ctx: &GgEzContext) -> Self {
+        // Convert to pixel coords and use the pixel coords constructor
+        let pixel_center = Self::hex_to_pixel_coords(center, ggez_ctx);
+        
+        Self::new_from_pixel_coords(pixel_center, size)
     }
 
 
-    ///////////////////////////////////////////////////////////////////////////
-    //  Accessor Methods
-    ///////////////////////////////////////////////////////////////////////////
+    /*  *  *  *  *  *  *  *\
+     *  Accessor Methods  *
+    \*  *  *  *  *  *  *  */
 
     pub fn center(&self) -> ggez_mint::Point2<f32> {
         self.center
@@ -86,11 +102,29 @@ impl HexGridCell {
         self.vertices
     }
 
+    pub fn highlighted(&self) -> bool {
+        self.highlight
+    }
 
-    ///////////////////////////////////////////////////////////////////////////
-    //  Utility Methods
-    ///////////////////////////////////////////////////////////////////////////
+    
+    /*  *  *  *  *  *  *  *\
+     *  Mutator Methods   *
+    \*  *  *  *  *  *  *  */
 
+    pub fn set_highlight(&mut self, highlight: bool) {
+        self.highlight = highlight;
+    }
+
+    pub fn toggle_highlight(&mut self) {
+        self.highlight = !self.highlight;
+    }
+
+
+    /*  *  *  *  *  *  *  *\
+     *  Utility Methods   *
+    \*  *  *  *  *  *  *  */
+
+    //OPT: *DESIGN* Fill/outline color should be intrinsic components of the HexGridCell object, not passed-in parameters
     /// Add hexagon to the given mesh builder
     pub fn add_to_mesh(&self, fill_color: ggez_gfx::Color, outline_color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
         // Add the filled hexagon
@@ -98,8 +132,14 @@ impl HexGridCell {
 
         // Add the outline of the hexagon
         self.add_hex_outline_to_mesh(outline_color, mesh_builder);
+
+        // Add highlight if necessary
+        if self.highlight {
+            self.add_highlight_to_mesh(mesh_builder);
+        }
     }
 
+    //OPT: *DESIGN* This should be a static helper function
     pub fn add_radials_to_mesh(
         &self,
         fill_color: ggez_gfx::Color,
@@ -138,7 +178,7 @@ impl HexGridCell {
                 radial_vertices[i].y -= (::CENTER_TO_SIDE_DIST*2.0*adj_theta.sin()) * level as f32;
 
                 // Create hex cells at each vertex
-                let vert_hex = HexGridCell::new(radial_vertices[i], ::GRID_CELL_SIZE);
+                let vert_hex = HexGridCell::new_from_pixel_coords(radial_vertices[i], ::GRID_CELL_SIZE);
                 vert_hex.add_to_mesh(cur_fill_color, outline_color, mesh_builder);
 
                 // Create interstitial hex(es) if level requires
@@ -150,7 +190,7 @@ impl HexGridCell {
                         y: radial_vertices[i].y - (::CENTER_TO_SIDE_DIST*2.0*inter_hex_theta.sin()) * (j+1) as f32
                     };
 
-                    let inter_hex = HexGridCell::new(inter_hex_center, ::GRID_CELL_SIZE);
+                    let inter_hex = HexGridCell::new_from_pixel_coords(inter_hex_center, ::GRID_CELL_SIZE);
                     inter_hex.add_to_mesh(cur_fill_color, outline_color, mesh_builder);
                 }
             }
@@ -164,9 +204,56 @@ impl HexGridCell {
     }
 
 
-    ///////////////////////////////////////////////////////////////////////////
-    //  Helper Functions
-    ///////////////////////////////////////////////////////////////////////////
+    /*  *  *  *  *  *  *  *\
+     *  Utility Functions *
+    \*  *  *  *  *  *  *  */
+
+    //OPT: *DESIGN* Is this the right place for these?
+    pub fn pixel_to_hex_coords(cart_coords: ggez_mint::Point2<f32>, ggez_ctx: &GgEzContext, ci_ctx: &CastIronContext) -> coords::Position {
+        // Get pixel centerpoint of game window
+        let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
+        let window_center = ggez_mint::Point2 {
+            x: window_x / 2.0,
+            y: window_y / 2.0
+        };
+
+        // Calculate pixel deltas from center
+        let x_delta = cart_coords.x - window_center.x;
+        let y_delta = cart_coords.y - window_center.y;
+
+        // Calculate the delta along the X and Z planes, and calculate Y based on the results
+        let x = (2.0/3.0 * x_delta) / ::GRID_CELL_SIZE;
+        let z = (-1.0/3.0 * x_delta + (3.0_f32).sqrt()/3.0 * y_delta) / ::GRID_CELL_SIZE;
+        let y = -x - z;
+
+        // Compose into a position, and return
+        Self::hex_round(x, y, z, ci_ctx)
+    }
+
+    pub fn hex_to_pixel_coords(hex_pos: &coords::Position, ggez_ctx: &GgEzContext) -> ggez_mint::Point2<f32> {
+        // Get pixel centerpoint of game window
+        let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
+        let window_center = ggez_mint::Point2 {
+            x: window_x / 2.0,
+            y: window_y / 2.0
+        };
+
+        // Calculate x, y offsets
+        let x_offset = hex_pos.x() as f32 * ::CENTER_TO_VERTEX_DIST * 3.0 / 2.0;
+        let y_offset = (-hex_pos.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
+                       (-hex_pos.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
+
+        ggez_mint::Point2 {
+            x: window_center.x + x_offset,
+            y: window_center.y + y_offset,
+        }
+    }
+
+
+
+    /*  *  *  *  *  *  *  *\
+     *  Helper Methods    *
+    \*  *  *  *  *  *  *  */
 
     /// Adds the fill portion of a hex cell to the given Mesh
     fn add_hex_fill_to_mesh(&self, color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
@@ -176,5 +263,49 @@ impl HexGridCell {
     /// Adds the outline portion of a hex cell to the given Mesh
     fn add_hex_outline_to_mesh(&self, color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
         mesh_builder.polygon(ggez_gfx::DrawMode::stroke(::DEFAULT_LINE_WIDTH), &self.vertices, color).unwrap();
+    }
+
+    fn add_highlight_to_mesh(&self, mesh_builder: &mut ggez_gfx::MeshBuilder) {
+        mesh_builder.polygon(ggez_gfx::DrawMode::fill(), &self.vertices, colors::HILITE_STD).unwrap();
+    }
+
+    
+
+
+    /*  *  *  *  *  *  *  *\
+     *  Helper Fucntions  *
+    \*  *  *  *  *  *  *  */
+
+    fn hex_round(x: f32, y: f32, z: f32, ci_ctx: &CastIronContext) -> coords::Position {
+        // Round all floating coords to nearest integer
+        let rounded_x = x.round() as i32;
+        let rounded_y = y.round() as i32;
+        let rounded_z = z.round() as i32;
+
+        // NOTE: Rounding may have broken the x + y + z == 0 constraint
+        // To combat this, we'll reset the coord component with the largest delta from the nearest integer
+        // to what is required by the constraint.
+        let delta_x = (x - rounded_x as f32).abs();
+        let delta_y = (y - rounded_y as f32).abs();
+        let delta_z = (z - rounded_z as f32).abs();
+
+        if delta_x > delta_y && delta_x > delta_z {
+            // X has largest delta, recalculate it
+            let recalc_x = -rounded_y - rounded_z;
+
+            coords::Position::new(recalc_x, rounded_y, rounded_z, ci_ctx).unwrap()
+        }
+        else if delta_y > delta_z {
+            // Y has largest delta, recalculate it
+            let recalc_y = -rounded_x - rounded_z;
+
+            coords::Position::new(rounded_x, recalc_y, rounded_z, ci_ctx).unwrap()
+        }
+        else {
+            // Z has largest delta, recalculate it
+            let recalc_z = -rounded_x - rounded_y;
+
+            coords::Position::new(rounded_x, rounded_y, recalc_z, ci_ctx).unwrap()
+        }
     }
 }

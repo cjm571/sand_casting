@@ -32,11 +32,16 @@ use ggez::{
     GameResult as GgEzGameResult,
     event as ggez_event,
     graphics as ggez_gfx,
+    input::mouse as ggez_mouse,
+    mint as ggez_mint,
     timer as ggez_timer,
 };
 
 use crate::{
-    game_assets::colors,
+    game_assets::{
+        colors,
+        hex_grid_cell::HexGridCell,
+    },
     game_managers::{
         DrawableMechanic,
         actor_manager::ActorManager,
@@ -129,9 +134,9 @@ impl SandCastingGameState {
     }
 
 
-    /*  *  *  *  *  *  *\
-     *  Utiliy Methods *
-    \*  *  *  *  *  *  */
+    /*  *  *  *  *  *  *  *\
+     *  Utility Methods   *
+    \*  *  *  *  *  *  *  */
 
     fn initialize(&mut self, ggez_ctx: &mut GgEzContext) {
         // Create random resources
@@ -163,7 +168,6 @@ impl SandCastingGameState {
 ///////////////////////////////////////////////////////////////////////////////
 
 //FEAT: Add performance metrics to update, draw
-//FEAT: Handle mouse events
 //FEAT: Handle keyboard events, '~' for a debug view would be cool
 impl ggez_event::EventHandler for SandCastingGameState {
     fn update(&mut self, ggez_ctx: &mut GgEzContext) -> GgEzGameResult<()> {
@@ -229,5 +233,27 @@ impl ggez_event::EventHandler for SandCastingGameState {
         self.profiler.send_stacked_draw_time(start_time, draw_timings).unwrap();
         
         res
+    }
+
+    fn mouse_button_down_event(&mut self, ctx: &mut GgEzContext, button: ggez_mouse::MouseButton, x: f32, y: f32) {
+        // Pack up event coordinates
+        let event_coords = ggez_mint::Point2 {x, y};
+
+        // Handle each button as appropriate
+        match button {
+            ggez_mouse::MouseButton::Left => {
+                // Determine which hex the mouse event occurred in
+                let event_hex_pos = HexGridCell::pixel_to_hex_coords(event_coords, ctx, &self.ci_ctx);
+
+                ci_log!(self.logger, logger::FilterLevel::Debug, "Event ({:?}) occurred at position: {}", button, event_hex_pos);
+
+                self.world_grid_manager.toggle_cell_highlight(&event_hex_pos, ctx).unwrap();
+
+            },
+            //TODO: Handle other mouse events
+            _ => {
+                ci_log!(self.logger, logger::FilterLevel::Warning, "Mouse Event ({:?}) unimplemented!", button);
+            }
+        }
     }
 }

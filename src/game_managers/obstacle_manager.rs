@@ -118,29 +118,11 @@ impl DrawableMechanic for ObstacleManager {
         // Get all coords for current obstacle instance
         let all_obstacle_coords = instance.all_coords();
 
-        //OPT: *PERFORMANCE* Do this in advance and pass in
-        // Get window dimensions
-        let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
-        let window_center = ggez_mint::Point2 {
-            x: window_x / 2.0,
-            y: window_y / 2.0
-        };
-
         // Iterate through current obstacle's coords, adding hexes to the mesh for each
         for (i, obstacle_coords) in all_obstacle_coords.iter().enumerate() {
             //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
-            // Calculate x, y offsets to determine (x,y) centerpoint from hex grid coords
-            let x_offset = obstacle_coords.x() as f32 * (::CENTER_TO_VERTEX_DIST * 3.0);
-            let y_offset = (-obstacle_coords.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
-                           (-obstacle_coords.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
-
-            let obstacle_center = ggez_mint::Point2 {
-                x: window_center.x + x_offset,
-                y: window_center.y + y_offset
-            };
-
             // Create a HexGridCell object and add it to the mesh builder
-            let cur_hex = HexGridCell::new(obstacle_center, ::GRID_CELL_SIZE);
+            let cur_hex = HexGridCell::new_from_hex_coords(&obstacle_coords, ::GRID_CELL_SIZE, ggez_ctx);
             cur_hex.add_to_mesh(colors::from_element(instance.element()), colors::DARKGREY, mesh_builder);
 
             //OPT: *DESIGN* This is basically an adjacency check, which would be a very useful function for the Coords module
