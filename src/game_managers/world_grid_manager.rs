@@ -180,13 +180,13 @@ impl WorldGridManager {
         for radial_level in 1 ..= radial_size {
             // Translate to the starting hex of the next ring, but don't add it to the map (will be done by the innermost loop)
             //OPT: *STYLE* put starting direction in a variable?
-            cur_hex_position += coords::Translation::from(hex_directions::Side::NORTHEAST);
+            cur_hex_position = cur_hex_position + coords::Translation::from(hex_directions::Side::NORTHEAST);
 
             let directions: hex_directions::Provider<hex_directions::Side> = hex_directions::Provider::new(hex_directions::Side::NORTH);
             for direction in directions {
                 for _intradirection_step in 0..radial_level {
                     // Add the hex at the current step
-                    cur_hex_position += coords::Translation::from(direction);
+                    cur_hex_position = cur_hex_position + coords::Translation::from(direction);
 
                     cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position, ::GRID_CELL_SIZE, ggez_ctx);
                     hex_map.insert(cur_hex_position, cur_hex_cell_instance);

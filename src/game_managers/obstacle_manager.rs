@@ -115,23 +115,21 @@ impl DrawableMechanic for ObstacleManager {
     fn add_instance_to_mesh_builder(instance: &Self::Instance,
                                     mesh_builder: &mut ggez_gfx::MeshBuilder,
                                     ggez_ctx: &mut GgEzContext) -> Result<(),Self::ErrorType> {
-        // Get all coords for current obstacle instance
-        let all_obstacle_coords = instance.all_coords();
+        // Get all positions for current obstacle instance
+        let obstacle_positions = instance.positions();
 
-        // Iterate through current obstacle's coords, adding hexes to the mesh for each
-        for (i, obstacle_coords) in all_obstacle_coords.iter().enumerate() {
+        // Iterate through current obstacle's positions, adding hexes to the mesh for each
+        for (i, obstacle_pos) in obstacle_positions.iter().enumerate() {
             //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
             // Create a HexGridCell object and add it to the mesh builder
-            let cur_hex = HexGridCell::new_from_hex_coords(&obstacle_coords, ::GRID_CELL_SIZE, ggez_ctx);
+            let cur_hex = HexGridCell::new_from_hex_coords(&obstacle_pos, ::GRID_CELL_SIZE, ggez_ctx);
             cur_hex.add_to_mesh(colors::from_element(instance.element()), colors::DARKGREY, mesh_builder);
 
-            //OPT: *DESIGN* This is basically an adjacency check, which would be a very useful function for the Coords module
             // Draw a line over the hex side between the new and previous obstacle cell for all but the first cell
             if i > 0 {
-                let prev_obstacle_coords = all_obstacle_coords.get(i-1).unwrap();
-
-                let direction = hex_directions::Side::from(*prev_obstacle_coords - *obstacle_coords);
                 // Determine direction of hex side that should be overwritten
+                let prev_obstacle_pos = obstacle_positions.get(i-1).unwrap();
+                let direction = hex_directions::Side::from(prev_obstacle_pos - obstacle_pos);
 
                 //OPT: *STYLE* oh my god...
                 // Get the vertices for the direction's side

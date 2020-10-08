@@ -250,7 +250,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
                 self.world_grid_manager.toggle_cell_highlight(&event_hex_pos, ctx).unwrap();
 
             },
-            //TODO: Handle other mouse events
+            //FEAT: Handle other mouse events
             _ => {
                 ci_log!(self.logger, logger::FilterLevel::Warning, "Mouse Event ({:?}) unimplemented!", button);
             }
