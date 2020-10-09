@@ -129,7 +129,7 @@ impl DrawableMechanic for ObstacleManager {
             if i > 0 {
                 // Determine direction of hex side that should be overwritten
                 let prev_obstacle_pos = obstacle_positions.get(i-1).unwrap();
-                let direction = hex_directions::Side::from(prev_obstacle_pos - obstacle_pos);
+                let direction = hex_directions::Side::from(obstacle_pos.delta_to(prev_obstacle_pos));
 
                 //OPT: *STYLE* oh my god...
                 // Get the vertices for the direction's side

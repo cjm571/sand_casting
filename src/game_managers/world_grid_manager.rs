@@ -23,6 +23,7 @@ Purpose:
 use std::collections::HashMap;
 
 use cast_iron::{
+    context::Context as CastIronContext,
     coords,
     hex_directions,
     logger,
@@ -71,7 +72,12 @@ pub struct WorldGridError;
 impl WorldGridManager {
     /// Returns a new instance of WorldGridManager, with a base grid mesh initialized based on
     /// the GGEZ context's current window dimensions.
-    pub fn new(logger_original: &logger::Instance, radial_size: usize, ggez_ctx: &mut GgEzContext) -> Self {
+    pub fn new(
+        logger_original: &logger::Instance,
+        radial_size: usize,
+        ci_ctx: &CastIronContext,
+        ggez_ctx: &mut GgEzContext
+    ) -> Self {
         // Clone the logger instance so this module has its own sender to use
         let logger_clone = logger_original.clone();
 
@@ -85,7 +91,7 @@ impl WorldGridManager {
                                 ::DEFAULT_LINE_WIDTH,
                                 ::DEFAULT_LINE_COLOR)
                                 .unwrap(),
-            hex_map:        Self::build_default_hex_cell_map(radial_size, ggez_ctx),
+            hex_map:        Self::build_default_hex_cell_map(radial_size, ci_ctx, ggez_ctx),
         };
         world_grid_manager.update_base_mesh(ggez_ctx);
 
@@ -162,7 +168,7 @@ impl WorldGridManager {
     \*  *  *  *  *  *  *  */
 
     /// Builds representation of all hex grid cells
-    fn build_default_hex_cell_map(radial_size: usize, ggez_ctx: &GgEzContext) -> HashMap<coords::Position, HexGridCell> {
+    fn build_default_hex_cell_map(radial_size: usize, ci_ctx: &CastIronContext, ggez_ctx: &GgEzContext) -> HashMap<coords::Position, HexGridCell> {
         // There are 6*(n-1) cells for a given (1-based) level n of a hex grid, so size map according to arithmetic sum
         let map_size = 1 + ((radial_size as f32/2.0) * ((2.0*NUM_ADDITIONAL_CELLS_PER_LEVEL as f32) + ((radial_size as f32 - 1.0)*NUM_ADDITIONAL_CELLS_PER_LEVEL as f32))) as usize;
 
@@ -180,13 +186,13 @@ impl WorldGridManager {
         for radial_level in 1 ..= radial_size {
             // Translate to the starting hex of the next ring, but don't add it to the map (will be done by the innermost loop)
             //OPT: *STYLE* put starting direction in a variable?
-            cur_hex_position = cur_hex_position + coords::Translation::from(hex_directions::Side::NORTHEAST);
+            cur_hex_position.translate(&coords::Translation::from(hex_directions::Side::NORTHEAST), ci_ctx).expect("Could not translate to the starting hex of the next ring.");
 
             let directions: hex_directions::Provider<hex_directions::Side> = hex_directions::Provider::new(hex_directions::Side::NORTH);
             for direction in directions {
                 for _intradirection_step in 0..radial_level {
                     // Add the hex at the current step
-                    cur_hex_position = cur_hex_position + coords::Translation::from(direction);
+                    cur_hex_position.translate(&coords::Translation::from(direction), ci_ctx).expect("Could not translate to next intrastep hex.");
 
                     cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position, ::GRID_CELL_SIZE, ggez_ctx);
                     hex_map.insert(cur_hex_position, cur_hex_cell_instance);

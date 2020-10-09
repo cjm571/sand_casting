@@ -209,7 +209,7 @@ impl HexGridCell {
     \*  *  *  *  *  *  *  */
 
     //OPT: *DESIGN* Is this the right place for these?
-    pub fn pixel_to_hex_coords(cart_coords: ggez_mint::Point2<f32>, ggez_ctx: &GgEzContext, ci_ctx: &CastIronContext) -> coords::Position {
+    pub fn pixel_to_hex_coords(cart_coords: ggez_mint::Point2<f32>, ci_ctx: &CastIronContext, ggez_ctx: &GgEzContext) -> coords::Position {
         // Get pixel centerpoint of game window
         let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
         let window_center = ggez_mint::Point2 {
