@@ -49,6 +49,13 @@ use crate::game_assets::{
 /// Number of additional hex cells per level in a hex grid.
 const NUM_ADDITIONAL_CELLS_PER_LEVEL: usize = 6;
 
+/// Starting direction of a new hex ring
+const NEW_RING_START_DIRECTION: hex_directions::Side    = hex_directions::Side::NORTHEAST;
+
+/// First intra-ring direction in new hex ring
+const FIRST_INTRARING_DIRECTION: hex_directions::Side   = hex_directions::Side::NORTH;
+
+
 ///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
@@ -185,10 +192,9 @@ impl WorldGridManager {
         // Add the remainder of the hexes in a spiral pattern
         for radial_level in 1 ..= radial_size {
             // Translate to the starting hex of the next ring, but don't add it to the map (will be done by the innermost loop)
-            //OPT: *STYLE* put starting direction in a variable?
-            cur_hex_position.translate(&coords::Translation::from(hex_directions::Side::NORTHEAST), ci_ctx).expect("Could not translate to the starting hex of the next ring.");
+            cur_hex_position.translate(&coords::Translation::from(NEW_RING_START_DIRECTION), ci_ctx).expect("Could not translate to the starting hex of the next ring.");
 
-            let directions: hex_directions::Provider<hex_directions::Side> = hex_directions::Provider::new(hex_directions::Side::NORTH);
+            let directions: hex_directions::Provider<hex_directions::Side> = hex_directions::Provider::new(FIRST_INTRARING_DIRECTION);
             for direction in directions {
                 for _intradirection_step in 0..radial_level {
                     // Add the hex at the current step

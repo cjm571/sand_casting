@@ -131,10 +131,12 @@ impl DrawableMechanic for ObstacleManager {
                 let prev_obstacle_pos = obstacle_positions.get(i-1).unwrap();
                 let direction = hex_directions::Side::from(obstacle_pos.delta_to(prev_obstacle_pos));
 
-                //OPT: *STYLE* oh my god...
-                // Get the vertices for the direction's side
-                let shared_line = [*cur_hex.vertices().get(usize::from(hex_directions::Side::get_adjacent_vertices(direction).0)).unwrap(),
-                                   *cur_hex.vertices().get(usize::from(hex_directions::Side::get_adjacent_vertices(direction).1)).unwrap()];
+                // Get the vertices for the direction's side                
+                let shared_vertex_indices = vec![usize::from(hex_directions::Side::get_adjacent_vertices(direction).0),
+                                                 usize::from(hex_directions::Side::get_adjacent_vertices(direction).1)];
+
+                let shared_line = [cur_hex.vertices()[shared_vertex_indices[0]],
+                                   cur_hex.vertices()[shared_vertex_indices[1]]];
 
                 mesh_builder.line(&shared_line, ::DEFAULT_LINE_WIDTH, colors::from_element(instance.element())).unwrap();
             }

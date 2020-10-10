@@ -47,8 +47,6 @@ pub mod world_grid_manager;
 //  Trait Declarations
 ///////////////////////////////////////////////////////////////////////////////
 
-
-//OPT: *STYLE* Better named VisualMechanic/VisibleMechanic?
 //OPT: *DESIGN* This may be abuse of the trait system... there's no guarantee that the implementor will do their shit correctly
 //OPT: *DESIGN* Also, this probably doesn't need to include the rand stuff
 pub trait DrawableMechanic {
