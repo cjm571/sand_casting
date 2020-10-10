@@ -24,7 +24,7 @@ use cast_iron::{
     element::Elemental,
     logger,
     mechanics::resource::Resource,
-    Locatable,
+    Plottable,
 };
 
 use ggez::{

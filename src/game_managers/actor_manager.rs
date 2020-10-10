@@ -22,7 +22,7 @@ Purpose:
 use cast_iron::{
     actor::Actor,
     logger,
-    Locatable,
+    Plottable,
 };
 
 use ggez::{

@@ -25,7 +25,7 @@ use cast_iron::{
     hex_directions,
     logger,
     mechanics::obstacle::Obstacle,
-    Locatable,
+    Plottable,
 };
 
 use ggez::{

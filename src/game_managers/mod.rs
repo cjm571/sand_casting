@@ -21,7 +21,7 @@ Purpose:
 
 use cast_iron::{
     context::Context as CastIronContext,
-    Locatable,
+    Plottable,
     Randomizable,
 };
 
@@ -58,7 +58,7 @@ pub trait DrawableMechanic {
     \*  *  *  *  *  *  *  *  */
 
     /// Implementor-defined type representing an instance of its drawable mechanic
-    type Instance: Randomizable + Locatable;
+    type Instance: Randomizable + Plottable;
 
     //OPT: *DESIGN* Figure out how to use this correctly...
     //              Causes a compiler error if returned within an Err() Option type
