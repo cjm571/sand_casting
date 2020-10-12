@@ -186,7 +186,7 @@ impl WorldGridManager {
         // Add central hex
         let central_hex_position = coords::Position::default();
         let mut cur_hex_position = central_hex_position;
-        let mut cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position, ::GRID_CELL_SIZE, ggez_ctx);
+        let mut cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position, ::HEX_RADIUS_VERTEX, ggez_ctx);
         hex_map.insert(cur_hex_position, cur_hex_cell_instance);
 
         // Add the remainder of the hexes in a spiral pattern
@@ -200,7 +200,7 @@ impl WorldGridManager {
                     // Add the hex at the current step
                     cur_hex_position.translate(&coords::Translation::from(direction), ci_ctx).expect("Could not translate to next intrastep hex.");
 
-                    cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position, ::GRID_CELL_SIZE, ggez_ctx);
+                    cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position, ::HEX_RADIUS_VERTEX, ggez_ctx);
                     hex_map.insert(cur_hex_position, cur_hex_cell_instance);
                 }
             }

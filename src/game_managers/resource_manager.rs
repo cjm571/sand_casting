@@ -116,7 +116,7 @@ impl DrawableMechanic for ResourceManager {
                                     mesh_builder: &mut ggez_gfx::MeshBuilder,
                                     ggez_ctx: &mut GgEzContext) -> Result<(), Self::ErrorType> {
         // Create a HexGridCell object and add it to the mesh builder
-        let cur_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::GRID_CELL_SIZE, ggez_ctx);
+        let cur_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::HEX_RADIUS_VERTEX, ggez_ctx);
         cur_hex.add_to_mesh(colors::from_resource(instance), colors::WHITE, mesh_builder);
 
         // Create radial HexGridCells as necessary

@@ -64,17 +64,17 @@ pub struct HexGridCellError;
 ///////////////////////////////////////////////////////////////////////////////
 impl HexGridCell {
     /// Pixel-coords-based constructor
-    pub fn new_from_pixel_coords(center: ggez_mint::Point2<f32>, size: f32) -> Self {
+    pub fn new_from_pixel_coords(center: ggez_mint::Point2<f32>, radius: f32) -> Self {
         // Compute vertices components
-        let x_offset = size * (PI/3.0).cos();
-        let y_offset = size * (PI/3.0).sin();
+        let x_offset = radius * (PI/3.0).cos();
+        let y_offset = radius * (PI/3.0).sin();
 
         // NOTE: these are graphical coordinates, where (0, 0) is the top-left
         let mut vertices: [ggez_mint::Point2<f32>; 6] = [ggez_mint::Point2{x: 0.0, y: 0.0}; 6];
-        vertices[0] = ggez_mint::Point2{ x: center.x + size,       y: center.y};
+        vertices[0] = ggez_mint::Point2{ x: center.x + radius,     y: center.y};
         vertices[1] = ggez_mint::Point2{ x: center.x + x_offset,   y: center.y - y_offset};
         vertices[2] = ggez_mint::Point2{ x: center.x - x_offset,   y: center.y - y_offset};
-        vertices[3] = ggez_mint::Point2{ x: center.x - size,       y: center.y};
+        vertices[3] = ggez_mint::Point2{ x: center.x - radius,     y: center.y};
         vertices[4] = ggez_mint::Point2{ x: center.x - x_offset,   y: center.y + y_offset};
         vertices[5] = ggez_mint::Point2{ x: center.x + x_offset,   y: center.y + y_offset};
 
@@ -82,11 +82,11 @@ impl HexGridCell {
     }
 
     /// Hex-coords-based constructor
-    pub fn new_from_hex_coords(center: &coords::Position, size: f32, ggez_ctx: &GgEzContext) -> Self {
+    pub fn new_from_hex_coords(center: &coords::Position, radius: f32, ggez_ctx: &GgEzContext) -> Self {
         // Convert to pixel coords and use the pixel coords constructor
         let pixel_center = Self::hex_to_pixel_coords(center, ggez_ctx);
         
-        Self::new_from_pixel_coords(pixel_center, size)
+        Self::new_from_pixel_coords(pixel_center, radius)
     }
 
 
@@ -170,15 +170,15 @@ impl HexGridCell {
                 // This is important as all radial groups of hexes will effectively be large point-up hexes
                 let adj_theta = theta + PI/6.0;
 
-                radial_vertices[i].x = origin_centerpoint.x + (::CENTER_TO_SIDE_DIST*2.0*adj_theta.cos());
-                radial_vertices[i].y = origin_centerpoint.y - (::CENTER_TO_SIDE_DIST*2.0*adj_theta.sin());
+                radial_vertices[i].x = origin_centerpoint.x + (::HEX_RADIUS_SIDE*2.0*adj_theta.cos());
+                radial_vertices[i].y = origin_centerpoint.y - (::HEX_RADIUS_SIDE*2.0*adj_theta.sin());
 
                 // Inflate the vertices based on level
-                radial_vertices[i].x += (::CENTER_TO_SIDE_DIST*2.0*adj_theta.cos()) * level as f32;
-                radial_vertices[i].y -= (::CENTER_TO_SIDE_DIST*2.0*adj_theta.sin()) * level as f32;
+                radial_vertices[i].x += (::HEX_RADIUS_SIDE*2.0*adj_theta.cos()) * level as f32;
+                radial_vertices[i].y -= (::HEX_RADIUS_SIDE*2.0*adj_theta.sin()) * level as f32;
 
                 // Create hex cells at each vertex
-                let vert_hex = HexGridCell::new_from_pixel_coords(radial_vertices[i], ::GRID_CELL_SIZE);
+                let vert_hex = HexGridCell::new_from_pixel_coords(radial_vertices[i], ::HEX_RADIUS_VERTEX);
                 vert_hex.add_to_mesh(cur_fill_color, outline_color, mesh_builder);
 
                 // Create interstitial hex(es) if level requires
@@ -186,11 +186,11 @@ impl HexGridCell {
                     let inter_hex_theta = adj_theta + 4.0*PI/6.0;
 
                     let inter_hex_center = ggez_mint::Point2 {
-                        x: radial_vertices[i].x + (::CENTER_TO_SIDE_DIST*2.0*inter_hex_theta.cos()) * (j+1) as f32,
-                        y: radial_vertices[i].y - (::CENTER_TO_SIDE_DIST*2.0*inter_hex_theta.sin()) * (j+1) as f32
+                        x: radial_vertices[i].x + (::HEX_RADIUS_SIDE*2.0*inter_hex_theta.cos()) * (j+1) as f32,
+                        y: radial_vertices[i].y - (::HEX_RADIUS_SIDE*2.0*inter_hex_theta.sin()) * (j+1) as f32
                     };
 
-                    let inter_hex = HexGridCell::new_from_pixel_coords(inter_hex_center, ::GRID_CELL_SIZE);
+                    let inter_hex = HexGridCell::new_from_pixel_coords(inter_hex_center, ::HEX_RADIUS_VERTEX);
                     inter_hex.add_to_mesh(cur_fill_color, outline_color, mesh_builder);
                 }
             }
@@ -222,8 +222,8 @@ impl HexGridCell {
         let y_delta = cart_coords.y - window_center.y;
 
         // Calculate the delta along the X and Z planes, and calculate Y based on the results
-        let x = (2.0/3.0 * x_delta) / ::GRID_CELL_SIZE;
-        let z = (-1.0/3.0 * x_delta + (3.0_f32).sqrt()/3.0 * y_delta) / ::GRID_CELL_SIZE;
+        let x = (2.0/3.0 * x_delta) / ::HEX_RADIUS_VERTEX;
+        let z = (-1.0/3.0 * x_delta + (3.0_f32).sqrt()/3.0 * y_delta) / ::HEX_RADIUS_VERTEX;
         let y = -x - z;
 
         // Compose into a position, and return
@@ -239,9 +239,9 @@ impl HexGridCell {
         };
 
         // Calculate x, y offsets
-        let x_offset = hex_pos.x() as f32 * ::CENTER_TO_VERTEX_DIST * 3.0 / 2.0;
-        let y_offset = (-hex_pos.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0)) +
-                       (-hex_pos.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::CENTER_TO_SIDE_DIST * 2.0));
+        let x_offset = hex_pos.x() as f32 * ::HEX_RADIUS_VERTEX * 3.0 / 2.0;
+        let y_offset = (-hex_pos.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::HEX_RADIUS_SIDE * 2.0)) +
+                       (-hex_pos.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::HEX_RADIUS_SIDE * 2.0));
 
         ggez_mint::Point2 {
             x: window_center.x + x_offset,
@@ -273,7 +273,7 @@ impl HexGridCell {
 
 
     /*  *  *  *  *  *  *  *\
-     *  Helper Fucntions  *
+     *  Helper Functions  *
     \*  *  *  *  *  *  *  */
 
     fn hex_round(x: f32, y: f32, z: f32, ci_ctx: &CastIronContext) -> coords::Position {

@@ -15,7 +15,8 @@ Copyright (C) 2020 CJ McAllister
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 
 Purpose:
-    //TODO: Fill in purpose statement
+    This module manages all active actors (both PCs and NPCs) in the game, as
+    well as providing utility methods for drawing, moving, etc.
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -113,10 +114,10 @@ impl DrawableMechanic for ActorManager {
                                     mesh_builder: &mut ggez_gfx::MeshBuilder,
                                     ggez_ctx: &mut GgEzContext) -> Result<(),Self::ErrorType> {
         // Create a HexGridCell object and add it to the mesh builder
-        let actor_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::GRID_CELL_SIZE, ggez_ctx);
+        let actor_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::HEX_RADIUS_VERTEX, ggez_ctx);
         
         //FEAT: Actual sprites (or images or something) for actors
-        mesh_builder.circle(ggez_gfx::DrawMode::fill(), actor_hex.center(), ::GRID_CELL_SIZE/2.0, 1.0, colors::GREEN);
+        mesh_builder.circle(ggez_gfx::DrawMode::fill(), actor_hex.center(), ::HEX_RADIUS_VERTEX/2.0, 1.0, colors::GREEN);
 
         Ok(())
     }

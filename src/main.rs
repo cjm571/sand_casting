@@ -75,16 +75,14 @@ const DEFAULT_TEXT_SIZE:        f32 = 16.0;
 const DEFAULT_LINE_WIDTH:       f32 = 2.0;
 const DEFAULT_LINE_COLOR:       ggez_gfx::Color = colors::WHITE;
 
+
 /* Hex Grid */
-//OPT: *DESIGN* This is double-defined, check usage
-const GRID_CELL_SIZE: f32 = 25.0;
+/// Distance from centerpoint of hex to center of a side
+const HEX_RADIUS_VERTEX:        f32 = 25.0;
 
-// Distance from centerpoint of hex to center of a side
-static CENTER_TO_SIDE_DIST: f32 = GRID_CELL_SIZE * 0.866_025_4;
+/// Distance from centerpoint of hex to center of a side
+const HEX_RADIUS_SIDE:          f32 = HEX_RADIUS_VERTEX * 0.866_025_4;
 
-//OPT: *DESIGN* This is double-defined, check usage
-// Distance from centerpoint of hex to center of a side
-static CENTER_TO_VERTEX_DIST: f32 = GRID_CELL_SIZE;
 
 /* Mechanics */
 const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: usize = 10;
