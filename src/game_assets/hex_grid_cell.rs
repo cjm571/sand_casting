@@ -195,7 +195,7 @@ impl HexGridCell {
                 }
             }
 
-            //FEAT: *DESIGN* A logarithmic scale would probably be prettier
+            //FEAT: A logarithmic scale would probably be prettier
             if has_gradient && cur_fill_color.a > MIN_ALPHA_VAL {
                 // Transparentize color such that we get to mostly transparent at the furthest level, but not fully transparent
                 cur_fill_color.a -= 1.0/radius as f32;

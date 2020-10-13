@@ -102,7 +102,7 @@ impl SandCastingGameState {
             weather_manager:    WeatherManager::default(logger_original, profiler_original, ci_ctx, ggez_ctx),
             world_grid_manager: WorldGridManager::new(
                                     logger_original,
-                                    ::DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE,
+                                    ::DEFAULT_GRID_RADIUS,
                                     ci_ctx,
                                     ggez_ctx),
         }

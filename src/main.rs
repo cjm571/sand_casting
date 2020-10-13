@@ -23,12 +23,15 @@ use std::env;
 
 extern crate cast_iron;
 use cast_iron::{
+    Disableable,
     ability::{
         Ability,
         aspect::*
     },
     actor::Actor,
-    context::Context as CastIronContext,
+    context::{
+        ContextBuilder as CastIronContextBuilder,
+    },
     element::Element,
     logger,
     ci_log,
@@ -66,7 +69,7 @@ pub mod profiler;
 //  Constants
 ///////////////////////////////////////////////////////////////////////////////
 
-/* Appearence */
+/* Window Appearance */
 const DEFAULT_WINDOW_SIZE_X:    f32 = 1000.0;
 const DEFAULT_WINDOW_SIZE_Y:    f32 = 1000.0;
 const DESIRED_FPS:              u32 = 60;
@@ -85,7 +88,23 @@ const HEX_RADIUS_SIDE:          f32 = HEX_RADIUS_VERTEX * 0.866_025_4;
 
 
 /* Mechanics */
-const DEFAULT_HEX_GRID_MAX_RADIAL_DISTANCE: usize = 10;
+/// Default hexagonal grid radius (in cells)
+const DEFAULT_GRID_RADIUS:              usize = 10;
+
+/// Default maximum number of attempts before considering random mechanic generation a failure
+const DEFAULT_MAX_RAND_ATTEMPTS:        usize = 10;
+
+/// Default maximum for the radius of resources (in cells)
+const DEFAULT_MAX_RESOURCE_RADIUS:      usize = 4;
+
+/// Default maximum for the length of an obstacle (in cells)
+const DEFAULT_MAX_OBSTACLE_LENGTH:      usize = 10;
+
+/// Default maximum intensity of a weather event
+const DEFAULT_MAX_WEATHER_INTENSITY:    f64 = 256.0;
+
+/// Default maximum duration for a weather event (in seconds)
+const DEFAULT_MAX_WEATHER_DURATION:     f64 = 10.0;
 
 
 fn main() {
@@ -113,7 +132,15 @@ fn main() {
     }
 
     // Create CastIron game context
-    let ci_ctx = CastIronContext::default();
+    let ci_ctx = CastIronContextBuilder::default()
+                    .grid_radius(DEFAULT_GRID_RADIUS)
+                    .max_obstacle_len(DEFAULT_MAX_OBSTACLE_LENGTH)
+                    .max_rand_attempts(DEFAULT_MAX_RAND_ATTEMPTS)
+                    .max_resource_radius(DEFAULT_MAX_RESOURCE_RADIUS)
+                    .max_weather_duration(DEFAULT_MAX_WEATHER_DURATION)
+                    .max_weather_intensity(DEFAULT_MAX_WEATHER_INTENSITY)
+                    .build();
+
     ci_log!(logger_original, logger::FilterLevel::Debug, "CastIron context created.");
 
     // Initialize Abilities

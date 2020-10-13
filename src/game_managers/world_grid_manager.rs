@@ -81,6 +81,7 @@ impl WorldGridManager {
     /// the GGEZ context's current window dimensions.
     pub fn new(
         logger_original: &logger::Instance,
+        //OPT: *DESIGN* Get grid radius from context
         radial_size: usize,
         ci_ctx: &CastIronContext,
         ggez_ctx: &mut GgEzContext
