@@ -83,7 +83,6 @@ struct CachedMetrics {
     pub peak_fps:   f64,
 }
 
-//FEAT: Support multiple customDelta files
 /// Enumeration for the various kinds of performance metrics that can be recorded.
 #[derive(VariantCount)]
 pub enum MetricContainer {
@@ -121,7 +120,7 @@ impl Instance {
 
 
     /*  *  *  *  *  *  *  *
-     *  Accesspr Methods  *
+     *  Accessor Methods  *
      *  *  *  *  *  *  *  */
     
     pub fn avg_fps(&self) -> f64 {

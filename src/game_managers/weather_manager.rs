@@ -112,7 +112,7 @@ impl WeatherManager {
         }
     }
 
-    /// Default staticructor
+    /// Default constructor
     pub fn default(logger_original: &logger::Instance,
                    profiler_original:   &profiler::Instance,
                    ci_ctx: &CastIronContext,
@@ -199,7 +199,7 @@ impl WeatherManager {
 
 
 impl HudElements {
-    /// Default staticructor
+    /// Default constructor
     fn default(ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Self {
         // Grab window dimensions so we can place the HUD appropriately
         let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
@@ -272,7 +272,6 @@ impl HudElements {
         ggez_gfx::draw(ggez_ctx, &self.int_bar_mesh, ggez_gfx::DrawParam::default()).unwrap();
     }
 
-    //FEAT: Use like, a cool picture frame or something instead
     /// Updates the frame mesh for the HUD (just a square outline for now)
     fn update_frame_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
         // Build a square in the top-right of the screen to hold the weather info
@@ -287,7 +286,6 @@ impl HudElements {
                                                         HUD_OUTLINE_LINE_COLOR).unwrap();
     }
 
-    //FEAT: Add graphics representing each element
     /// Updates the mesh for the HUD color (just a filled square for now)
     fn update_content_mesh(&mut self, color: ggez_gfx::Color, ggez_ctx: &mut GgEzContext) {
         // Build a square in the top-right of the screen to hold the weather info

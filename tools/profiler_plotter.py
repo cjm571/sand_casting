@@ -243,7 +243,7 @@ if __name__ == "__main__":
         usage()
         sys.exit(2)
 
-    # Intialize chart boilerplate
+    # Initialize chart boilerplate
     fig, ax0 = plt.subplots()
     color = 'tab:blue'
     ax0.set_xlabel('time (ms)')

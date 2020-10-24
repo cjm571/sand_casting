@@ -162,8 +162,7 @@ fn main() {
     blood_drain.set_morality(Morality::Evil);
     blood_drain.set_school(School::Destruction);
 
-    //FEAT: Make actors do stuff
-    // Intialize Actor
+    // Initialize Actor
     let mut player_one: Actor = Actor::new_name_only("CJ McAllister");
     player_one.add_ability(lightning_bolt);
     player_one.add_ability(blood_drain);
@@ -190,6 +189,6 @@ fn main() {
     // Run the game!
     match ggez_event::run(&mut ggez_ctx, &mut ggez_event_loop, &mut sand_casting_game_state) {
         Ok(_)   => println!("Exited cleanly."),
-        Err(e)  => println!("Error occured: {}", e)
+        Err(e)  => println!("Error occurred: {}", e)
     }
 }

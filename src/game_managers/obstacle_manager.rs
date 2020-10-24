@@ -48,15 +48,14 @@ use crate::{
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
-//TODO: Proper implementation of an error type
-#[derive(Debug)]
-pub struct ObstacleError;
-
 pub struct ObstacleManager {
     logger:         logger::Instance,
     obstacles:      Vec<Obstacle>,
     obstacle_mesh:  ggez_gfx::Mesh,
 }
+
+#[derive(Debug)]
+pub struct ObstacleError;
 
 
 ///////////////////////////////////////////////////////////////////////////////

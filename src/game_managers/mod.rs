@@ -35,7 +35,6 @@ use ggez::{
 //  Module Declarations
 ///////////////////////////////////////////////////////////////////////////////
 
-//FEAT: meshes should be referred to as cached meshes
 pub mod actor_manager;
 pub mod obstacle_manager;
 pub mod resource_manager;
@@ -88,8 +87,7 @@ pub trait DrawableMechanic {
 
     /// Adds the given instance to the manager
     fn add_instance(&mut self, new_instance: Self::Instance, ggez_ctx: &mut GgEzContext) -> Result<(), ()> {
-        //FEAT: Not the right place for this collision check, need a global scope. probably using Context?
-        //      Currently allows obstacles to overlap!
+        // NOTE: Currently allows obstacles to overlap! (24 Oct 2020)
         // Verify that no instance already exists in the same location
         let mut coords_occupied = false;
         for existing_instance in self.instances() {

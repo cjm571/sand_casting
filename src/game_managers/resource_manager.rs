@@ -47,15 +47,14 @@ use crate::{
 // Data structures
 ///////////////////////////////////////////////////////////////////////////////
 
-//TODO: Proper implementation of an error type
-#[derive(Debug)]
-pub struct ResourceError;
-
 pub struct ResourceManager {
     logger:         logger::Instance,
     resources:      Vec<Resource>,
     resource_mesh:  ggez_gfx::Mesh,
 }
+
+#[derive(Debug)]
+pub struct ResourceError;
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -67,7 +67,6 @@ pub struct WorldGridManager {
     hex_map:                HashMap::<coords::Position, HexGridCell>
 }
 
-//TODO: Proper implementation of an error type
 #[derive(Debug)]
 pub struct WorldGridError;
 
@@ -84,8 +83,7 @@ impl WorldGridManager {
         //OPT: *DESIGN* Get grid radius from context
         radial_size: usize,
         ci_ctx: &CastIronContext,
-        ggez_ctx: &mut GgEzContext
-    ) -> Self {
+        ggez_ctx: &mut GgEzContext ) -> Self {
         // Clone the logger instance so this module has its own sender to use
         let logger_clone = logger_original.clone();
 

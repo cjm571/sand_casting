@@ -171,8 +171,6 @@ impl SandCastingGameState {
 //  Trait Implementations
 ///////////////////////////////////////////////////////////////////////////////
 
-//FEAT: Add performance metrics to update, draw
-//FEAT: Handle keyboard events, '~' for a debug view would be cool
 impl ggez_event::EventHandler for SandCastingGameState {
     fn update(&mut self, ggez_ctx: &mut GgEzContext) -> GgEzGameResult<()> {
         // Check if first-frame initialization is required
@@ -254,7 +252,6 @@ impl ggez_event::EventHandler for SandCastingGameState {
                 self.world_grid_manager.toggle_cell_highlight(&event_hex_pos, ggez_ctx).unwrap();
 
             },
-            //FEAT: Handle other mouse events
             _ => {
                 ci_log!(self.logger, logger::FilterLevel::Warning, "Mouse Event ({:?}) unimplemented!", button);
             }

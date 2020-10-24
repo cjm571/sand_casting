@@ -56,7 +56,6 @@ pub struct HexGridCell {
     highlight:  bool,                           // Indicates if cell should be highlighted in world grid
 }
 
-//TODO: Proper implementation of an error type
 pub struct HexGridCellError;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -195,7 +194,6 @@ impl HexGridCell {
                 }
             }
 
-            //FEAT: A logarithmic scale would probably be prettier
             if has_gradient && cur_fill_color.a > MIN_ALPHA_VAL {
                 // Transparentize color such that we get to mostly transparent at the furthest level, but not fully transparent
                 cur_fill_color.a -= 1.0/radius as f32;
@@ -283,7 +281,7 @@ impl HexGridCell {
         let rounded_z = z.round() as i32;
 
         // NOTE: Rounding may have broken the x + y + z == 0 constraint
-        // To combat this, we'll reset the coord component with the largest delta from the nearest integer
+        // To combat this, we'll reset the coordinate component with the largest delta from the nearest integer
         // to what is required by the constraint.
         let delta_x = (x - rounded_x as f32).abs();
         let delta_y = (y - rounded_y as f32).abs();

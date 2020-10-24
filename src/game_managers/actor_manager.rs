@@ -46,15 +46,14 @@ use crate::{
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
-//TODO: Proper implementation of an error type
-#[derive(Debug)]
-pub struct ActorError;
-
 pub struct ActorManager {
     logger:     logger::Instance,
     actors:     Vec<Actor>,
     actor_mesh: ggez_gfx::Mesh,
 }
+
+#[derive(Debug)]
+pub struct ActorError;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -116,7 +115,7 @@ impl DrawableMechanic for ActorManager {
         // Create a HexGridCell object and add it to the mesh builder
         let actor_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::HEX_RADIUS_VERTEX, ggez_ctx);
         
-        //FEAT: Actual sprites (or images or something) for actors
+        // Draw green circle to represent the actor
         mesh_builder.circle(ggez_gfx::DrawMode::fill(), actor_hex.center(), ::HEX_RADIUS_VERTEX/2.0, 1.0, colors::GREEN);
 
         Ok(())

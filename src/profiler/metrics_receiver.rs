@@ -15,7 +15,7 @@ Copyright (C) 2020 CJ McAllister
     Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 
 Purpose:
-    This module will provide data structures and functions to recieve and
+    This module will provide data structures and functions to receive and
     record metrics data.
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -64,7 +64,6 @@ impl MetricsReceiver {
      *  Accessor Methods  *
      *  *  *  *  *  *  *  */
 
-    //FEAT: Support multiple customDelta files
     fn file_handle(&mut self, metric: &profiler::MetricContainer) -> &mut fs::File {
         &mut self.files[usize::from(metric)]
     }
