@@ -87,7 +87,6 @@ pub trait DrawableMechanic {
 
     /// Adds the given instance to the manager
     fn add_instance(&mut self, new_instance: Self::Instance, ggez_ctx: &mut GgEzContext) -> Result<(), ()> {
-        // NOTE: Currently allows obstacles to overlap! (24 Oct 2020)
         // Verify that no instance already exists in the same location
         let mut coords_occupied = false;
         for existing_instance in self.instances() {

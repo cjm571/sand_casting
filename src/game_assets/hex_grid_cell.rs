@@ -267,8 +267,6 @@ impl HexGridCell {
         mesh_builder.polygon(ggez_gfx::DrawMode::fill(), &self.vertices, colors::HILITE_STD).unwrap();
     }
 
-    
-
 
     /*  *  *  *  *  *  *  *\
      *  Helper Functions  *
