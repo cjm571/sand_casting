@@ -1,6 +1,6 @@
 [package]
 name = "sand_casting"
-version = "0.6.5"
+version = "0.6.6"
 authors = ["CJ McAllister <cjm571@gmail.com>"]
 
 [dependencies]

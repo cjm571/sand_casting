@@ -245,12 +245,14 @@ impl ggez_event::EventHandler for SandCastingGameState {
         match button {
             ggez_mouse::MouseButton::Left => {
                 // Determine which hex the mouse event occurred in
-                let event_hex_pos = HexGridCell::pixel_to_hex_coords(event_coords, &self.ci_ctx, ggez_ctx);
+                if let Ok(event_hex_pos) = HexGridCell::pixel_to_hex_coords(event_coords, &self.ci_ctx, ggez_ctx) {
+                    ci_log!(self.logger, logger::FilterLevel::Debug, "Event ({:?}) occurred at position: {}", button, event_hex_pos);
 
-                ci_log!(self.logger, logger::FilterLevel::Debug, "Event ({:?}) occurred at position: {}", button, event_hex_pos);
-
-                self.world_grid_manager.toggle_cell_highlight(&event_hex_pos, ggez_ctx).unwrap();
-
+                    self.world_grid_manager.toggle_cell_highlight(&event_hex_pos, ggez_ctx).unwrap();
+                }
+                else {
+                    ci_log!(self.logger, logger::FilterLevel::Debug, "Event ({:?}) occurred outside hex grid at pixel coords ({}, {})", button, event_coords.x, event_coords.y);
+                }
             },
             _ => {
                 ci_log!(self.logger, logger::FilterLevel::Warning, "Mouse Event ({:?}) unimplemented!", button);

@@ -207,7 +207,7 @@ impl HexGridCell {
     \*  *  *  *  *  *  *  */
 
     //OPT: *DESIGN* Is this the right place for these?
-    pub fn pixel_to_hex_coords(cart_coords: ggez_mint::Point2<f32>, ci_ctx: &CastIronContext, ggez_ctx: &GgEzContext) -> coords::Position {
+    pub fn pixel_to_hex_coords(cart_coords: ggez_mint::Point2<f32>, ci_ctx: &CastIronContext, ggez_ctx: &GgEzContext) -> Result<coords::Position, coords::CoordsError> {
         // Get pixel centerpoint of game window
         let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
         let window_center = ggez_mint::Point2 {
@@ -272,7 +272,7 @@ impl HexGridCell {
      *  Helper Functions  *
     \*  *  *  *  *  *  *  */
 
-    fn hex_round(x: f32, y: f32, z: f32, ci_ctx: &CastIronContext) -> coords::Position {
+    fn hex_round(x: f32, y: f32, z: f32, ci_ctx: &CastIronContext) -> Result<coords::Position, coords::CoordsError> {
         // Round all floating coords to nearest integer
         let rounded_x = x.round() as i32;
         let rounded_y = y.round() as i32;
@@ -289,19 +289,19 @@ impl HexGridCell {
             // X has largest delta, recalculate it
             let recalc_x = -rounded_y - rounded_z;
 
-            coords::Position::new(recalc_x, rounded_y, rounded_z, ci_ctx).unwrap()
+            coords::Position::new(recalc_x, rounded_y, rounded_z, ci_ctx)
         }
         else if delta_y > delta_z {
             // Y has largest delta, recalculate it
             let recalc_y = -rounded_x - rounded_z;
 
-            coords::Position::new(rounded_x, recalc_y, rounded_z, ci_ctx).unwrap()
+            coords::Position::new(rounded_x, recalc_y, rounded_z, ci_ctx)
         }
         else {
             // Z has largest delta, recalculate it
             let recalc_z = -rounded_x - rounded_y;
 
-            coords::Position::new(rounded_x, rounded_y, recalc_z, ci_ctx).unwrap()
+            coords::Position::new(rounded_x, rounded_y, recalc_z, ci_ctx)
         }
     }
 }

@@ -1815,7 +1815,7 @@ dependencies = [
 
 [[package]]
 name = "sand_casting"
-version = "0.6.5"
+version = "0.6.6"
 dependencies = [
  "cast_iron",
  "chrono",
