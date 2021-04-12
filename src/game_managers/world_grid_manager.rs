@@ -50,10 +50,10 @@ use crate::game_assets::{
 const NUM_ADDITIONAL_CELLS_PER_LEVEL: usize = 6;
 
 /// Starting direction of a new hex ring
-const NEW_RING_START_DIRECTION: hex_directions::Side    = hex_directions::Side::NORTHEAST;
+const NEW_RING_START_DIRECTION: hex_directions::Side    = hex_directions::Side::NorthEast;
 
 /// First intra-ring direction in new hex ring
-const FIRST_INTRARING_DIRECTION: hex_directions::Side   = hex_directions::Side::NORTH;
+const FIRST_INTRARING_DIRECTION: hex_directions::Side   = hex_directions::Side::North;
 
 
 ///////////////////////////////////////////////////////////////////////////////

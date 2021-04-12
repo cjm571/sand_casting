@@ -23,6 +23,7 @@ use cast_iron::{
     context::Context as CastIronContext,
     Plottable,
     Randomizable,
+    coords,
 };
 
 use ggez::{
@@ -40,6 +41,17 @@ pub mod obstacle_manager;
 pub mod resource_manager;
 pub mod weather_manager;
 pub mod world_grid_manager;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//  Data Structures
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, PartialEq)]
+pub enum DrawableError {
+    CoordinatesOccupied(coords::Position),
+    ReachedMaxRandAttempts,
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -86,51 +98,35 @@ pub trait DrawableMechanic {
     \*  *  *  *  *  *  *  *  */
 
     /// Adds the given instance to the manager
-    fn add_instance(&mut self, new_instance: Self::Instance, ggez_ctx: &mut GgEzContext) -> Result<(), ()> {
+    fn add_instance(&mut self, new_instance: Self::Instance, ggez_ctx: &mut GgEzContext) -> Result<(), DrawableError> {
         // Verify that no instance already exists in the same location
-        let mut coords_occupied = false;
         for existing_instance in self.instances() {
             if new_instance.origin() == existing_instance.origin() {
-                coords_occupied = true;
-                break;
+                return Err(DrawableError::CoordinatesOccupied(*new_instance.origin()));
             }
         }
 
-        // If the new instance's coordinates are unoccupied, add it
-        if !coords_occupied {
-            self.push_instance(new_instance);
+        // New instance's coordinates are unoccupied, add it to the mesh
+        self.push_instance(new_instance);
 
-            // Update mesh
-            self.update_mesh(ggez_ctx);
+        // Update mesh
+        self.update_mesh(ggez_ctx);
 
-            Ok(())
-        }
-        else { // Otherwise, return an error
-            Err(())
-        }
+        Ok(())
     }
 
-    fn add_rand_instance(&mut self, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Result<(), ()> {
+    fn add_rand_instance(&mut self, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Result<(), DrawableError> {
         // Create a random instance and attempt to add them until we succeed (or fail too many times)
-        let mut attempts = 0;
-        while attempts < ci_ctx.max_rand_attempts() {
+        for _ in 0..ci_ctx.max_rand_attempts() {
             let rand_instance = Self::Instance::rand(ci_ctx);
-            match self.add_instance(rand_instance, ggez_ctx) {
-                Ok(())  => {
-                    break;      // Successfully added instance, break loop
-                },
-                Err(()) => ()   // Failed to add instance, continue
+            if self.add_instance(rand_instance, ggez_ctx).is_ok() {
+                // Successfully added instance
+                return Ok(())
             }
-
-            attempts += 1;
         }
 
-        // If attempts maxed out - return error, otherwise Ok()
-        if attempts == ci_ctx.max_rand_attempts() {
-            Err(())
-        } else {
-            Ok(())
-        }
+        // Failed to add instance within allowable number of attempts
+        Err(DrawableError::ReachedMaxRandAttempts)
     }
 
     /// Draws the mesh for the mechanic in the given context

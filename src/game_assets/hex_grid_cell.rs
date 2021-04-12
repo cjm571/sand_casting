@@ -162,7 +162,7 @@ impl HexGridCell {
 
         for level in 0..radius {
             // Create an iterator starting at the East vertex and going COUNTER-CLOCKWISE as required by GGEZ draw calls
-            let direction_provider: hex_directions::Provider<hex_directions::Vertex> = hex_directions::Provider::new(hex_directions::Vertex::EAST);
+            let direction_provider: hex_directions::Provider<hex_directions::Vertex> = hex_directions::Provider::new(hex_directions::Vertex::East);
             for (i, vertex) in direction_provider.enumerate() {
                 let theta: f32 = vertex.into();
                 // Add PI/6 to theta to rotate the standard flat-up hex to point-up
@@ -238,8 +238,8 @@ impl HexGridCell {
 
         // Calculate x, y offsets
         let x_offset = hex_pos.x() as f32 * ::HEX_RADIUS_VERTEX * 3.0 / 2.0;
-        let y_offset = (-hex_pos.y() as f32 * f32::from(hex_directions::Side::NORTHWEST).sin() * (::HEX_RADIUS_SIDE * 2.0)) +
-                       (-hex_pos.z() as f32 * f32::from(hex_directions::Side::SOUTHWEST).sin() * (::HEX_RADIUS_SIDE * 2.0));
+        let y_offset = (-hex_pos.y() as f32 * f32::from(hex_directions::Side::NorthWest).sin() * (::HEX_RADIUS_SIDE * 2.0)) +
+                       (-hex_pos.z() as f32 * f32::from(hex_directions::Side::SouthWest).sin() * (::HEX_RADIUS_SIDE * 2.0));
 
         ggez_mint::Point2 {
             x: window_center.x + x_offset,
