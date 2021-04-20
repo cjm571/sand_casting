@@ -63,7 +63,6 @@ const HUD_TEXT_OFFSET:          f32 = 5.0;
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct WeatherManager {
-    logger:         logger::Instance,
     profiler:       profiler::Instance,
     active_weather: weather::Event,
     timeout_ms:     u128,
@@ -92,18 +91,15 @@ struct HudElements {
 
 impl WeatherManager {
     /// Fully-qualified constructor
-    pub fn new(logger_original:     &logger::Instance,
-               profiler_original:   &profiler::Instance,
+    pub fn new(profiler_original:   &profiler::Instance,
                active_weather:      weather::Event,
                timeout_ms:          u128,
                ci_ctx:              &CastIronContext, 
                ggez_ctx:            &mut GgEzContext) -> Self {
-        // Clone the logger, profiler instances for use by this module
-        let logger_clone = logger_original.clone();
+        // Clone the profiler instances for use by this module
         let profiler_clone = profiler_original.clone();
 
         WeatherManager {
-            logger:         logger_clone,
             profiler:       profiler_clone,
             active_weather, 
             timeout_ms,
@@ -113,16 +109,13 @@ impl WeatherManager {
     }
 
     /// Default constructor
-    pub fn default(logger_original: &logger::Instance,
-                   profiler_original:   &profiler::Instance,
+    pub fn default(profiler_original:   &profiler::Instance,
                    ci_ctx: &CastIronContext,
                    ggez_ctx: &mut GgEzContext) -> Self {
-        // Clone the logger, profiler instances for use by this module
-        let logger_clone = logger_original.clone();
+        // Clone the profiler instances for use by this module
         let profiler_clone = profiler_original.clone();
 
         WeatherManager {
-            logger:         logger_clone,
             profiler:       profiler_clone,
             active_weather: weather::Event::default(),
             timeout_ms:     u128::default(),
@@ -150,7 +143,7 @@ impl WeatherManager {
             self.active_weather = weather::Event::rand(ci_ctx).starting_at(elapsed_time);
 
             // Log weather change
-            ci_log!(self.logger, logger::FilterLevel::Info,
+            ci_log!(logger::FilterLevel::Info,
                 "GameTime: {:.3}s: Weather changed to Elem: {:?}, Duration: {:.3}s",
                 elapsed_time.as_secs_f64(),
                 self.active_weather.element(),

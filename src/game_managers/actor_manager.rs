@@ -47,7 +47,6 @@ use crate::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct ActorManager {
-    logger:     logger::Instance,
     actors:     Vec<Actor>,
     actor_mesh: ggez_gfx::Mesh,
 }
@@ -62,12 +61,8 @@ pub struct ActorError;
 
 impl ActorManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(logger_original: &logger::Instance, ggez_ctx: &mut GgEzContext) -> Self {
-        // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger_original.clone();
-
+    pub fn new(ggez_ctx: &mut GgEzContext) -> Self {
         ActorManager {
-            logger:     logger_clone,
             actors:     Vec::new(),
             actor_mesh: ggez_gfx::Mesh::new_line(ggez_ctx,
                                                  &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
@@ -93,7 +88,7 @@ impl DrawableMechanic for ActorManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        ci_log!(self.logger, logger::FilterLevel::Debug,
+        ci_log!(logger::FilterLevel::Debug,
             "Adding actor: {} at {} to mesh.",
             instance.name(),
             instance.origin());

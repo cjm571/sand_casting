@@ -49,7 +49,6 @@ use crate::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct ObstacleManager {
-    logger:         logger::Instance,
     obstacles:      Vec<Obstacle>,
     obstacle_mesh:  ggez_gfx::Mesh,
 }
@@ -64,12 +63,8 @@ pub struct ObstacleError;
 
 impl ObstacleManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(logger_original: &logger::Instance, ctx: &mut GgEzContext) -> Self {
-        // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger_original.clone();
-
+    pub fn new(ctx: &mut GgEzContext) -> Self {
         ObstacleManager {
-            logger:         logger_clone,
             obstacles:      Vec::new(),
             obstacle_mesh:  ggez_gfx::Mesh::new_line(
                                 ctx,
@@ -95,7 +90,7 @@ impl DrawableMechanic for ObstacleManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        ci_log!(self.logger, logger::FilterLevel::Debug,
+        ci_log!(logger::FilterLevel::Debug,
             "Adding {} obstacle starting at {} to mesh.",
             String::from(instance.element()),
             instance.origin());

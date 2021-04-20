@@ -108,19 +108,20 @@ const DEFAULT_MAX_WEATHER_DURATION:     f64 = 10.0;
 
 
 fn main() {
-    //OPT: *DESIGN* Helper function to do this cleanly
-    //              Or replace it with some kindof CLI parsing crate...
+    //OPT: *DESIGN* Replace this with pattern from once_cell example
     // Parse command line arguments
     let args: Vec<String> = env::args().collect();
 
     // Create logger instance, or disable if required
-    let logger_original;
+    let logger;
     if args.contains(&String::from("-log")) {
-        logger_original = logger::Instance::default();
+        logger = logger::Instance::default();
     }
     else {
-        logger_original = logger::Instance::disabled();
+        logger = logger::Instance::disabled();
     }
+
+    logger::INSTANCE.set(logger).unwrap();
 
     // Create profiler instance, or disable if required
     let profiler_original;
@@ -141,7 +142,7 @@ fn main() {
                     .max_weather_intensity(DEFAULT_MAX_WEATHER_INTENSITY)
                     .build();
 
-    ci_log!(logger_original, logger::FilterLevel::Debug, "CastIron context created.");
+    ci_log!(logger::FilterLevel::Debug, "CastIron context created.");
 
     // Initialize Abilities
     let null_abil: Ability = Ability::new_name_only("Null");
@@ -181,10 +182,10 @@ fn main() {
                                                     )
                                                   .build()
                                                   .unwrap();
-    ci_log!(logger_original, logger::FilterLevel::Info, "ggez context, event loop created.");
+    ci_log!(logger::FilterLevel::Info, "ggez context, event loop created.");
 
     // Use built context to create a GGEZ Event Handler instance
-    let mut sand_casting_game_state = SandCastingGameState::new(&logger_original, &profiler_original, &ci_ctx, &mut ggez_ctx);
+    let mut sand_casting_game_state = SandCastingGameState::new(&profiler_original, &ci_ctx, &mut ggez_ctx);
 
     // Run the game!
     match ggez_event::run(&mut ggez_ctx, &mut ggez_event_loop, &mut sand_casting_game_state) {

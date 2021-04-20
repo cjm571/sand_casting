@@ -61,7 +61,6 @@ const FIRST_INTRARING_DIRECTION: hex_directions::Side   = hex_directions::Side::
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct WorldGridManager {
-    logger:                 logger::Instance,
     radial_size:            usize,          // Maximum value for an axis of the hex grid
     base_grid_mesh:         ggez_gfx::Mesh, // Mesh for the base hex grid
     hex_map:                HashMap::<coords::Position, HexGridCell>
@@ -79,17 +78,12 @@ impl WorldGridManager {
     /// Returns a new instance of WorldGridManager, with a base grid mesh initialized based on
     /// the GGEZ context's current window dimensions.
     pub fn new(
-        logger_original: &logger::Instance,
         //OPT: *DESIGN* Get grid radius from context
         radial_size: usize,
         ci_ctx: &CastIronContext,
         ggez_ctx: &mut GgEzContext ) -> Self {
-        // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger_original.clone();
-
         // Create manager and update mesh for initialization
         let mut world_grid_manager = Self {
-            logger:         logger_clone,
             radial_size,
             base_grid_mesh: ggez_gfx::Mesh::new_line(
                                 ggez_ctx,
@@ -165,7 +159,7 @@ impl WorldGridManager {
 
         self.base_grid_mesh = mesh_builder.build(ggez_ctx).unwrap();
 
-        ci_log!(self.logger, logger::FilterLevel::Debug, "Base mesh updated");
+        ci_log!(logger::FilterLevel::Debug, "Base mesh updated");
     }
 
 
