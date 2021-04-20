@@ -39,6 +39,8 @@ use cast_iron::{
 
 extern crate chrono;
 
+extern crate dd_statechart;
+
 extern crate ggez;
 use ggez::{
     ContextBuilder as GgEzContextBuilder,

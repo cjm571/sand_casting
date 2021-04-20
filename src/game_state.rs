@@ -21,10 +21,21 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+use std::{
+    error::Error,
+    fmt,
+};
+
 use cast_iron::{
     context::Context as CastIronContext, 
     logger,
     ci_log,
+};
+
+use dd_statechart::{
+    StateChart,
+    StateChartError,
+    event::Event,
 };
 
 use ggez::{
@@ -33,6 +44,7 @@ use ggez::{
     event as ggez_event,
     graphics as ggez_gfx,
     input::mouse as ggez_mouse,
+    input::keyboard as ggez_kb,
     mint as ggez_mint,
     timer as ggez_timer,
 };
@@ -55,20 +67,38 @@ use crate::{
 
 
 ///////////////////////////////////////////////////////////////////////////////
+//  Named Constants
+///////////////////////////////////////////////////////////////////////////////
+
+//FIXME: These probably should be relative to window size
+// Position of debug info text in window
+const DEBUG_POS_STATE: ggez_mint::Point2<f32> = ggez_mint::Point2 {x: 0.0, y: 800.0};
+
+
+///////////////////////////////////////////////////////////////////////////////
 //  Data Structures
 ///////////////////////////////////////////////////////////////////////////////
 
+//TODO: Rename and refactor this - very likely does not need to keep clones of the logger and profiler
 /// Primary Game Struct
 pub struct SandCastingGameState {
     initialized:        bool,               // Flag indicating if game has been initialized
+    debug_display:      bool,               // Flag indicating if debug info should be displayed
     ci_ctx:             CastIronContext,    // CastIron engine context
     logger:             logger::Instance,   // Instance of CastIron Logger
     profiler:           profiler::Instance, // Instance of SandCasting performance profiler
     actor_manager:      ActorManager,       // Actor Manager instance
     obstacle_manager:   ObstacleManager,    // Obstacle Manager instance
     resource_manager:   ResourceManager,    // Resource Manager instance
+    statechart:         StateChart,         // StateChart covering all game states
     weather_manager:    WeatherManager,     // Weather Manager instance
     world_grid_manager: WorldGridManager,   // World Grid Manager instance
+}
+
+#[derive(Debug, PartialEq)]
+pub enum GameStateError {
+    // Wrappers
+    StateChartError(StateChartError),
 }
 
 
@@ -78,10 +108,11 @@ pub struct SandCastingGameState {
 
 /// Constructor
 impl SandCastingGameState {
-    pub fn new(logger_original: &logger::Instance,
-               profiler_original: &profiler::Instance,
-               ci_ctx: &CastIronContext,
-               ggez_ctx: &mut GgEzContext) -> Self {
+    pub fn new(
+        logger_original: &logger::Instance,
+        profiler_original: &profiler::Instance,
+        ci_ctx: &CastIronContext,
+        ggez_ctx: &mut GgEzContext) -> Self {
         //NOTE: Load/create resources here: images, fonts, sounds, etc.
 
         // Clone the logger, profiler instances for use by this module
@@ -93,12 +124,14 @@ impl SandCastingGameState {
 
         SandCastingGameState{
             initialized:        false,
+            debug_display:      false,
             ci_ctx:             ctx_clone,
             logger:             logger_clone,
             profiler:           profiler_clone,
             actor_manager:      ActorManager::new(logger_original, ggez_ctx),
             obstacle_manager:   ObstacleManager::new(logger_original, ggez_ctx),
             resource_manager:   ResourceManager::new(logger_original, ggez_ctx),
+            statechart:         StateChart::from("./res/default.scxml").unwrap(), //FIXME: Hardcoded for now, make this a global const or something
             weather_manager:    WeatherManager::default(logger_original, profiler_original, ci_ctx, ggez_ctx),
             world_grid_manager: WorldGridManager::new(
                                     logger_original,
@@ -113,10 +146,12 @@ impl SandCastingGameState {
      *  Accessor Methods  *
     \*  *  *  *  *  *  *  */
 
+    //TODO: This does not need nea mut self
     pub fn initialized(&mut self) -> bool {
         self.initialized
     }
 
+    //TODO: These should not give out mutable references
     pub fn actor_manager(&mut self) -> &mut ActorManager {
         &mut self.actor_manager
     }
@@ -137,9 +172,23 @@ impl SandCastingGameState {
         &mut self.world_grid_manager
     }
 
+    pub fn active_state_ids(&self) -> Vec<&str> {
+        self.statechart.active_state_ids()
+    }
+
 
     /*  *  *  *  *  *  *  *\
      *  Utility Methods   *
+    \*  *  *  *  *  *  *  */
+
+    pub fn process_event(&mut self, event: &Event) -> Result<(), GameStateError> {
+        // Pass the event to the StateChart
+        self.statechart.process_external_event(event).map_err(GameStateError::StateChartError)
+    }
+
+
+    /*  *  *  *  *  *  *  *\
+     *   Helper Methods   *
     \*  *  *  *  *  *  *  */
 
     fn initialize(&mut self, ggez_ctx: &mut GgEzContext) {
@@ -164,12 +213,23 @@ impl SandCastingGameState {
         ci_log!(self.logger, logger::FilterLevel::Info, "First-frame initialization complete.");
         self.initialized = true;
     }
+
+    fn draw_debug_info(&self, ggez_ctx: &mut GgEzContext) {
+        // Draw active State(s)
+        let state_str = format!("Active State(s): {:?}", self.statechart.active_state_ids());
+        let state_display = ggez_gfx::Text::new((state_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
+        ggez_gfx::draw(ggez_ctx, &state_display, (DEBUG_POS_STATE, 0.0, colors::YELLOW)).unwrap(); //FIXME: NOOOOOO UNWRAP
+    }
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Trait Implementations
 ///////////////////////////////////////////////////////////////////////////////
+
+/*  *  *  *  *  *  *  *  *  *\
+ *   SandCastingGameState   *
+\*  *  *  *  *  *  *  *  *  */
 
 impl ggez_event::EventHandler for SandCastingGameState {
     fn update(&mut self, ggez_ctx: &mut GgEzContext) -> GgEzGameResult<()> {
@@ -224,9 +284,15 @@ impl ggez_event::EventHandler for SandCastingGameState {
         self.actor_manager.draw(ctx);
         draw_timings.push(profiler::StackedTime{label: String::from("Actors"), time: ggez_timer::time_since_start(ctx)});
 
-        // Draw performance stats
-        self.profiler.draw_fps_stats(ctx);
-        draw_timings.push(profiler::StackedTime{label: String::from("FPS"), time: ggez_timer::time_since_start(ctx)});
+        if self.debug_display {
+            // Draw performance stats
+            self.profiler.draw_fps_stats(ctx);
+            draw_timings.push(profiler::StackedTime{label: String::from("FPS"), time: ggez_timer::time_since_start(ctx)});
+
+            // Draw Debug info
+            self.draw_debug_info(ctx);
+            draw_timings.push(profiler::StackedTime{label: String::from("Debug Info"), time: ggez_timer::time_since_start(ctx)});
+        }
 
         let res = ggez_gfx::present(ctx);
         draw_timings.push(profiler::StackedTime{label: String::from("Present"), time: ggez_timer::time_since_start(ctx)});
@@ -258,5 +324,96 @@ impl ggez_event::EventHandler for SandCastingGameState {
                 ci_log!(self.logger, logger::FilterLevel::Warning, "Mouse Event ({:?}) unimplemented!", button);
             }
         }
+    }
+
+    fn key_down_event(&mut self, _ggez_ctx: &mut GgEzContext, keycode: ggez_kb::KeyCode, keymods: ggez_kb::KeyMods, repeat: bool) {
+        // Ignore repeat inputs (for now)
+        if repeat {
+            return;
+        }
+        
+        // Otherwise, check the Mod + Key tuple and handle accordingly
+        match (keymods, keycode) {
+            // Toggle debug display
+            (ggez_kb::KeyMods::NONE, ggez_kb::KeyCode::D) => {
+                if self.debug_display {
+                    self.debug_display = false;
+                    ci_log!(self.logger, logger::FilterLevel::Debug, "Debug display disabled");
+                }
+                else {
+                    self.debug_display = true;
+                    ci_log!(self.logger, logger::FilterLevel::Debug, "Debug display enabled");
+                }
+            },
+            _ => {
+                ci_log!(self.logger, logger::FilterLevel::Warning, "Keyboard Event ({:?} + {:?}) unimplemented!", keymods, keycode);
+            }
+        }
+    }
+}
+
+
+/*  *  *  *  *  *  *  *  *  *\
+ *      GameStateError      *
+\*  *  *  *  *  *  *  *  *  */
+
+impl Error for GameStateError {}
+
+impl fmt::Display for GameStateError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::StateChartError(sc_err) => {
+                write!(f, "StateChartError '{}' encountered", sc_err)
+            },
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//  Unit Tests
+///////////////////////////////////////////////////////////////////////////////
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use crate::{
+        cast_iron::{
+            context::Context as CastIronContext,
+        },
+        dd_statechart::event::Event,
+        game_state::SandCastingGameState,
+        ggez::ContextBuilder as GgEzContextBuilder,
+        logger,
+        profiler,
+    };
+
+
+    type TestResult = Result<(), Box<dyn Error>>;
+
+
+    #[test]
+    fn statechart_test() -> TestResult {
+        let logger = logger::Instance::new(logger::FilterLevel::Warning as u8, logger::OutputType::Console);
+        let profiler = profiler::Instance::disabled();
+        let ci_ctx = CastIronContext::default();
+        let (mut ggez_ctx, mut _event_loop) = GgEzContextBuilder::new("test", "CJ McAllister").build()?;
+
+        let mut game_state = SandCastingGameState::new(&logger, &profiler, &ci_ctx, &mut ggez_ctx);
+
+        // Initial State should be 'idle'
+        assert_eq!(
+            game_state.active_state_ids(),
+            vec!["idle"],
+        );
+
+        // Send a combat trigger and verify that the Active State indicates combat has begun
+        game_state.process_event(&Event::from("combat.enter")?)?;
+        assert_eq!(
+            game_state.active_state_ids(),
+            vec!["combat"],
+        );
+        
+        Ok(())
     }
 }

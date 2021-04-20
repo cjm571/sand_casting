@@ -6,6 +6,7 @@ authors = ["CJ McAllister <cjm571@gmail.com>"]
 [dependencies]
 cast_iron = { path = "../cast_iron", version = "0.8" }
 chrono = { version = "0.4", features = ["serde"] }
+dd_statechart = { path = "../dd_statechart", version = "^0.3"}
 ggez = "0.5.1"
 rand = "0.7.3"
 variant_count = "*"
