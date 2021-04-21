@@ -23,7 +23,6 @@ Purpose:
 use cast_iron::{
     element::Elemental,
     hex_directions,
-    logger,
     mechanics::obstacle::Obstacle,
     Plottable,
 };
@@ -33,6 +32,8 @@ use ggez::{
     graphics as ggez_gfx,
     mint as ggez_mint,
 };
+
+use mt_logger;
 
 use crate::{
     game_assets::{
@@ -90,7 +91,7 @@ impl DrawableMechanic for ObstacleManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        ci_log!(logger::FilterLevel::Debug,
+        ci_log!(mt_logger::FilterLevel::Debug,
             "Adding {} obstacle starting at {} to mesh.",
             String::from(instance.element()),
             instance.origin());

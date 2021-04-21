@@ -26,14 +26,17 @@ use cast_iron::{
     context::Context as CastIronContext,
     coords,
     hex_directions,
-    logger,
-    ci_log,
 };
 
 use ggez::{
     Context as GgEzContext,
     graphics as ggez_gfx,
     mint as ggez_mint,
+};
+
+use mt_logger::{
+    self,
+    ci_log,
 };
 
 use crate::game_assets::{
@@ -159,7 +162,7 @@ impl WorldGridManager {
 
         self.base_grid_mesh = mesh_builder.build(ggez_ctx).unwrap();
 
-        ci_log!(logger::FilterLevel::Debug, "Base mesh updated");
+        ci_log!(mt_logger::FilterLevel::Debug, "Base mesh updated");
     }
 
 

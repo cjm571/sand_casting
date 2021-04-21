@@ -26,10 +26,8 @@ use cast_iron::{
         Element,
         Elemental,
     },
-    logger,
     mechanics::weather,
     Randomizable,
-    ci_log,
 };
 
 use ggez::{
@@ -37,6 +35,11 @@ use ggez::{
     graphics as ggez_gfx,
     mint as ggez_mint,
     timer as ggez_timer,
+};
+
+use mt_logger::{
+    self,
+    ci_log,
 };
 
 use crate::{
@@ -143,7 +146,7 @@ impl WeatherManager {
             self.active_weather = weather::Event::rand(ci_ctx).starting_at(elapsed_time);
 
             // Log weather change
-            ci_log!(logger::FilterLevel::Info,
+            ci_log!(mt_logger::FilterLevel::Info,
                 "GameTime: {:.3}s: Weather changed to Elem: {:?}, Duration: {:.3}s",
                 elapsed_time.as_secs_f64(),
                 self.active_weather.element(),

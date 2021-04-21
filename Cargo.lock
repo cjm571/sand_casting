@@ -106,9 +106,9 @@ checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
 name = "backtrace"
-version = "0.3.56"
+version = "0.3.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d117600f438b1707d4e4ae15d3595657288f8235a0eb593e80ecc98ab34e1bc"
+checksum = "78ed203b9ba68b242c62b3fb7480f589dd49829be1edb3fe8fc8b4ffda2dcb8d"
 dependencies = [
  "addr2line",
  "cfg-if 1.0.0",
@@ -235,10 +235,8 @@ dependencies = [
 
 [[package]]
 name = "cast_iron"
-version = "0.8.1"
+version = "0.9.0"
 dependencies = [
- "chrono",
- "once_cell",
  "rand 0.7.3",
  "serde",
  "serde_json",
@@ -1230,6 +1228,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "519df8d6856dcd4b40519947737b408f81be051fc032590659cae5d77d664185"
 
 [[package]]
+name = "mt_logger"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "once_cell",
+]
+
+[[package]]
 name = "nalgebra"
 version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1899,11 +1905,12 @@ dependencies = [
 
 [[package]]
 name = "sand_casting"
-version = "0.6.6"
+version = "0.6.7"
 dependencies = [
  "cast_iron",
  "chrono",
  "ggez",
+ "mt_logger",
  "rand 0.7.3",
  "variant_count",
 ]

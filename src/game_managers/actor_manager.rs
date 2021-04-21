@@ -22,7 +22,6 @@ Purpose:
 
 use cast_iron::{
     actor::Actor,
-    logger,
     Plottable,
 };
 
@@ -31,6 +30,8 @@ use ggez::{
     graphics as ggez_gfx,
     mint as ggez_mint,
 };
+
+use mt_logger;
 
 use crate::{
     game_assets::{
@@ -88,7 +89,7 @@ impl DrawableMechanic for ActorManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        ci_log!(logger::FilterLevel::Debug,
+        ci_log!(mt_logger::FilterLevel::Debug,
             "Adding actor: {} at {} to mesh.",
             instance.name(),
             instance.origin());
