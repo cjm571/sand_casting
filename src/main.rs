@@ -45,7 +45,12 @@ use ggez::{
 };
 
 extern crate mt_logger;
-use mt_logger::ci_log;
+use mt_logger::{
+    mt_new,
+    mt_log,
+    Level,
+    OutputStream,
+};
 
 extern crate rand;
 
@@ -112,16 +117,10 @@ fn main() {
     // Parse command line arguments
     let args: Vec<String> = env::args().collect();
 
-    // Create logger instance, or disable if required
-    let logger;
+    // Initialize logger instance if specified
     if args.contains(&String::from("-log")) {
-        logger = mt_logger::Instance::default();
+        mt_new!(Level::Info, OutputStream::Both);
     }
-    else {
-        logger = mt_logger::Instance::disabled();
-    }
-
-    mt_logger::INSTANCE.set(logger).unwrap();
 
     // Create profiler instance, or disable if required
     let profiler_original;
@@ -142,7 +141,7 @@ fn main() {
                     .max_weather_intensity(DEFAULT_MAX_WEATHER_INTENSITY)
                     .build();
 
-    ci_log!(mt_logger::FilterLevel::Debug, "CastIron context created.");
+    mt_log!(Level::Debug, "CastIron context created.");
 
     // Initialize Abilities
     let null_abil: Ability = Ability::new_name_only("Null");
@@ -182,7 +181,7 @@ fn main() {
                                                     )
                                                   .build()
                                                   .unwrap();
-    ci_log!(mt_logger::FilterLevel::Info, "ggez context, event loop created.");
+    mt_log!(Level::Info, "ggez context, event loop created.");
 
     // Use built context to create a GGEZ Event Handler instance
     let mut sand_casting_game_state = SandCastingGameState::new(&profiler_original, &ci_ctx, &mut ggez_ctx);

@@ -36,8 +36,8 @@ use ggez::{
 };
 
 use mt_logger::{
-    self,
-    ci_log,
+    mt_log,
+    Level,
 };
 
 use crate::{
@@ -142,21 +142,21 @@ impl SandCastingGameState {
         for _i in 0..3 {
             self.resource_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
         }
-        ci_log!(mt_logger::FilterLevel::Info, "Resources generated.");
+        mt_log!(Level::Info, "Resources generated.");
 
         // Create random obstacles
         for _i in 0..3 {
             self.obstacle_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
         }
-        ci_log!(mt_logger::FilterLevel::Info, "Obstacles generated.");
+        mt_log!(Level::Info, "Obstacles generated.");
         
         // Create random actors
         for _i in 0..3 {
             self.actor_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
         }
-        ci_log!(mt_logger::FilterLevel::Info, "Actors generated.");
+        mt_log!(Level::Info, "Actors generated.");
 
-        ci_log!(mt_logger::FilterLevel::Info, "First-frame initialization complete.");
+        mt_log!(Level::Info, "First-frame initialization complete.");
         self.initialized = true;
     }
 }
@@ -176,7 +176,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
         // Check if we've reached an update
         while ggez_timer::check_update_time(ggez_ctx, ::DESIRED_FPS) {
             // Update weather
-            ci_log!(mt_logger::FilterLevel::Trace, "Updating weather...");
+            mt_log!(Level::Trace, "Updating weather...");
             self.weather_manager.update_weather(&self.ci_ctx, ggez_ctx);
 
             // Update FPS
@@ -241,16 +241,16 @@ impl ggez_event::EventHandler for SandCastingGameState {
             ggez_mouse::MouseButton::Left => {
                 // Determine which hex the mouse event occurred in
                 if let Ok(event_hex_pos) = HexGridCell::pixel_to_hex_coords(event_coords, &self.ci_ctx, ggez_ctx) {
-                    ci_log!(mt_logger::FilterLevel::Debug, "Event ({:?}) occurred at position: {}", button, event_hex_pos);
+                    mt_log!(Level::Debug, "Event ({:?}) occurred at position: {}", button, event_hex_pos);
 
                     self.world_grid_manager.toggle_cell_highlight(&event_hex_pos, ggez_ctx).unwrap();
                 }
                 else {
-                    ci_log!(mt_logger::FilterLevel::Debug, "Event ({:?}) occurred outside hex grid at pixel coords ({}, {})", button, event_coords.x, event_coords.y);
+                    mt_log!(Level::Debug, "Event ({:?}) occurred outside hex grid at pixel coords ({}, {})", button, event_coords.x, event_coords.y);
                 }
             },
             _ => {
-                ci_log!(mt_logger::FilterLevel::Warning, "Mouse Event ({:?}) unimplemented!", button);
+                mt_log!(Level::Warning, "Mouse Event ({:?}) unimplemented!", button);
             }
         }
     }

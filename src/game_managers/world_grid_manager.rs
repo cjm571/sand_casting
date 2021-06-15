@@ -35,8 +35,8 @@ use ggez::{
 };
 
 use mt_logger::{
-    self,
-    ci_log,
+    mt_log,
+    Level,
 };
 
 use crate::game_assets::{
@@ -162,7 +162,7 @@ impl WorldGridManager {
 
         self.base_grid_mesh = mesh_builder.build(ggez_ctx).unwrap();
 
-        ci_log!(mt_logger::FilterLevel::Debug, "Base mesh updated");
+        mt_log!(Level::Debug, "Base mesh updated");
     }
 
 

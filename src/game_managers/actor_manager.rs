@@ -31,7 +31,10 @@ use ggez::{
     mint as ggez_mint,
 };
 
-use mt_logger;
+use mt_logger::{
+    mt_log,
+    Level,
+};
 
 use crate::{
     game_assets::{
@@ -39,7 +42,6 @@ use crate::{
         hex_grid_cell::HexGridCell,
     },
     game_managers::DrawableMechanic,
-    ci_log,
 };
 
 
@@ -89,7 +91,7 @@ impl DrawableMechanic for ActorManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        ci_log!(mt_logger::FilterLevel::Debug,
+        mt_log!(Level::Debug,
             "Adding actor: {} at {} to mesh.",
             instance.name(),
             instance.origin());
