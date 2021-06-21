@@ -46,6 +46,7 @@ use ggez::{
 
 extern crate mt_logger;
 use mt_logger::{
+    mt_flush,
     mt_new,
     mt_log,
     Level,
@@ -189,6 +190,17 @@ fn main() {
     // Run the game!
     match ggez_event::run(&mut ggez_ctx, &mut ggez_event_loop, &mut sand_casting_game_state) {
         Ok(_)   => println!("Exited cleanly."),
-        Err(e)  => println!("Error occurred: {}", e)
+        Err(e)  => eprintln!("Error occurred: {}", e)
+    }
+
+    // Flush all log messages before shutting down
+    match mt_flush!() {
+        // Ignore success case, and uninitialized logger
+        Ok(_) => {}
+        Err(mt_logger::MtLoggerError::LoggerNotInitialized) => {}
+
+        Err(e) => {
+            eprintln!("Error '{}' encountered when attempting to flush mt_logger commands/messages", e);
+        }
     }
 }
