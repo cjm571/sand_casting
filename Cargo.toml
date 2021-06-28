@@ -7,6 +7,6 @@ authors = ["CJ McAllister <cjm571@gmail.com>"]
 cast_iron = { path = "../cast_iron", version = "^0.9" }
 chrono = { version = "0.4", features = ["serde"] }
 ggez = "0.5.1"
-mt_logger = "^2"
+mt_logger = "^3"
 rand = "0.7.3"
 variant_count = "*"

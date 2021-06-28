@@ -120,7 +120,7 @@ fn main() {
 
     // Initialize logger instance if specified
     if args.contains(&String::from("-log")) {
-        mt_new!(Level::Info, OutputStream::Both);
+        mt_new!(None, Level::Info, OutputStream::Both);
     }
 
     // Create profiler instance, or disable if required
@@ -189,7 +189,7 @@ fn main() {
 
     // Run the game!
     match ggez_event::run(&mut ggez_ctx, &mut ggez_event_loop, &mut sand_casting_game_state) {
-        Ok(_)   => println!("Exited cleanly."),
+        Ok(_)   => mt_log!(Level::Info, "Exited cleanly."),
         Err(e)  => eprintln!("Error occurred: {}", e)
     }
 
