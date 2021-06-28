@@ -22,7 +22,6 @@ Purpose:
 
 use cast_iron::{
     element::Elemental,
-    logger,
     mechanics::resource::Resource,
     Plottable,
 };
@@ -33,13 +32,17 @@ use ggez::{
     mint as ggez_mint,
 };
 
+use mt_logger::{
+    mt_log,
+    Level,
+};
+
 use crate::{
     game_assets::{
         colors,
         hex_grid_cell::HexGridCell,
     },
     game_managers::DrawableMechanic,
-    ci_log,
 };
 
 
@@ -48,7 +51,6 @@ use crate::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct ResourceManager {
-    logger:         logger::Instance,
     resources:      Vec<Resource>,
     resource_mesh:  ggez_gfx::Mesh,
 }
@@ -63,18 +65,14 @@ pub struct ResourceError;
 
 impl ResourceManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(logger_original: &logger::Instance, ctx: &mut GgEzContext) -> Self {
-        // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger_original.clone();
-
+    pub fn new(ctx: &mut GgEzContext) -> Self {
         ResourceManager {
-            logger:         logger_clone,
             resources:      Vec::new(),
             resource_mesh:  ggez_gfx::Mesh::new_line(
                             ctx,
                             &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                            ::DEFAULT_LINE_WIDTH,
-                            ::DEFAULT_LINE_COLOR)
+                           crate::DEFAULT_LINE_WIDTH,
+                           crate::DEFAULT_LINE_COLOR)
                             .unwrap(),
         }
     }
@@ -94,8 +92,7 @@ impl DrawableMechanic for ResourceManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        ci_log!(self.logger,
-            logger::FilterLevel::Debug,
+        mt_log!(Level::Debug,
             "Adding {} resource starting at {} to mesh.",
             String::from(instance.element()),
             instance.origin());
@@ -115,7 +112,7 @@ impl DrawableMechanic for ResourceManager {
                                     mesh_builder: &mut ggez_gfx::MeshBuilder,
                                     ggez_ctx: &mut GgEzContext) -> Result<(), Self::ErrorType> {
         // Create a HexGridCell object and add it to the mesh builder
-        let cur_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::HEX_RADIUS_VERTEX, ggez_ctx);
+        let cur_hex = HexGridCell::new_from_hex_coords(instance.origin(),crate::HEX_RADIUS_VERTEX, ggez_ctx);
         cur_hex.add_to_mesh(colors::from_resource(instance), colors::WHITE, mesh_builder);
 
         // Create radial HexGridCells as necessary

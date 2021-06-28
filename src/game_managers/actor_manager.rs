@@ -22,7 +22,6 @@ Purpose:
 
 use cast_iron::{
     actor::Actor,
-    logger,
     Plottable,
 };
 
@@ -32,13 +31,17 @@ use ggez::{
     mint as ggez_mint,
 };
 
+use mt_logger::{
+    mt_log,
+    Level,
+};
+
 use crate::{
     game_assets::{
         colors,
         hex_grid_cell::HexGridCell,
     },
     game_managers::DrawableMechanic,
-    ci_log,
 };
 
 
@@ -47,7 +50,6 @@ use crate::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct ActorManager {
-    logger:     logger::Instance,
     actors:     Vec<Actor>,
     actor_mesh: ggez_gfx::Mesh,
 }
@@ -62,17 +64,13 @@ pub struct ActorError;
 
 impl ActorManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(logger_original: &logger::Instance, ggez_ctx: &mut GgEzContext) -> Self {
-        // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger_original.clone();
-
+    pub fn new(ggez_ctx: &mut GgEzContext) -> Self {
         ActorManager {
-            logger:     logger_clone,
             actors:     Vec::new(),
             actor_mesh: ggez_gfx::Mesh::new_line(ggez_ctx,
                                                  &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                                 ::DEFAULT_LINE_WIDTH,
-                                                 ::DEFAULT_LINE_COLOR)
+                                                crate::DEFAULT_LINE_WIDTH,
+                                                crate::DEFAULT_LINE_COLOR)
                                                  .unwrap(),
         }
     }
@@ -93,7 +91,7 @@ impl DrawableMechanic for ActorManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        ci_log!(self.logger, logger::FilterLevel::Debug,
+        mt_log!(Level::Debug,
             "Adding actor: {} at {} to mesh.",
             instance.name(),
             instance.origin());
@@ -113,10 +111,10 @@ impl DrawableMechanic for ActorManager {
                                     mesh_builder: &mut ggez_gfx::MeshBuilder,
                                     ggez_ctx: &mut GgEzContext) -> Result<(),Self::ErrorType> {
         // Create a HexGridCell object and add it to the mesh builder
-        let actor_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::HEX_RADIUS_VERTEX, ggez_ctx);
+        let actor_hex = HexGridCell::new_from_hex_coords(instance.origin(),crate::HEX_RADIUS_VERTEX, ggez_ctx);
         
         // Draw green circle to represent the actor
-        mesh_builder.circle(ggez_gfx::DrawMode::fill(), actor_hex.center(), ::HEX_RADIUS_VERTEX/2.0, 1.0, colors::GREEN);
+        mesh_builder.circle(ggez_gfx::DrawMode::fill(), actor_hex.center(),crate::HEX_RADIUS_VERTEX/2.0, 1.0, colors::GREEN);
 
         Ok(())
     }
