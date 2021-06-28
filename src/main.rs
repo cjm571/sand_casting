@@ -21,7 +21,6 @@ Purpose:
 
 use std::env;
 
-extern crate cast_iron;
 use cast_iron::{
     ability::{
         Ability,
@@ -34,9 +33,6 @@ use cast_iron::{
     element::Element,
 };
 
-extern crate chrono;
-
-extern crate ggez;
 use ggez::{
     ContextBuilder as GgEzContextBuilder,
     conf as ggez_conf,
@@ -44,7 +40,6 @@ use ggez::{
     graphics as ggez_gfx,
 };
 
-extern crate mt_logger;
 use mt_logger::{
     mt_flush,
     mt_new,
@@ -52,10 +47,6 @@ use mt_logger::{
     Level,
     OutputStream,
 };
-
-extern crate rand;
-
-extern crate variant_count;
 
 ///
 // Module Declarations
@@ -121,6 +112,12 @@ fn main() {
     // Initialize logger instance if specified
     if args.contains(&String::from("-log")) {
         mt_new!(None, Level::Info, OutputStream::Both);
+    }
+    else if args.contains(&String::from("-debug")) {
+        mt_new!(None, Level::Debug, OutputStream::Both);
+    }
+    else if args.contains(&String::from("-trace")) {
+        mt_new!(None, Level::Trace, OutputStream::Both);
     }
 
     // Create profiler instance, or disable if required
@@ -190,7 +187,7 @@ fn main() {
     // Run the game!
     match ggez_event::run(&mut ggez_ctx, &mut ggez_event_loop, &mut sand_casting_game_state) {
         Ok(_)   => mt_log!(Level::Info, "Exited cleanly."),
-        Err(e)  => eprintln!("Error occurred: {}", e)
+        Err(e)  => mt_log!(Level::Error, "Error occurred: {}", e)
     }
 
     // Flush all log messages before shutting down

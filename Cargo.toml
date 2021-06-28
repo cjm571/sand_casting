@@ -2,6 +2,7 @@
 name = "sand_casting"
 version = "0.6.9"
 authors = ["CJ McAllister <cjm571@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 cast_iron = { path = "../cast_iron", version = "^0.9" }

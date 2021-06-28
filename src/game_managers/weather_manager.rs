@@ -209,27 +209,27 @@ impl HudElements {
             frame_size:     calc_frame_size,
             frame_mesh:     ggez_gfx::MeshBuilder::new()
                                     .line(&[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                          ::DEFAULT_LINE_WIDTH,
-                                          ::DEFAULT_LINE_COLOR)
+                                         crate::DEFAULT_LINE_WIDTH,
+                                         crate::DEFAULT_LINE_COLOR)
                                     .unwrap()
                                     .build(ggez_ctx)
                                     .unwrap(),
             content_mesh:   ggez_gfx::MeshBuilder::new()
                                     .line(&[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                          ::DEFAULT_LINE_WIDTH,
-                                          ::DEFAULT_LINE_COLOR)
+                                         crate::DEFAULT_LINE_WIDTH,
+                                         crate::DEFAULT_LINE_COLOR)
                                     .unwrap()
                                     .build(ggez_ctx)
                                     .unwrap(),
             int_bar_mesh:   ggez_gfx::MeshBuilder::new()
                                     .line(&[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                            ::DEFAULT_LINE_WIDTH,
-                                            ::DEFAULT_LINE_COLOR)
+                                           crate::DEFAULT_LINE_WIDTH,
+                                           crate::DEFAULT_LINE_COLOR)
                                     .unwrap()
                                     .build(ggez_ctx)
                                     .unwrap(),
             text_elem_pos:  ggez_mint::Point2{ x: calc_frame_pos.x,
-                                               y: calc_frame_pos.y - ::DEFAULT_TEXT_SIZE - HUD_TEXT_OFFSET},
+                                               y: calc_frame_pos.y -crate::DEFAULT_TEXT_SIZE - HUD_TEXT_OFFSET},
             text_elem_str:  String::default(),
             text_elem_obj:  ggez_gfx::Text::default(),
             text_int_pos:   ggez_mint::Point2{ x: calc_frame_pos.x,
@@ -325,12 +325,12 @@ impl HudElements {
         self.text_elem_str = String::from(element);
         self.text_elem_obj = ggez_gfx::Text::new((self.text_elem_str.as_str(),
                                                   ggez_gfx::Font::default(),
-                                                  ::DEFAULT_TEXT_SIZE));
+                                                 crate::DEFAULT_TEXT_SIZE));
 
         // Update intensity text
         self.text_int_str = String::from(intensity);
         self.text_int_obj = ggez_gfx::Text::new((self.text_int_str.as_str(),
                                                  ggez_gfx::Font::default(),
-                                                 ::DEFAULT_TEXT_SIZE));
+                                                crate::DEFAULT_TEXT_SIZE));
     }
 }

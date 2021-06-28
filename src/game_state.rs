@@ -99,7 +99,7 @@ impl SandCastingGameState {
             obstacle_manager:   ObstacleManager::new(ggez_ctx),
             resource_manager:   ResourceManager::new(ggez_ctx),
             weather_manager:    WeatherManager::default(profiler_original, ci_ctx, ggez_ctx),
-            world_grid_manager: WorldGridManager::new(::DEFAULT_GRID_RADIUS, ci_ctx, ggez_ctx),
+            world_grid_manager: WorldGridManager::new(crate::DEFAULT_GRID_RADIUS, ci_ctx, ggez_ctx),
         }
     }
 
@@ -174,7 +174,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
         }
 
         // Check if we've reached an update
-        while ggez_timer::check_update_time(ggez_ctx, ::DESIRED_FPS) {
+        while ggez_timer::check_update_time(ggez_ctx,crate::DESIRED_FPS) {
             // Update weather
             mt_log!(Level::Trace, "Updating weather...");
             self.weather_manager.update_weather(&self.ci_ctx, ggez_ctx);

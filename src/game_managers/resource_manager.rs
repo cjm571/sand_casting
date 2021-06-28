@@ -71,8 +71,8 @@ impl ResourceManager {
             resource_mesh:  ggez_gfx::Mesh::new_line(
                             ctx,
                             &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                            ::DEFAULT_LINE_WIDTH,
-                            ::DEFAULT_LINE_COLOR)
+                           crate::DEFAULT_LINE_WIDTH,
+                           crate::DEFAULT_LINE_COLOR)
                             .unwrap(),
         }
     }
@@ -112,7 +112,7 @@ impl DrawableMechanic for ResourceManager {
                                     mesh_builder: &mut ggez_gfx::MeshBuilder,
                                     ggez_ctx: &mut GgEzContext) -> Result<(), Self::ErrorType> {
         // Create a HexGridCell object and add it to the mesh builder
-        let cur_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::HEX_RADIUS_VERTEX, ggez_ctx);
+        let cur_hex = HexGridCell::new_from_hex_coords(instance.origin(),crate::HEX_RADIUS_VERTEX, ggez_ctx);
         cur_hex.add_to_mesh(colors::from_resource(instance), colors::WHITE, mesh_builder);
 
         // Create radial HexGridCells as necessary

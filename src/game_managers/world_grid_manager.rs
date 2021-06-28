@@ -91,8 +91,8 @@ impl WorldGridManager {
             base_grid_mesh: ggez_gfx::Mesh::new_line(
                                 ggez_ctx,
                                 &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                ::DEFAULT_LINE_WIDTH,
-                                ::DEFAULT_LINE_COLOR)
+                               crate::DEFAULT_LINE_WIDTH,
+                               crate::DEFAULT_LINE_COLOR)
                                 .unwrap(),
             hex_map:        Self::build_default_hex_cell_map(radial_size, ci_ctx, ggez_ctx),
         };
@@ -157,7 +157,7 @@ impl WorldGridManager {
         let mut mesh_builder = ggez_gfx::MeshBuilder::new();
 
         for (_position, hex_cell) in self.hex_map.iter() {
-            hex_cell.add_to_mesh(colors::TRANSPARENT, ::DEFAULT_LINE_COLOR, &mut mesh_builder);
+            hex_cell.add_to_mesh(colors::TRANSPARENT,crate::DEFAULT_LINE_COLOR, &mut mesh_builder);
         }
 
         self.base_grid_mesh = mesh_builder.build(ggez_ctx).unwrap();
@@ -182,7 +182,7 @@ impl WorldGridManager {
         // Add central hex
         let central_hex_position = coords::Position::default();
         let mut cur_hex_position = central_hex_position;
-        let mut cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position, ::HEX_RADIUS_VERTEX, ggez_ctx);
+        let mut cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position,crate::HEX_RADIUS_VERTEX, ggez_ctx);
         hex_map.insert(cur_hex_position, cur_hex_cell_instance);
 
         // Add the remainder of the hexes in a spiral pattern
@@ -196,7 +196,7 @@ impl WorldGridManager {
                     // Add the hex at the current step
                     cur_hex_position.translate(&coords::Translation::from(direction), ci_ctx).expect("Could not translate to next intrastep hex.");
 
-                    cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position, ::HEX_RADIUS_VERTEX, ggez_ctx);
+                    cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position,crate::HEX_RADIUS_VERTEX, ggez_ctx);
                     hex_map.insert(cur_hex_position, cur_hex_cell_instance);
                 }
             }

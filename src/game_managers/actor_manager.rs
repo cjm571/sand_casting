@@ -69,8 +69,8 @@ impl ActorManager {
             actors:     Vec::new(),
             actor_mesh: ggez_gfx::Mesh::new_line(ggez_ctx,
                                                  &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                                 ::DEFAULT_LINE_WIDTH,
-                                                 ::DEFAULT_LINE_COLOR)
+                                                crate::DEFAULT_LINE_WIDTH,
+                                                crate::DEFAULT_LINE_COLOR)
                                                  .unwrap(),
         }
     }
@@ -111,10 +111,10 @@ impl DrawableMechanic for ActorManager {
                                     mesh_builder: &mut ggez_gfx::MeshBuilder,
                                     ggez_ctx: &mut GgEzContext) -> Result<(),Self::ErrorType> {
         // Create a HexGridCell object and add it to the mesh builder
-        let actor_hex = HexGridCell::new_from_hex_coords(instance.origin(), ::HEX_RADIUS_VERTEX, ggez_ctx);
+        let actor_hex = HexGridCell::new_from_hex_coords(instance.origin(),crate::HEX_RADIUS_VERTEX, ggez_ctx);
         
         // Draw green circle to represent the actor
-        mesh_builder.circle(ggez_gfx::DrawMode::fill(), actor_hex.center(), ::HEX_RADIUS_VERTEX/2.0, 1.0, colors::GREEN);
+        mesh_builder.circle(ggez_gfx::DrawMode::fill(), actor_hex.center(),crate::HEX_RADIUS_VERTEX/2.0, 1.0, colors::GREEN);
 
         Ok(())
     }
