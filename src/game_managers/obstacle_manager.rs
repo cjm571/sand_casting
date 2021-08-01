@@ -119,7 +119,7 @@ impl DrawableMechanic for ObstacleManager {
         for (i, obstacle_pos) in obstacle_positions.iter().enumerate() {
             //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
             // Create a HexGridCell object and add it to the mesh builder
-            let cur_hex = HexGridCell::new_from_hex_coords(&obstacle_pos,crate::HEX_RADIUS_VERTEX, ggez_ctx);
+            let cur_hex = HexGridCell::new_from_hex_coords(obstacle_pos,crate::HEX_RADIUS_VERTEX, ggez_ctx);
             cur_hex.add_to_mesh(colors::from_element(instance.element()), colors::DARKGREY, mesh_builder);
 
             // Draw a line over the hex side between the new and previous obstacle cell for all but the first cell
