@@ -26,14 +26,17 @@ use cast_iron::{
     context::Context as CastIronContext,
     coords,
     hex_directions,
-    logger,
-    ci_log,
 };
 
 use ggez::{
     Context as GgEzContext,
     graphics as ggez_gfx,
     mint as ggez_mint,
+};
+
+use mt_logger::{
+    mt_log,
+    Level,
 };
 
 use crate::game_assets::{
@@ -61,7 +64,6 @@ const FIRST_INTRARING_DIRECTION: hex_directions::Side   = hex_directions::Side::
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct WorldGridManager {
-    logger:                 logger::Instance,
     radial_size:            usize,          // Maximum value for an axis of the hex grid
     base_grid_mesh:         ggez_gfx::Mesh, // Mesh for the base hex grid
     hex_map:                HashMap::<coords::Position, HexGridCell>
@@ -79,23 +81,18 @@ impl WorldGridManager {
     /// Returns a new instance of WorldGridManager, with a base grid mesh initialized based on
     /// the GGEZ context's current window dimensions.
     pub fn new(
-        logger_original: &logger::Instance,
         //OPT: *DESIGN* Get grid radius from context
         radial_size: usize,
         ci_ctx: &CastIronContext,
         ggez_ctx: &mut GgEzContext ) -> Self {
-        // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger_original.clone();
-
         // Create manager and update mesh for initialization
         let mut world_grid_manager = Self {
-            logger:         logger_clone,
             radial_size,
             base_grid_mesh: ggez_gfx::Mesh::new_line(
                                 ggez_ctx,
                                 &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                ::DEFAULT_LINE_WIDTH,
-                                ::DEFAULT_LINE_COLOR)
+                               crate::DEFAULT_LINE_WIDTH,
+                               crate::DEFAULT_LINE_COLOR)
                                 .unwrap(),
             hex_map:        Self::build_default_hex_cell_map(radial_size, ci_ctx, ggez_ctx),
         };
@@ -160,12 +157,12 @@ impl WorldGridManager {
         let mut mesh_builder = ggez_gfx::MeshBuilder::new();
 
         for (_position, hex_cell) in self.hex_map.iter() {
-            hex_cell.add_to_mesh(colors::TRANSPARENT, ::DEFAULT_LINE_COLOR, &mut mesh_builder);
+            hex_cell.add_to_mesh(colors::TRANSPARENT,crate::DEFAULT_LINE_COLOR, &mut mesh_builder);
         }
 
         self.base_grid_mesh = mesh_builder.build(ggez_ctx).unwrap();
 
-        ci_log!(self.logger, logger::FilterLevel::Debug, "Base mesh updated");
+        mt_log!(Level::Debug, "Base mesh updated");
     }
 
 
@@ -185,7 +182,7 @@ impl WorldGridManager {
         // Add central hex
         let central_hex_position = coords::Position::default();
         let mut cur_hex_position = central_hex_position;
-        let mut cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position, ::HEX_RADIUS_VERTEX, ggez_ctx);
+        let mut cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position,crate::HEX_RADIUS_VERTEX, ggez_ctx);
         hex_map.insert(cur_hex_position, cur_hex_cell_instance);
 
         // Add the remainder of the hexes in a spiral pattern
@@ -199,7 +196,7 @@ impl WorldGridManager {
                     // Add the hex at the current step
                     cur_hex_position.translate(&coords::Translation::from(direction), ci_ctx).expect("Could not translate to next intrastep hex.");
 
-                    cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position, ::HEX_RADIUS_VERTEX, ggez_ctx);
+                    cur_hex_cell_instance = HexGridCell::new_from_hex_coords(&cur_hex_position,crate::HEX_RADIUS_VERTEX, ggez_ctx);
                     hex_map.insert(cur_hex_position, cur_hex_cell_instance);
                 }
             }

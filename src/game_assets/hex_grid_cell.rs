@@ -169,15 +169,15 @@ impl HexGridCell {
                 // This is important as all radial groups of hexes will effectively be large point-up hexes
                 let adj_theta = theta + PI/6.0;
 
-                radial_vertices[i].x = origin_centerpoint.x + (::HEX_RADIUS_SIDE*2.0*adj_theta.cos());
-                radial_vertices[i].y = origin_centerpoint.y - (::HEX_RADIUS_SIDE*2.0*adj_theta.sin());
+                radial_vertices[i].x = origin_centerpoint.x + (crate::HEX_RADIUS_SIDE*2.0*adj_theta.cos());
+                radial_vertices[i].y = origin_centerpoint.y - (crate::HEX_RADIUS_SIDE*2.0*adj_theta.sin());
 
                 // Inflate the vertices based on level
-                radial_vertices[i].x += (::HEX_RADIUS_SIDE*2.0*adj_theta.cos()) * level as f32;
-                radial_vertices[i].y -= (::HEX_RADIUS_SIDE*2.0*adj_theta.sin()) * level as f32;
+                radial_vertices[i].x += (crate::HEX_RADIUS_SIDE*2.0*adj_theta.cos()) * level as f32;
+                radial_vertices[i].y -= (crate::HEX_RADIUS_SIDE*2.0*adj_theta.sin()) * level as f32;
 
                 // Create hex cells at each vertex
-                let vert_hex = HexGridCell::new_from_pixel_coords(radial_vertices[i], ::HEX_RADIUS_VERTEX);
+                let vert_hex = HexGridCell::new_from_pixel_coords(radial_vertices[i],crate::HEX_RADIUS_VERTEX);
                 vert_hex.add_to_mesh(cur_fill_color, outline_color, mesh_builder);
 
                 // Create interstitial hex(es) if level requires
@@ -185,11 +185,11 @@ impl HexGridCell {
                     let inter_hex_theta = adj_theta + 4.0*PI/6.0;
 
                     let inter_hex_center = ggez_mint::Point2 {
-                        x: radial_vertices[i].x + (::HEX_RADIUS_SIDE*2.0*inter_hex_theta.cos()) * (j+1) as f32,
-                        y: radial_vertices[i].y - (::HEX_RADIUS_SIDE*2.0*inter_hex_theta.sin()) * (j+1) as f32
+                        x: radial_vertices[i].x + (crate::HEX_RADIUS_SIDE*2.0*inter_hex_theta.cos()) * (j+1) as f32,
+                        y: radial_vertices[i].y - (crate::HEX_RADIUS_SIDE*2.0*inter_hex_theta.sin()) * (j+1) as f32
                     };
 
-                    let inter_hex = HexGridCell::new_from_pixel_coords(inter_hex_center, ::HEX_RADIUS_VERTEX);
+                    let inter_hex = HexGridCell::new_from_pixel_coords(inter_hex_center,crate::HEX_RADIUS_VERTEX);
                     inter_hex.add_to_mesh(cur_fill_color, outline_color, mesh_builder);
                 }
             }
@@ -220,8 +220,8 @@ impl HexGridCell {
         let y_delta = cart_coords.y - window_center.y;
 
         // Calculate the delta along the X and Z planes, and calculate Y based on the results
-        let x = (2.0/3.0 * x_delta) / ::HEX_RADIUS_VERTEX;
-        let z = (-1.0/3.0 * x_delta + (3.0_f32).sqrt()/3.0 * y_delta) / ::HEX_RADIUS_VERTEX;
+        let x = (2.0/3.0 * x_delta) /crate::HEX_RADIUS_VERTEX;
+        let z = (-1.0/3.0 * x_delta + (3.0_f32).sqrt()/3.0 * y_delta) /crate::HEX_RADIUS_VERTEX;
         let y = -x - z;
 
         // Compose into a position, and return
@@ -237,9 +237,9 @@ impl HexGridCell {
         };
 
         // Calculate x, y offsets
-        let x_offset = hex_pos.x() as f32 * ::HEX_RADIUS_VERTEX * 3.0 / 2.0;
-        let y_offset = (-hex_pos.y() as f32 * f32::from(hex_directions::Side::NorthWest).sin() * (::HEX_RADIUS_SIDE * 2.0)) +
-                       (-hex_pos.z() as f32 * f32::from(hex_directions::Side::SouthWest).sin() * (::HEX_RADIUS_SIDE * 2.0));
+        let x_offset = hex_pos.x() as f32 *crate::HEX_RADIUS_VERTEX * 3.0 / 2.0;
+        let y_offset = (-hex_pos.y() as f32 * f32::from(hex_directions::Side::NorthWest).sin() * (crate::HEX_RADIUS_SIDE * 2.0)) +
+                       (-hex_pos.z() as f32 * f32::from(hex_directions::Side::SouthWest).sin() * (crate::HEX_RADIUS_SIDE * 2.0));
 
         ggez_mint::Point2 {
             x: window_center.x + x_offset,
@@ -260,7 +260,7 @@ impl HexGridCell {
 
     /// Adds the outline portion of a hex cell to the given Mesh
     fn add_hex_outline_to_mesh(&self, color: ggez_gfx::Color, mesh_builder: &mut ggez_gfx::MeshBuilder) {
-        mesh_builder.polygon(ggez_gfx::DrawMode::stroke(::DEFAULT_LINE_WIDTH), &self.vertices, color).unwrap();
+        mesh_builder.polygon(ggez_gfx::DrawMode::stroke(crate::DEFAULT_LINE_WIDTH), &self.vertices, color).unwrap();
     }
 
     fn add_highlight_to_mesh(&self, mesh_builder: &mut ggez_gfx::MeshBuilder) {

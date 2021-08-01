@@ -21,9 +21,7 @@ Purpose:
 
 use std::env;
 
-extern crate cast_iron;
 use cast_iron::{
-    Disableable,
     ability::{
         Ability,
         aspect::*
@@ -33,15 +31,8 @@ use cast_iron::{
         ContextBuilder as CastIronContextBuilder,
     },
     element::Element,
-    logger,
-    ci_log,
 };
 
-extern crate chrono;
-
-extern crate dd_statechart;
-
-extern crate ggez;
 use ggez::{
     ContextBuilder as GgEzContextBuilder,
     conf as ggez_conf,
@@ -49,9 +40,13 @@ use ggez::{
     graphics as ggez_gfx,
 };
 
-extern crate rand;
-
-extern crate variant_count;
+use mt_logger::{
+    mt_flush,
+    mt_new,
+    mt_log,
+    Level,
+    OutputStream,
+};
 
 ///
 // Module Declarations
@@ -110,18 +105,19 @@ const DEFAULT_MAX_WEATHER_DURATION:     f64 = 10.0;
 
 
 fn main() {
-    //OPT: *DESIGN* Helper function to do this cleanly
-    //              Or replace it with some kindof CLI parsing crate...
+    //OPT: *DESIGN* Replace this with pattern from once_cell example
     // Parse command line arguments
     let args: Vec<String> = env::args().collect();
 
-    // Create logger instance, or disable if required
-    let logger_original;
+    // Initialize logger instance if specified
     if args.contains(&String::from("-log")) {
-        logger_original = logger::Instance::default();
+        mt_new!(None, Level::Info, OutputStream::Both);
     }
-    else {
-        logger_original = logger::Instance::disabled();
+    else if args.contains(&String::from("-debug")) {
+        mt_new!(None, Level::Debug, OutputStream::Both);
+    }
+    else if args.contains(&String::from("-trace")) {
+        mt_new!(None, Level::Trace, OutputStream::Both);
     }
 
     // Create profiler instance, or disable if required
@@ -143,7 +139,7 @@ fn main() {
                     .max_weather_intensity(DEFAULT_MAX_WEATHER_INTENSITY)
                     .build();
 
-    ci_log!(logger_original, logger::FilterLevel::Debug, "CastIron context created.");
+    mt_log!(Level::Debug, "CastIron context created.");
 
     // Initialize Abilities
     let null_abil: Ability = Ability::new_name_only("Null");
@@ -183,14 +179,25 @@ fn main() {
                                                     )
                                                   .build()
                                                   .unwrap();
-    ci_log!(logger_original, logger::FilterLevel::Info, "ggez context, event loop created.");
+    mt_log!(Level::Info, "ggez context, event loop created.");
 
     // Use built context to create a GGEZ Event Handler instance
-    let mut sand_casting_game_state = SandCastingGameState::new(&logger_original, &profiler_original, &ci_ctx, &mut ggez_ctx);
+    let mut sand_casting_game_state = SandCastingGameState::new(&profiler_original, &ci_ctx, &mut ggez_ctx);
 
     // Run the game!
     match ggez_event::run(&mut ggez_ctx, &mut ggez_event_loop, &mut sand_casting_game_state) {
-        Ok(_)   => println!("Exited cleanly."),
-        Err(e)  => println!("Error occurred: {}", e)
+        Ok(_)   => mt_log!(Level::Info, "Exited cleanly."),
+        Err(e)  => mt_log!(Level::Error, "Error occurred: {}", e)
+    }
+
+    // Flush all log messages before shutting down
+    match mt_flush!() {
+        // Ignore success case, and uninitialized logger
+        Ok(_) => {}
+        Err(mt_logger::MtLoggerError::LoggerNotInitialized) => {}
+
+        Err(e) => {
+            eprintln!("Error '{}' encountered when attempting to flush mt_logger commands/messages", e);
+        }
     }
 }

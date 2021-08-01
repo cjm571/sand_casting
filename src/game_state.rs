@@ -27,9 +27,7 @@ use std::{
 };
 
 use cast_iron::{
-    context::Context as CastIronContext, 
-    logger,
-    ci_log,
+    context::Context as CastIronContext,
 };
 
 use dd_statechart::{
@@ -47,6 +45,11 @@ use ggez::{
     input::keyboard as ggez_kb,
     mint as ggez_mint,
     timer as ggez_timer,
+};
+
+use mt_logger::{
+    mt_log,
+    Level,
 };
 
 use crate::{
@@ -85,7 +88,6 @@ pub struct SandCastingGameState {
     initialized:        bool,               // Flag indicating if game has been initialized
     debug_display:      bool,               // Flag indicating if debug info should be displayed
     ci_ctx:             CastIronContext,    // CastIron engine context
-    logger:             logger::Instance,   // Instance of CastIron Logger
     profiler:           profiler::Instance, // Instance of SandCasting performance profiler
     actor_manager:      ActorManager,       // Actor Manager instance
     obstacle_manager:   ObstacleManager,    // Obstacle Manager instance
@@ -108,15 +110,12 @@ pub enum GameStateError {
 
 /// Constructor
 impl SandCastingGameState {
-    pub fn new(
-        logger_original: &logger::Instance,
-        profiler_original: &profiler::Instance,
-        ci_ctx: &CastIronContext,
-        ggez_ctx: &mut GgEzContext) -> Self {
+    pub fn new(profiler_original: &profiler::Instance,
+               ci_ctx: &CastIronContext,
+               ggez_ctx: &mut GgEzContext) -> Self {
         //NOTE: Load/create resources here: images, fonts, sounds, etc.
 
-        // Clone the logger, profiler instances for use by this module
-        let logger_clone = logger_original.clone();
+        // Clone the profiler instances for use by this module
         let profiler_clone = profiler_original.clone();
 
         // Clone context for use by submodules
@@ -126,18 +125,13 @@ impl SandCastingGameState {
             initialized:        false,
             debug_display:      false,
             ci_ctx:             ctx_clone,
-            logger:             logger_clone,
             profiler:           profiler_clone,
-            actor_manager:      ActorManager::new(logger_original, ggez_ctx),
-            obstacle_manager:   ObstacleManager::new(logger_original, ggez_ctx),
-            resource_manager:   ResourceManager::new(logger_original, ggez_ctx),
-            statechart:         StateChart::from("./res/default.scxml").unwrap(), //FIXME: Hardcoded for now, make this a global const or something
-            weather_manager:    WeatherManager::default(logger_original, profiler_original, ci_ctx, ggez_ctx),
-            world_grid_manager: WorldGridManager::new(
-                                    logger_original,
-                                    ::DEFAULT_GRID_RADIUS,
-                                    ci_ctx,
-                                    ggez_ctx),
+            actor_manager:      ActorManager::new(ggez_ctx),
+            obstacle_manager:   ObstacleManager::new(ggez_ctx),
+            resource_manager:   ResourceManager::new(ggez_ctx),
+            statechart:         StateChart::from("./res/default.scxml").unwrap(),
+            weather_manager:    WeatherManager::default(profiler_original, ci_ctx, ggez_ctx),
+            world_grid_manager: WorldGridManager::new(crate::DEFAULT_GRID_RADIUS, ci_ctx, ggez_ctx),
         }
     }
 
@@ -196,28 +190,28 @@ impl SandCastingGameState {
         for _i in 0..3 {
             self.resource_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
         }
-        ci_log!(self.logger, logger::FilterLevel::Info, "Resources generated.");
+        mt_log!(Level::Info, "Resources generated.");
 
         // Create random obstacles
         for _i in 0..3 {
             self.obstacle_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
         }
-        ci_log!(self.logger, logger::FilterLevel::Info, "Obstacles generated.");
+        mt_log!(Level::Info, "Obstacles generated.");
         
         // Create random actors
         for _i in 0..3 {
             self.actor_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
         }
-        ci_log!(self.logger, logger::FilterLevel::Info, "Actors generated.");
+        mt_log!(Level::Info, "Actors generated.");
 
-        ci_log!(self.logger, logger::FilterLevel::Info, "First-frame initialization complete.");
+        mt_log!(Level::Info, "First-frame initialization complete.");
         self.initialized = true;
     }
 
     fn draw_debug_info(&self, ggez_ctx: &mut GgEzContext) {
         // Draw active State(s)
         let state_str = format!("Active State(s): {:?}", self.statechart.active_state_ids());
-        let state_display = ggez_gfx::Text::new((state_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
+        let state_display = ggez_gfx::Text::new((state_str, ggez_gfx::Font::default(), crate::DEFAULT_TEXT_SIZE));
         ggez_gfx::draw(ggez_ctx, &state_display, (DEBUG_POS_STATE, 0.0, colors::YELLOW)).unwrap(); //FIXME: NOOOOOO UNWRAP
     }
 }
@@ -239,9 +233,9 @@ impl ggez_event::EventHandler for SandCastingGameState {
         }
 
         // Check if we've reached an update
-        while ggez_timer::check_update_time(ggez_ctx, ::DESIRED_FPS) {
+        while ggez_timer::check_update_time(ggez_ctx,crate::DESIRED_FPS) {
             // Update weather
-            ci_log!(self.logger, logger::FilterLevel::Trace, "Updating weather...");
+            mt_log!(Level::Trace, "Updating weather...");
             self.weather_manager.update_weather(&self.ci_ctx, ggez_ctx);
 
             // Update FPS
@@ -312,16 +306,16 @@ impl ggez_event::EventHandler for SandCastingGameState {
             ggez_mouse::MouseButton::Left => {
                 // Determine which hex the mouse event occurred in
                 if let Ok(event_hex_pos) = HexGridCell::pixel_to_hex_coords(event_coords, &self.ci_ctx, ggez_ctx) {
-                    ci_log!(self.logger, logger::FilterLevel::Debug, "Event ({:?}) occurred at position: {}", button, event_hex_pos);
+                    mt_log!(Level::Debug, "Event ({:?}) occurred at position: {}", button, event_hex_pos);
 
                     self.world_grid_manager.toggle_cell_highlight(&event_hex_pos, ggez_ctx).unwrap();
                 }
                 else {
-                    ci_log!(self.logger, logger::FilterLevel::Debug, "Event ({:?}) occurred outside hex grid at pixel coords ({}, {})", button, event_coords.x, event_coords.y);
+                    mt_log!(Level::Debug, "Event ({:?}) occurred outside hex grid at pixel coords ({}, {})", button, event_coords.x, event_coords.y);
                 }
             },
             _ => {
-                ci_log!(self.logger, logger::FilterLevel::Warning, "Mouse Event ({:?}) unimplemented!", button);
+                mt_log!(Level::Warning, "Mouse Event ({:?}) unimplemented!", button);
             }
         }
     }
@@ -338,15 +332,15 @@ impl ggez_event::EventHandler for SandCastingGameState {
             (ggez_kb::KeyMods::NONE, ggez_kb::KeyCode::D) => {
                 if self.debug_display {
                     self.debug_display = false;
-                    ci_log!(self.logger, logger::FilterLevel::Debug, "Debug display disabled");
+                    mt_log!(Level::Debug, "Debug display disabled");
                 }
                 else {
                     self.debug_display = true;
-                    ci_log!(self.logger, logger::FilterLevel::Debug, "Debug display enabled");
+                    mt_log!(Level::Debug, "Debug display enabled");
                 }
             },
             _ => {
-                ci_log!(self.logger, logger::FilterLevel::Warning, "Keyboard Event ({:?} + {:?}) unimplemented!", keymods, keycode);
+                mt_log!(Level::Warning, "Keyboard Event ({:?} + {:?}) unimplemented!", keymods, keycode);
             }
         }
     }
@@ -377,14 +371,14 @@ impl fmt::Display for GameStateError {
 mod tests {
     use std::error::Error;
 
+    use cast_iron::{
+        context::Context as CastIronContext,
+    };
+    use dd_statechart::event::Event;
+    use ggez::ContextBuilder as GgEzContextBuilder;
+
     use crate::{
-        cast_iron::{
-            context::Context as CastIronContext,
-        },
-        dd_statechart::event::Event,
         game_state::SandCastingGameState,
-        ggez::ContextBuilder as GgEzContextBuilder,
-        logger,
         profiler,
     };
 
@@ -394,12 +388,11 @@ mod tests {
 
     #[test]
     fn statechart_test() -> TestResult {
-        let logger = logger::Instance::new(logger::FilterLevel::Warning as u8, logger::OutputType::Console);
         let profiler = profiler::Instance::disabled();
         let ci_ctx = CastIronContext::default();
         let (mut ggez_ctx, mut _event_loop) = GgEzContextBuilder::new("test", "CJ McAllister").build()?;
 
-        let mut game_state = SandCastingGameState::new(&logger, &profiler, &ci_ctx, &mut ggez_ctx);
+        let mut game_state = SandCastingGameState::new(&profiler, &ci_ctx, &mut ggez_ctx);
 
         // Initial State should be 'idle'
         assert_eq!(

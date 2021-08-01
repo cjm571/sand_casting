@@ -26,10 +26,8 @@ use cast_iron::{
         Element,
         Elemental,
     },
-    logger,
     mechanics::weather,
     Randomizable,
-    ci_log,
 };
 
 use ggez::{
@@ -37,6 +35,11 @@ use ggez::{
     graphics as ggez_gfx,
     mint as ggez_mint,
     timer as ggez_timer,
+};
+
+use mt_logger::{
+    mt_log,
+    Level,
 };
 
 use crate::{
@@ -63,7 +66,6 @@ const HUD_TEXT_OFFSET:          f32 = 5.0;
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct WeatherManager {
-    logger:         logger::Instance,
     profiler:       profiler::Instance,
     active_weather: weather::Event,
     timeout_ms:     u128,
@@ -92,18 +94,15 @@ struct HudElements {
 
 impl WeatherManager {
     /// Fully-qualified constructor
-    pub fn new(logger_original:     &logger::Instance,
-               profiler_original:   &profiler::Instance,
+    pub fn new(profiler_original:   &profiler::Instance,
                active_weather:      weather::Event,
                timeout_ms:          u128,
                ci_ctx:              &CastIronContext, 
                ggez_ctx:            &mut GgEzContext) -> Self {
-        // Clone the logger, profiler instances for use by this module
-        let logger_clone = logger_original.clone();
+        // Clone the profiler instances for use by this module
         let profiler_clone = profiler_original.clone();
 
         WeatherManager {
-            logger:         logger_clone,
             profiler:       profiler_clone,
             active_weather, 
             timeout_ms,
@@ -113,16 +112,13 @@ impl WeatherManager {
     }
 
     /// Default constructor
-    pub fn default(logger_original: &logger::Instance,
-                   profiler_original:   &profiler::Instance,
+    pub fn default(profiler_original:   &profiler::Instance,
                    ci_ctx: &CastIronContext,
                    ggez_ctx: &mut GgEzContext) -> Self {
-        // Clone the logger, profiler instances for use by this module
-        let logger_clone = logger_original.clone();
+        // Clone the profiler instances for use by this module
         let profiler_clone = profiler_original.clone();
 
         WeatherManager {
-            logger:         logger_clone,
             profiler:       profiler_clone,
             active_weather: weather::Event::default(),
             timeout_ms:     u128::default(),
@@ -150,7 +146,7 @@ impl WeatherManager {
             self.active_weather = weather::Event::rand(ci_ctx).starting_at(elapsed_time);
 
             // Log weather change
-            ci_log!(self.logger, logger::FilterLevel::Info,
+            mt_log!(Level::Info,
                 "GameTime: {:.3}s: Weather changed to Elem: {:?}, Duration: {:.3}s",
                 elapsed_time.as_secs_f64(),
                 self.active_weather.element(),
@@ -213,27 +209,27 @@ impl HudElements {
             frame_size:     calc_frame_size,
             frame_mesh:     ggez_gfx::MeshBuilder::new()
                                     .line(&[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                          ::DEFAULT_LINE_WIDTH,
-                                          ::DEFAULT_LINE_COLOR)
+                                         crate::DEFAULT_LINE_WIDTH,
+                                         crate::DEFAULT_LINE_COLOR)
                                     .unwrap()
                                     .build(ggez_ctx)
                                     .unwrap(),
             content_mesh:   ggez_gfx::MeshBuilder::new()
                                     .line(&[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                          ::DEFAULT_LINE_WIDTH,
-                                          ::DEFAULT_LINE_COLOR)
+                                         crate::DEFAULT_LINE_WIDTH,
+                                         crate::DEFAULT_LINE_COLOR)
                                     .unwrap()
                                     .build(ggez_ctx)
                                     .unwrap(),
             int_bar_mesh:   ggez_gfx::MeshBuilder::new()
                                     .line(&[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                            ::DEFAULT_LINE_WIDTH,
-                                            ::DEFAULT_LINE_COLOR)
+                                           crate::DEFAULT_LINE_WIDTH,
+                                           crate::DEFAULT_LINE_COLOR)
                                     .unwrap()
                                     .build(ggez_ctx)
                                     .unwrap(),
             text_elem_pos:  ggez_mint::Point2{ x: calc_frame_pos.x,
-                                               y: calc_frame_pos.y - ::DEFAULT_TEXT_SIZE - HUD_TEXT_OFFSET},
+                                               y: calc_frame_pos.y -crate::DEFAULT_TEXT_SIZE - HUD_TEXT_OFFSET},
             text_elem_str:  String::default(),
             text_elem_obj:  ggez_gfx::Text::default(),
             text_int_pos:   ggez_mint::Point2{ x: calc_frame_pos.x,
@@ -329,12 +325,12 @@ impl HudElements {
         self.text_elem_str = String::from(element);
         self.text_elem_obj = ggez_gfx::Text::new((self.text_elem_str.as_str(),
                                                   ggez_gfx::Font::default(),
-                                                  ::DEFAULT_TEXT_SIZE));
+                                                 crate::DEFAULT_TEXT_SIZE));
 
         // Update intensity text
         self.text_int_str = String::from(intensity);
         self.text_int_obj = ggez_gfx::Text::new((self.text_int_str.as_str(),
                                                  ggez_gfx::Font::default(),
-                                                 ::DEFAULT_TEXT_SIZE));
+                                                crate::DEFAULT_TEXT_SIZE));
     }
 }

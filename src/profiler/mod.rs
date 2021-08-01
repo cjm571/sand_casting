@@ -141,13 +141,13 @@ impl Instance {
         // Draw avg. FPS
         let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
         let avg_fps_str = format!("Avg. FPS: {:.0}", self.cached_metrics.avg_fps);
-        let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
+        let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(),crate::DEFAULT_TEXT_SIZE));
         ggez_gfx::draw(ggez_ctx, &avg_fps_display, (avg_fps_pos, 0.0, colors::GREEN)).unwrap();
 
         // Draw peak FPS
         let peak_fps_pos = ggez_mint::Point2 {x: 0.0, y: 20.0};
         let peak_fps_str = format!("Peak FPS: {:.0}", self.cached_metrics.peak_fps);
-        let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(), ::DEFAULT_TEXT_SIZE));
+        let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(),crate::DEFAULT_TEXT_SIZE));
         ggez_gfx::draw(ggez_ctx, &peak_fps_display, (peak_fps_pos, 0.0, colors::GREEN)).unwrap();
     }
 

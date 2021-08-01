@@ -23,7 +23,6 @@ Purpose:
 use cast_iron::{
     element::Elemental,
     hex_directions,
-    logger,
     mechanics::obstacle::Obstacle,
     Plottable,
 };
@@ -34,13 +33,17 @@ use ggez::{
     mint as ggez_mint,
 };
 
+use mt_logger::{
+    mt_log,
+    Level,
+};
+
 use crate::{
     game_assets::{
         colors,
         hex_grid_cell::HexGridCell,
     },
     game_managers::DrawableMechanic,
-    ci_log,
 };
 
 
@@ -49,7 +52,6 @@ use crate::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct ObstacleManager {
-    logger:         logger::Instance,
     obstacles:      Vec<Obstacle>,
     obstacle_mesh:  ggez_gfx::Mesh,
 }
@@ -64,18 +66,14 @@ pub struct ObstacleError;
 
 impl ObstacleManager {
     /// Generic Constructor - creates an empty instance
-    pub fn new(logger_original: &logger::Instance, ctx: &mut GgEzContext) -> Self {
-        // Clone the logger instance so this module has its own sender to use
-        let logger_clone = logger_original.clone();
-
+    pub fn new(ctx: &mut GgEzContext) -> Self {
         ObstacleManager {
-            logger:         logger_clone,
             obstacles:      Vec::new(),
             obstacle_mesh:  ggez_gfx::Mesh::new_line(
                                 ctx,
                                 &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                ::DEFAULT_LINE_WIDTH,
-                                ::DEFAULT_LINE_COLOR)
+                               crate::DEFAULT_LINE_WIDTH,
+                               crate::DEFAULT_LINE_COLOR)
                                 .unwrap(),
         }
     }
@@ -95,7 +93,7 @@ impl DrawableMechanic for ObstacleManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        ci_log!(self.logger, logger::FilterLevel::Debug,
+        mt_log!(Level::Debug,
             "Adding {} obstacle starting at {} to mesh.",
             String::from(instance.element()),
             instance.origin());
@@ -121,7 +119,7 @@ impl DrawableMechanic for ObstacleManager {
         for (i, obstacle_pos) in obstacle_positions.iter().enumerate() {
             //OPT: *PERFORMANCE* Not a great spot for this conversion logic...
             // Create a HexGridCell object and add it to the mesh builder
-            let cur_hex = HexGridCell::new_from_hex_coords(&obstacle_pos, ::HEX_RADIUS_VERTEX, ggez_ctx);
+            let cur_hex = HexGridCell::new_from_hex_coords(&obstacle_pos,crate::HEX_RADIUS_VERTEX, ggez_ctx);
             cur_hex.add_to_mesh(colors::from_element(instance.element()), colors::DARKGREY, mesh_builder);
 
             // Draw a line over the hex side between the new and previous obstacle cell for all but the first cell
@@ -137,7 +135,7 @@ impl DrawableMechanic for ObstacleManager {
                 let shared_line = [cur_hex.vertices()[shared_vertex_indices[0]],
                                    cur_hex.vertices()[shared_vertex_indices[1]]];
 
-                mesh_builder.line(&shared_line, ::DEFAULT_LINE_WIDTH, colors::from_element(instance.element())).unwrap();
+                mesh_builder.line(&shared_line,crate::DEFAULT_LINE_WIDTH, colors::from_element(instance.element())).unwrap();
             }
         }
 
