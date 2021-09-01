@@ -21,50 +21,26 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use std::{
-    error::Error,
-    fmt,
-    io::Write,
-};
+use std::{error::Error, fmt, io::Write};
 
-use cast_iron::{
-    context::Context as CastIronContext,
-};
+use cast_iron::context::Context as CastIronContext;
 
-use dd_statechart::{
-    StateChart,
-    StateChartError,
-    event::Event,
-};
+use dd_statechart::{event::Event, StateChart, StateChartError};
 
 use ggez::{
-    Context as GgEzContext,
+    event as ggez_event, graphics as ggez_gfx, input::keyboard as ggez_kb,
+    input::mouse as ggez_mouse, mint as ggez_mint, timer as ggez_timer, Context as GgEzContext,
     GameResult as GgEzGameResult,
-    event as ggez_event,
-    graphics as ggez_gfx,
-    input::mouse as ggez_mouse,
-    input::keyboard as ggez_kb,
-    mint as ggez_mint,
-    timer as ggez_timer,
 };
 
-use mt_logger::{
-    mt_log,
-    Level,
-};
+use mt_logger::{mt_log, Level};
 
 use crate::{
-    game_assets::{
-        colors,
-        hex_grid_cell::HexGridCell,
-    },
+    game_assets::{colors, hex_grid_cell::HexGridCell},
     game_managers::{
-        DrawableMechanic,
-        actor_manager::ActorManager,
-        obstacle_manager::ObstacleManager,
-        resource_manager::ResourceManager,
-        weather_manager::WeatherManager,
-        world_grid_manager::WorldGridManager,
+        actor_manager::ActorManager, obstacle_manager::ObstacleManager,
+        resource_manager::ResourceManager, weather_manager::WeatherManager,
+        world_grid_manager::WorldGridManager, DrawableMechanic,
     },
     profiler,
 };
@@ -76,7 +52,7 @@ use crate::{
 
 //FIXME: These probably should be relative to window size
 // Position of debug info text in window
-const DEBUG_POS_STATE: ggez_mint::Point2<f32> = ggez_mint::Point2 {x: 0.0, y: 800.0};
+const DEBUG_POS_STATE: ggez_mint::Point2<f32> = ggez_mint::Point2 { x: 0.0, y: 800.0 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -86,16 +62,16 @@ const DEBUG_POS_STATE: ggez_mint::Point2<f32> = ggez_mint::Point2 {x: 0.0, y: 80
 //TODO: Rename and refactor this - very likely does not need to keep clones of the logger and profiler
 /// Primary Game Struct
 pub struct SandCastingGameState {
-    initialized:        bool,               // Flag indicating if game has been initialized
-    debug_display:      bool,               // Flag indicating if debug info should be displayed
-    ci_ctx:             CastIronContext,    // CastIron engine context
-    profiler:           profiler::Instance, // Instance of SandCasting performance profiler
-    actor_manager:      ActorManager,       // Actor Manager instance
-    obstacle_manager:   ObstacleManager,    // Obstacle Manager instance
-    resource_manager:   ResourceManager,    // Resource Manager instance
-    statechart:         StateChart,         // StateChart covering all game states
-    weather_manager:    WeatherManager,     // Weather Manager instance
-    world_grid_manager: WorldGridManager,   // World Grid Manager instance
+    initialized: bool,                 // Flag indicating if game has been initialized
+    debug_display: bool,               // Flag indicating if debug info should be displayed
+    ci_ctx: CastIronContext,           // CastIron engine context
+    profiler: profiler::Instance,      // Instance of SandCasting performance profiler
+    actor_manager: ActorManager,       // Actor Manager instance
+    obstacle_manager: ObstacleManager, // Obstacle Manager instance
+    resource_manager: ResourceManager, // Resource Manager instance
+    statechart: StateChart,            // StateChart covering all game states
+    weather_manager: WeatherManager,   // Weather Manager instance
+    world_grid_manager: WorldGridManager, // World Grid Manager instance
 }
 
 #[derive(Debug, PartialEq)]
@@ -111,9 +87,11 @@ pub enum GameStateError {
 
 /// Constructor
 impl SandCastingGameState {
-    pub fn new(profiler_original: &profiler::Instance,
-               ci_ctx: &CastIronContext,
-               ggez_ctx: &mut GgEzContext) -> Self {
+    pub fn new(
+        profiler_original: &profiler::Instance,
+        ci_ctx: &CastIronContext,
+        ggez_ctx: &mut GgEzContext,
+    ) -> Self {
         //NOTE: Load/create resources here: images, fonts, sounds, etc.
 
         // Clone the profiler instances for use by this module
@@ -122,16 +100,16 @@ impl SandCastingGameState {
         // Clone context for use by submodules
         let ctx_clone = ci_ctx.clone();
 
-        SandCastingGameState{
-            initialized:        false,
-            debug_display:      false,
-            ci_ctx:             ctx_clone,
-            profiler:           profiler_clone,
-            actor_manager:      ActorManager::new(ggez_ctx),
-            obstacle_manager:   ObstacleManager::new(ggez_ctx),
-            resource_manager:   ResourceManager::new(ggez_ctx),
-            statechart:         StateChart::from("./res/default.scxml").unwrap(),
-            weather_manager:    WeatherManager::default(profiler_original, ci_ctx, ggez_ctx),
+        SandCastingGameState {
+            initialized: false,
+            debug_display: false,
+            ci_ctx: ctx_clone,
+            profiler: profiler_clone,
+            actor_manager: ActorManager::new(ggez_ctx),
+            obstacle_manager: ObstacleManager::new(ggez_ctx),
+            resource_manager: ResourceManager::new(ggez_ctx),
+            statechart: StateChart::from("./res/default.scxml").unwrap(),
+            weather_manager: WeatherManager::default(profiler_original, ci_ctx, ggez_ctx),
             world_grid_manager: WorldGridManager::new(crate::DEFAULT_GRID_RADIUS, ci_ctx, ggez_ctx),
         }
     }
@@ -178,13 +156,25 @@ impl SandCastingGameState {
 
     pub fn process_event(&mut self, event: &Event) -> Result<(), GameStateError> {
         // Pass the event to the StateChart
-        let process_result = self.statechart.process_external_event(event).map_err(GameStateError::StateChartError);
+        let process_result = self
+            .statechart
+            .process_external_event(event)
+            .map_err(GameStateError::StateChartError);
 
         if process_result.is_ok() {
-            mt_log!(Level::Info, "Event '{}' processed. Current Active State(s) '{:?}'", event, self.active_state_ids());
-        }
-        else {
-            mt_log!(Level::Error, "Failed to process Event '{}'. Current Active State(s) '{:?}'", event, self.active_state_ids());
+            mt_log!(
+                Level::Info,
+                "Event '{}' processed. Current Active State(s) '{:?}'",
+                event,
+                self.active_state_ids()
+            );
+        } else {
+            mt_log!(
+                Level::Error,
+                "Failed to process Event '{}'. Current Active State(s) '{:?}'",
+                event,
+                self.active_state_ids()
+            );
         }
 
         process_result
@@ -198,19 +188,25 @@ impl SandCastingGameState {
     fn initialize(&mut self, ggez_ctx: &mut GgEzContext) {
         // Create random resources
         for _i in 0..3 {
-            self.resource_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
+            self.resource_manager
+                .add_rand_instance(&self.ci_ctx, ggez_ctx)
+                .unwrap();
         }
         mt_log!(Level::Info, "Resources generated.");
 
         // Create random obstacles
         for _i in 0..3 {
-            self.obstacle_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
+            self.obstacle_manager
+                .add_rand_instance(&self.ci_ctx, ggez_ctx)
+                .unwrap();
         }
         mt_log!(Level::Info, "Obstacles generated.");
-        
+
         // Create random actors
         for _i in 0..3 {
-            self.actor_manager.add_rand_instance(&self.ci_ctx, ggez_ctx).unwrap();
+            self.actor_manager
+                .add_rand_instance(&self.ci_ctx, ggez_ctx)
+                .unwrap();
         }
         mt_log!(Level::Info, "Actors generated.");
 
@@ -221,8 +217,17 @@ impl SandCastingGameState {
     fn draw_debug_info(&self, ggez_ctx: &mut GgEzContext) {
         // Draw active State(s)
         let state_str = format!("Active State(s): {:?}", self.statechart.active_state_ids());
-        let state_display = ggez_gfx::Text::new((state_str, ggez_gfx::Font::default(), crate::DEFAULT_TEXT_SIZE));
-        ggez_gfx::draw(ggez_ctx, &state_display, (DEBUG_POS_STATE, 0.0, colors::YELLOW)).unwrap(); //FIXME: NOOOOOO UNWRAP
+        let state_display = ggez_gfx::Text::new((
+            state_str,
+            ggez_gfx::Font::default(),
+            crate::DEFAULT_TEXT_SIZE,
+        ));
+        ggez_gfx::draw(
+            ggez_ctx,
+            &state_display,
+            (DEBUG_POS_STATE, 0.0, colors::YELLOW),
+        )
+        .unwrap(); //FIXME: NOOOOOO UNWRAP
     }
 }
 
@@ -243,7 +248,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
         }
 
         // Check if we've reached an update
-        while ggez_timer::check_update_time(ggez_ctx,crate::DESIRED_FPS) {
+        while ggez_timer::check_update_time(ggez_ctx, crate::DESIRED_FPS) {
             // Update weather
             mt_log!(Level::Trace, "Updating weather...");
             self.weather_manager.update_weather(&self.ci_ctx, ggez_ctx);
@@ -260,7 +265,7 @@ impl ggez_event::EventHandler for SandCastingGameState {
         if ggez_timer::ticks(ctx) > 1 {
             self.profiler.send_frame_delta(ctx).unwrap();
         }
-        
+
         // Get draw start time and set up vec for stacked draw time
         let start_time = ggez_timer::time_since_start(ctx);
         let mut draw_timings = Vec::new();
@@ -268,80 +273,134 @@ impl ggez_event::EventHandler for SandCastingGameState {
         // Change background color based on game state
         if self.active_state_ids().contains(&"combat") {
             ggez_gfx::clear(ctx, colors::RED);
-        }
-        else {
+        } else {
             ggez_gfx::clear(ctx, colors::BLACK);
         }
-        draw_timings.push(profiler::StackedTime{label: String::from("Clear"), time: ggez_timer::time_since_start(ctx)});
-        
+        draw_timings.push(profiler::StackedTime {
+            label: String::from("Clear"),
+            time: ggez_timer::time_since_start(ctx),
+        });
+
         // Draw the weather HUD
         self.weather_manager.draw(ctx);
-        draw_timings.push(profiler::StackedTime{label: String::from("Weather"), time: ggez_timer::time_since_start(ctx)});
-        
+        draw_timings.push(profiler::StackedTime {
+            label: String::from("Weather"),
+            time: ggez_timer::time_since_start(ctx),
+        });
+
         // Draw the hex grid
         self.world_grid_manager.draw(ctx);
-        draw_timings.push(profiler::StackedTime{label: String::from("WorldGrid"), time: ggez_timer::time_since_start(ctx)});
+        draw_timings.push(profiler::StackedTime {
+            label: String::from("WorldGrid"),
+            time: ggez_timer::time_since_start(ctx),
+        });
 
         // Draw resources
         self.resource_manager.draw(ctx);
-        draw_timings.push(profiler::StackedTime{label: String::from("Resources"), time: ggez_timer::time_since_start(ctx)});
+        draw_timings.push(profiler::StackedTime {
+            label: String::from("Resources"),
+            time: ggez_timer::time_since_start(ctx),
+        });
 
         // Draw obstacles
         self.obstacle_manager.draw(ctx);
-        draw_timings.push(profiler::StackedTime{label: String::from("Obstacles"), time: ggez_timer::time_since_start(ctx)});
+        draw_timings.push(profiler::StackedTime {
+            label: String::from("Obstacles"),
+            time: ggez_timer::time_since_start(ctx),
+        });
 
         // Draw actors
         self.actor_manager.draw(ctx);
-        draw_timings.push(profiler::StackedTime{label: String::from("Actors"), time: ggez_timer::time_since_start(ctx)});
+        draw_timings.push(profiler::StackedTime {
+            label: String::from("Actors"),
+            time: ggez_timer::time_since_start(ctx),
+        });
 
         if self.debug_display {
             // Draw performance stats
             self.profiler.draw_fps_stats(ctx);
-            draw_timings.push(profiler::StackedTime{label: String::from("FPS"), time: ggez_timer::time_since_start(ctx)});
+            draw_timings.push(profiler::StackedTime {
+                label: String::from("FPS"),
+                time: ggez_timer::time_since_start(ctx),
+            });
 
             // Draw Debug info
             self.draw_debug_info(ctx);
-            draw_timings.push(profiler::StackedTime{label: String::from("Debug Info"), time: ggez_timer::time_since_start(ctx)});
+            draw_timings.push(profiler::StackedTime {
+                label: String::from("Debug Info"),
+                time: ggez_timer::time_since_start(ctx),
+            });
         }
 
         let res = ggez_gfx::present(ctx);
-        draw_timings.push(profiler::StackedTime{label: String::from("Present"), time: ggez_timer::time_since_start(ctx)});
+        draw_timings.push(profiler::StackedTime {
+            label: String::from("Present"),
+            time: ggez_timer::time_since_start(ctx),
+        });
 
         // Send stacked timings to profiler
-        self.profiler.send_stacked_draw_time(start_time, draw_timings).unwrap();
-        
+        self.profiler
+            .send_stacked_draw_time(start_time, draw_timings)
+            .unwrap();
+
         res
     }
 
-    fn mouse_button_down_event(&mut self, ggez_ctx: &mut GgEzContext, button: ggez_mouse::MouseButton, x: f32, y: f32) {
+    fn mouse_button_down_event(
+        &mut self,
+        ggez_ctx: &mut GgEzContext,
+        button: ggez_mouse::MouseButton,
+        x: f32,
+        y: f32,
+    ) {
         // Pack up event coordinates
-        let event_coords = ggez_mint::Point2 {x, y};
+        let event_coords = ggez_mint::Point2 { x, y };
 
         // Handle each button as appropriate
         match button {
             ggez_mouse::MouseButton::Left => {
                 // Determine which hex the mouse event occurred in
-                if let Ok(event_hex_pos) = HexGridCell::pixel_to_hex_coords(event_coords, &self.ci_ctx, ggez_ctx) {
-                    mt_log!(Level::Debug, "Event ({:?}) occurred at position: {}", button, event_hex_pos);
+                if let Ok(event_hex_pos) =
+                    HexGridCell::pixel_to_hex_coords(event_coords, &self.ci_ctx, ggez_ctx)
+                {
+                    mt_log!(
+                        Level::Debug,
+                        "Event ({:?}) occurred at position: {}",
+                        button,
+                        event_hex_pos
+                    );
 
-                    self.world_grid_manager.toggle_cell_highlight(&event_hex_pos, ggez_ctx).unwrap();
+                    self.world_grid_manager
+                        .toggle_cell_highlight(&event_hex_pos, ggez_ctx)
+                        .unwrap();
+                } else {
+                    mt_log!(
+                        Level::Debug,
+                        "Event ({:?}) occurred outside hex grid at pixel coords ({}, {})",
+                        button,
+                        event_coords.x,
+                        event_coords.y
+                    );
                 }
-                else {
-                    mt_log!(Level::Debug, "Event ({:?}) occurred outside hex grid at pixel coords ({}, {})", button, event_coords.x, event_coords.y);
-                }
-            },
+            }
             _ => {
                 mt_log!(Level::Warning, "Mouse Event ({:?}) unimplemented!", button);
             }
         }
     }
 
-    fn key_down_event(&mut self, _ggez_ctx: &mut GgEzContext, keycode: ggez_kb::KeyCode, keymods: ggez_kb::KeyMods, repeat: bool) {
+    fn key_down_event(
+        &mut self,
+        _ggez_ctx: &mut GgEzContext,
+        keycode: ggez_kb::KeyCode,
+        keymods: ggez_kb::KeyMods,
+        repeat: bool,
+    ) {
         // Ignore repeat inputs (for now)
         if repeat {
             return;
         }
-        
+
         // Otherwise, check the Mod + Key tuple and handle accordingly
         match (keymods, keycode) {
             // Toggle debug display
@@ -349,12 +408,11 @@ impl ggez_event::EventHandler for SandCastingGameState {
                 if self.debug_display {
                     self.debug_display = false;
                     mt_log!(Level::Debug, "Debug display disabled");
-                }
-                else {
+                } else {
                     self.debug_display = true;
                     mt_log!(Level::Debug, "Debug display enabled");
                 }
-            },
+            }
             // Prompt for an Event ID
             (ggez_kb::KeyMods::NONE, ggez_kb::KeyCode::E) => {
                 let mut user_event_id = String::new();
@@ -372,12 +430,29 @@ impl ggez_event::EventHandler for SandCastingGameState {
 
                 // Parse into Event and process
                 match dd_statechart::event::Event::from(user_event_id.trim_end()) {
-                    Ok(user_event) => self.process_event(&user_event).unwrap_or_else(|e| mt_log!(Level::Error, "Error '{}' while processing event '{}'", e, user_event)),
-                    Err(e) => mt_log!(Level::Error, "Error '{}' while parsing Event ID '{}'", e, user_event_id)
+                    Ok(user_event) => self.process_event(&user_event).unwrap_or_else(|e| {
+                        mt_log!(
+                            Level::Error,
+                            "Error '{}' while processing event '{}'",
+                            e,
+                            user_event
+                        )
+                    }),
+                    Err(e) => mt_log!(
+                        Level::Error,
+                        "Error '{}' while parsing Event ID '{}'",
+                        e,
+                        user_event_id
+                    ),
                 }
             }
             _ => {
-                mt_log!(Level::Warning, "Keyboard Event ({:?} + {:?}) unimplemented!", keymods, keycode);
+                mt_log!(
+                    Level::Warning,
+                    "Keyboard Event ({:?} + {:?}) unimplemented!",
+                    keymods,
+                    keycode
+                );
             }
         }
     }
@@ -395,7 +470,7 @@ impl fmt::Display for GameStateError {
         match self {
             Self::StateChartError(sc_err) => {
                 write!(f, "StateChartError '{}' encountered", sc_err)
-            },
+            }
         }
     }
 }
@@ -408,16 +483,11 @@ impl fmt::Display for GameStateError {
 mod tests {
     use std::error::Error;
 
-    use cast_iron::{
-        context::Context as CastIronContext,
-    };
+    use cast_iron::context::Context as CastIronContext;
     use dd_statechart::event::Event;
     use ggez::ContextBuilder as GgEzContextBuilder;
 
-    use crate::{
-        game_state::SandCastingGameState,
-        profiler,
-    };
+    use crate::{game_state::SandCastingGameState, profiler};
 
 
     type TestResult = Result<(), Box<dyn Error>>;
@@ -427,23 +497,18 @@ mod tests {
     fn statechart_test() -> TestResult {
         let profiler = profiler::Instance::disabled();
         let ci_ctx = CastIronContext::default();
-        let (mut ggez_ctx, mut _event_loop) = GgEzContextBuilder::new("test", "CJ McAllister").build()?;
+        let (mut ggez_ctx, mut _event_loop) =
+            GgEzContextBuilder::new("test", "CJ McAllister").build()?;
 
         let mut game_state = SandCastingGameState::new(&profiler, &ci_ctx, &mut ggez_ctx);
 
         // Initial State should be 'idle'
-        assert_eq!(
-            game_state.active_state_ids(),
-            vec!["idle"],
-        );
+        assert_eq!(game_state.active_state_ids(), vec!["idle"],);
 
         // Send a combat trigger and verify that the Active State indicates combat has begun
         game_state.process_event(&Event::from("combat.enter")?)?;
-        assert_eq!(
-            game_state.active_state_ids(),
-            vec!["combat"],
-        );
-        
+        assert_eq!(game_state.active_state_ids(), vec!["combat"],);
+
         Ok(())
     }
 }

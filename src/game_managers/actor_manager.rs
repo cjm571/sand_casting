@@ -20,27 +20,14 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use cast_iron::{
-    actor::Actor,
-    Plottable,
-};
+use cast_iron::{actor::Actor, Plottable};
 
-use ggez::{
-    Context as GgEzContext,
-    graphics as ggez_gfx,
-    mint as ggez_mint,
-};
+use ggez::{graphics as ggez_gfx, mint as ggez_mint, Context as GgEzContext};
 
-use mt_logger::{
-    mt_log,
-    Level,
-};
+use mt_logger::{mt_log, Level};
 
 use crate::{
-    game_assets::{
-        colors,
-        hex_grid_cell::HexGridCell,
-    },
+    game_assets::{colors, hex_grid_cell::HexGridCell},
     game_managers::DrawableMechanic,
 };
 
@@ -50,7 +37,7 @@ use crate::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct ActorManager {
-    actors:     Vec<Actor>,
+    actors: Vec<Actor>,
     actor_mesh: ggez_gfx::Mesh,
 }
 
@@ -66,16 +53,20 @@ impl ActorManager {
     /// Generic Constructor - creates an empty instance
     pub fn new(ggez_ctx: &mut GgEzContext) -> Self {
         ActorManager {
-            actors:     Vec::new(),
-            actor_mesh: ggez_gfx::Mesh::new_line(ggez_ctx,
-                                                 &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                                                crate::DEFAULT_LINE_WIDTH,
-                                                crate::DEFAULT_LINE_COLOR)
-                                                 .unwrap(),
+            actors: Vec::new(),
+            actor_mesh: ggez_gfx::Mesh::new_line(
+                ggez_ctx,
+                &[
+                    ggez_mint::Point2 { x: 0.0, y: 0.0 },
+                    ggez_mint::Point2 { x: 10.0, y: 10.0 },
+                ],
+                crate::DEFAULT_LINE_WIDTH,
+                crate::DEFAULT_LINE_COLOR,
+            )
+            .unwrap(),
         }
     }
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -91,10 +82,12 @@ impl DrawableMechanic for ActorManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        mt_log!(Level::Debug,
+        mt_log!(
+            Level::Debug,
             "Adding actor: {} at {} to mesh.",
             instance.name(),
-            instance.origin());
+            instance.origin()
+        );
 
         self.actors.push(instance);
     }
@@ -107,14 +100,23 @@ impl DrawableMechanic for ActorManager {
         self.actor_mesh = mesh;
     }
 
-    fn add_instance_to_mesh_builder(instance: &Self::Instance,
-                                    mesh_builder: &mut ggez_gfx::MeshBuilder,
-                                    ggez_ctx: &mut GgEzContext) -> Result<(),Self::ErrorType> {
+    fn add_instance_to_mesh_builder(
+        instance: &Self::Instance,
+        mesh_builder: &mut ggez_gfx::MeshBuilder,
+        ggez_ctx: &mut GgEzContext,
+    ) -> Result<(), Self::ErrorType> {
         // Create a HexGridCell object and add it to the mesh builder
-        let actor_hex = HexGridCell::new_from_hex_coords(instance.origin(),crate::HEX_RADIUS_VERTEX, ggez_ctx);
-        
+        let actor_hex =
+            HexGridCell::new_from_hex_coords(instance.origin(), crate::HEX_RADIUS_VERTEX, ggez_ctx);
+
         // Draw green circle to represent the actor
-        mesh_builder.circle(ggez_gfx::DrawMode::fill(), actor_hex.center(),crate::HEX_RADIUS_VERTEX/2.0, 1.0, colors::GREEN);
+        mesh_builder.circle(
+            ggez_gfx::DrawMode::fill(),
+            actor_hex.center(),
+            crate::HEX_RADIUS_VERTEX / 2.0,
+            1.0,
+            colors::GREEN,
+        );
 
         Ok(())
     }

@@ -20,13 +20,7 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use std::{
-    fs,
-    io::prelude::*,
-    path::PathBuf,
-    sync::mpsc,
-    time::Duration,
-};
+use std::{fs, io::prelude::*, path::PathBuf, sync::mpsc, time::Duration};
 
 use crate::profiler;
 
@@ -39,7 +33,7 @@ use chrono::Local;
 
 pub struct MetricsReceiver {
     metrics_rx: mpsc::Receiver<profiler::MetricContainer>,
-    files:      Vec<fs::File>,
+    files: Vec<fs::File>,
 }
 
 
@@ -52,11 +46,8 @@ impl MetricsReceiver {
     pub fn new(metrics_rx: mpsc::Receiver<profiler::MetricContainer>) -> Self {
         let mut files = Vec::new();
         Self::create_files(&mut files);
-        
-        Self {
-            metrics_rx,
-            files,
-        }
+
+        Self { metrics_rx, files }
     }
 
 
@@ -67,7 +58,7 @@ impl MetricsReceiver {
     fn file_handle(&mut self, metric: &profiler::MetricContainer) -> &mut fs::File {
         &mut self.files[usize::from(metric)]
     }
-     
+
 
     /*  *  *  *  *  *  *  *
      *  Utility Methods   *
@@ -75,7 +66,10 @@ impl MetricsReceiver {
 
     /// Main loop for receiving and recording metrics data
     pub fn main(&mut self) {
-        println!("{}: Entered MetricsReceiver thread.", Local::now().format("%Y-%m-%d %T%.3f"));
+        println!(
+            "{}: Entered MetricsReceiver thread.",
+            Local::now().format("%Y-%m-%d %T%.3f")
+        );
 
         loop {
             // Check channel for metrics
@@ -90,10 +84,10 @@ impl MetricsReceiver {
                     }
                     profiler::MetricContainer::FrameDeltaTime(timestamp, delta) => {
                         Self::add_f64_to_csv(timestamp, delta, 7, file_handle);
-                    },
+                    }
                     profiler::MetricContainer::EventMarker(timestamp, event_label) => {
                         Self::add_string_to_csv(timestamp, event_label, file_handle);
-                    },
+                    }
                     profiler::MetricContainer::StackedDrawTime(timestamp, stacked_times) => {
                         Self::add_stacked_times_to_csv(timestamp, stacked_times, 7, file_handle)
                     }
@@ -101,7 +95,7 @@ impl MetricsReceiver {
             }
         }
     }
-    
+
 
     /*  *  *  *  *  *  *
      * Helper Methods  *
@@ -125,12 +119,15 @@ impl MetricsReceiver {
         metrics_path_buf.push(metrics_cur);
         match fs::create_dir(metrics_path_buf.as_path()) {
             Ok(()) => (),
-            Err(e) => panic!("Failed to create current-run metrics directory. Error: {}", e),
+            Err(e) => panic!(
+                "Failed to create current-run metrics directory. Error: {}",
+                e
+            ),
         }
 
         //OPT: *DESIGN* Would be cleaner if this were an iterator
         // Create standard metrics files
-        for metric_idx in 0 .. profiler::MetricContainer::VARIANT_COUNT {
+        for metric_idx in 0..profiler::MetricContainer::VARIANT_COUNT {
             // Get the current metric's filename
             let filename = profiler::MetricContainer::from(metric_idx).filename();
 
@@ -138,7 +135,11 @@ impl MetricsReceiver {
             metrics_path_buf.push(filename);
             match fs::File::create(metrics_path_buf.as_path()) {
                 Ok(file) => files.push(file),
-                Err(err) => panic!("Failed to create metrics file at {}. Error: {}", metrics_path_buf.as_path().display(), err),
+                Err(err) => panic!(
+                    "Failed to create metrics file at {}. Error: {}",
+                    metrics_path_buf.as_path().display(),
+                    err
+                ),
             }
 
             // Pop the filename off the path buffer for the next iteration
@@ -146,10 +147,7 @@ impl MetricsReceiver {
         }
     }
 
-    fn add_f64_to_csv(timestamp: Duration,
-                      item: f64,
-                      precision: usize,
-                      csv_file: &mut fs::File) {
+    fn add_f64_to_csv(timestamp: Duration, item: f64, precision: usize, csv_file: &mut fs::File) {
         // Format item for writing
         let item_formatted = format!(
             "{timestamp},{item:.precision$};",
@@ -162,9 +160,7 @@ impl MetricsReceiver {
         csv_file.write_all(item_formatted.as_bytes()).unwrap();
     }
 
-    fn add_string_to_csv(timestamp: Duration,
-                         label: String,
-                         csv_file: &mut fs::File) {
+    fn add_string_to_csv(timestamp: Duration, label: String, csv_file: &mut fs::File) {
         // Format label for writing
         let label_formatted = format!(
             "{timestamp},{label};",
@@ -176,10 +172,12 @@ impl MetricsReceiver {
         csv_file.write_all(label_formatted.as_bytes()).unwrap();
     }
 
-    fn add_stacked_times_to_csv(timestamp: Duration,
-                                stacked_times: Vec<profiler::StackedTime>,
-                                precision: usize,
-                                csv_file: &mut fs::File) {
+    fn add_stacked_times_to_csv(
+        timestamp: Duration,
+        stacked_times: Vec<profiler::StackedTime>,
+        precision: usize,
+        csv_file: &mut fs::File,
+    ) {
         // Initialize formatted string
         let mut formatted_stack = format!("{},", timestamp.as_millis());
 
@@ -188,7 +186,7 @@ impl MetricsReceiver {
         for element in stacked_times {
             let formatted_element = format!(
                 "{elem:.precision$}|",
-                elem=(element.time - prev_time).as_secs_f64(),
+                elem = (element.time - prev_time).as_secs_f64(),
                 precision = precision
             );
             formatted_stack = format!("{}{}", formatted_stack, formatted_element);

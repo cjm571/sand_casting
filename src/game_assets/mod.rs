@@ -19,5 +19,5 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-pub mod hex_grid_cell;
 pub mod colors;
+pub mod hex_grid_cell;
