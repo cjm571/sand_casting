@@ -20,18 +20,9 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use std::{
-    sync::mpsc,
-    thread,
-    time::Duration,
-};
+use std::{sync::mpsc, thread, time::Duration};
 
-use ggez::{
-    Context as GgEzContext,
-    graphics as ggez_gfx,
-    mint as ggez_mint,
-    timer as ggez_timer,
-};
+use ggez::{graphics as ggez_gfx, mint as ggez_mint, timer as ggez_timer, Context as GgEzContext};
 
 use variant_count::VariantCount;
 
@@ -72,15 +63,15 @@ use self::metrics_receiver::MetricsReceiver;
 /// Instance of the SandCasting profiler module
 #[derive(Clone)]
 pub struct Instance {
-    enabled:        bool,
-    sender:         MetricsSender,
+    enabled: bool,
+    sender: MetricsSender,
     cached_metrics: CachedMetrics,
 }
 
 #[derive(Clone, Default)]
 struct CachedMetrics {
-    pub avg_fps:    f64,
-    pub peak_fps:   f64,
+    pub avg_fps: f64,
+    pub peak_fps: f64,
 }
 
 /// Enumeration for the various kinds of performance metrics that can be recorded.
@@ -107,13 +98,13 @@ impl Instance {
     pub fn disabled() -> Self {
         // Create dummy channel handles
         let (dummy_tx, _dummy_rx) = mpsc::channel::<MetricContainer>();
-        
+
         // Initialize dummy sender struct
         let dummy_sender = MetricsSender::new(dummy_tx);
 
         Self {
-            enabled:        false,
-            sender:         dummy_sender,
+            enabled: false,
+            sender: dummy_sender,
             cached_metrics: CachedMetrics::default(),
         }
     }
@@ -122,7 +113,7 @@ impl Instance {
     /*  *  *  *  *  *  *  *
      *  Accessor Methods  *
      *  *  *  *  *  *  *  */
-    
+
     pub fn avg_fps(&self) -> f64 {
         self.cached_metrics.avg_fps
     }
@@ -139,22 +130,43 @@ impl Instance {
     pub fn draw_fps_stats(&self, ggez_ctx: &mut GgEzContext) {
         //OPT: *PERFORMANCE* "static" storage of these local variables would probably be quicker
         // Draw avg. FPS
-        let avg_fps_pos = ggez_mint::Point2 {x: 0.0, y: 0.0};
+        let avg_fps_pos = ggez_mint::Point2 { x: 0.0, y: 0.0 };
         let avg_fps_str = format!("Avg. FPS: {:.0}", self.cached_metrics.avg_fps);
-        let avg_fps_display = ggez_gfx::Text::new((avg_fps_str, ggez_gfx::Font::default(),crate::DEFAULT_TEXT_SIZE));
-        ggez_gfx::draw(ggez_ctx, &avg_fps_display, (avg_fps_pos, 0.0, colors::GREEN)).unwrap();
+        let avg_fps_display = ggez_gfx::Text::new((
+            avg_fps_str,
+            ggez_gfx::Font::default(),
+            crate::DEFAULT_TEXT_SIZE,
+        ));
+        ggez_gfx::draw(
+            ggez_ctx,
+            &avg_fps_display,
+            (avg_fps_pos, 0.0, colors::GREEN),
+        )
+        .unwrap();
 
         // Draw peak FPS
-        let peak_fps_pos = ggez_mint::Point2 {x: 0.0, y: 20.0};
+        let peak_fps_pos = ggez_mint::Point2 { x: 0.0, y: 20.0 };
         let peak_fps_str = format!("Peak FPS: {:.0}", self.cached_metrics.peak_fps);
-        let peak_fps_display = ggez_gfx::Text::new((peak_fps_str, ggez_gfx::Font::default(),crate::DEFAULT_TEXT_SIZE));
-        ggez_gfx::draw(ggez_ctx, &peak_fps_display, (peak_fps_pos, 0.0, colors::GREEN)).unwrap();
+        let peak_fps_display = ggez_gfx::Text::new((
+            peak_fps_str,
+            ggez_gfx::Font::default(),
+            crate::DEFAULT_TEXT_SIZE,
+        ));
+        ggez_gfx::draw(
+            ggez_ctx,
+            &peak_fps_display,
+            (peak_fps_pos, 0.0, colors::GREEN),
+        )
+        .unwrap();
     }
 
-    pub fn update_fps_stats(&mut self, ggez_ctx: &GgEzContext) -> Result<(), mpsc::SendError<MetricContainer>> {
+    pub fn update_fps_stats(
+        &mut self,
+        ggez_ctx: &GgEzContext,
+    ) -> Result<(), mpsc::SendError<MetricContainer>> {
         // Get elapsed time
         let elapsed_time = ggez_timer::time_since_start(ggez_ctx);
-        
+
         // Update cached avg. FPS
         self.cached_metrics.avg_fps = ggez_timer::fps(ggez_ctx);
 
@@ -162,18 +174,20 @@ impl Instance {
         if self.cached_metrics.avg_fps > self.cached_metrics.peak_fps {
             self.cached_metrics.peak_fps = self.cached_metrics.avg_fps;
         }
-            
+
         if self.enabled {
             // Pack up FPS in a container and send
             let metric = MetricContainer::AvgFps(elapsed_time, self.cached_metrics.avg_fps);
             self.sender.send_metric(metric)
-        }
-        else {
+        } else {
             Ok(())
         }
     }
 
-    pub fn send_frame_delta(&self, ggez_ctx: &GgEzContext) -> Result<(), mpsc::SendError<MetricContainer>> {
+    pub fn send_frame_delta(
+        &self,
+        ggez_ctx: &GgEzContext,
+    ) -> Result<(), mpsc::SendError<MetricContainer>> {
         if self.enabled {
             // Get elapsed time
             let elapsed_time = ggez_timer::time_since_start(ggez_ctx);
@@ -184,13 +198,16 @@ impl Instance {
             // Pack up frame delta in a container and send
             let metric = MetricContainer::FrameDeltaTime(elapsed_time, frame_delta);
             self.sender.send_metric(metric)
-        }
-        else {
+        } else {
             Ok(())
         }
     }
 
-    pub fn mark_event(&self, event_label: String, ggez_ctx: &GgEzContext) -> Result<(), mpsc::SendError<MetricContainer>> {
+    pub fn mark_event(
+        &self,
+        event_label: String,
+        ggez_ctx: &GgEzContext,
+    ) -> Result<(), mpsc::SendError<MetricContainer>> {
         if self.enabled {
             // Get elapsed time
             let elapsed_time = ggez_timer::time_since_start(ggez_ctx);
@@ -198,19 +215,21 @@ impl Instance {
             // Pack up event label in a container and send
             let metric = MetricContainer::EventMarker(elapsed_time, event_label);
             self.sender.send_metric(metric)
-        }
-        else {
+        } else {
             Ok(())
         }
     }
 
-    pub fn send_stacked_draw_time(&self, start_time: Duration, stacked_times: Vec<StackedTime>) -> Result<(), mpsc::SendError<MetricContainer>> {
+    pub fn send_stacked_draw_time(
+        &self,
+        start_time: Duration,
+        stacked_times: Vec<StackedTime>,
+    ) -> Result<(), mpsc::SendError<MetricContainer>> {
         if self.enabled {
             // Pack up stacked times into container and send
             let metric = MetricContainer::StackedDrawTime(start_time, stacked_times);
             self.sender.send_metric(metric)
-        }
-        else {
+        } else {
             Ok(())
         }
     }
@@ -218,7 +237,6 @@ impl Instance {
 
 
 impl MetricContainer {
-    
     /*  *  *  *  *  *  *  *
      *  Utility Methods   *
      *  *  *  *  *  *  *  */
@@ -226,10 +244,10 @@ impl MetricContainer {
     /// Returns the filename that will store the metric's data
     pub fn filename(&self) -> String {
         match self {
-            MetricContainer::AvgFps(_dur, _val)             => String::from("avg_fps.csv"),
-            MetricContainer::FrameDeltaTime(_dur, _val)     => String::from("frame_delta.csv"),
-            MetricContainer::EventMarker(_dur, _label)      => String::from("event_marker.csv"),
-            MetricContainer::StackedDrawTime(_dur, _vec)    => String::from("stacked_draw_time.csv")
+            MetricContainer::AvgFps(_dur, _val) => String::from("avg_fps.csv"),
+            MetricContainer::FrameDeltaTime(_dur, _val) => String::from("frame_delta.csv"),
+            MetricContainer::EventMarker(_dur, _label) => String::from("event_marker.csv"),
+            MetricContainer::StackedDrawTime(_dur, _vec) => String::from("stacked_draw_time.csv"),
         }
     }
 }
@@ -256,8 +274,8 @@ impl Default for Instance {
             .unwrap();
 
         Self {
-            enabled:        true,
-            sender:         MetricsSender::new(metrics_tx),
+            enabled: true,
+            sender: MetricsSender::new(metrics_tx),
             cached_metrics: CachedMetrics::default(),
         }
     }
@@ -270,10 +288,10 @@ impl Default for Instance {
 impl From<&MetricContainer> for usize {
     fn from(src: &MetricContainer) -> Self {
         match src {
-            MetricContainer::AvgFps(_dur, _val)             => 0,
-            MetricContainer::FrameDeltaTime(_dur, _val)     => 1,
-            MetricContainer::EventMarker(_dur, _label)      => 2,
-            MetricContainer::StackedDrawTime(_dur, _vec)    => 3,
+            MetricContainer::AvgFps(_dur, _val) => 0,
+            MetricContainer::FrameDeltaTime(_dur, _val) => 1,
+            MetricContainer::EventMarker(_dur, _label) => 2,
+            MetricContainer::StackedDrawTime(_dur, _vec) => 3,
         }
     }
 }
@@ -283,8 +301,13 @@ impl From<usize> for MetricContainer {
             0 => MetricContainer::AvgFps(PLACEHOLDER_DURATION, PLACEHOLDER_F64),
             1 => MetricContainer::FrameDeltaTime(PLACEHOLDER_DURATION, PLACEHOLDER_F64),
             2 => MetricContainer::EventMarker(PLACEHOLDER_DURATION, PLACEHOLDER_STRING),
-            3 => MetricContainer::StackedDrawTime(PLACEHOLDER_DURATION, PLACEHOLDER_STACKED_DRAW_VEC),
-            _ => panic!("Invalid value ({}) for usize -> MetricContainer conversion", src),
+            3 => {
+                MetricContainer::StackedDrawTime(PLACEHOLDER_DURATION, PLACEHOLDER_STACKED_DRAW_VEC)
+            }
+            _ => panic!(
+                "Invalid value ({}) for usize -> MetricContainer conversion",
+                src
+            ),
         }
     }
 }

@@ -1,12 +1,13 @@
 [package]
 name = "sand_casting"
-version = "0.6.9"
+version = "0.6.10"
 authors = ["CJ McAllister <cjm571@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 cast_iron = { path = "../cast_iron", version = "^0.9" }
 chrono = { version = "0.4", features = ["serde"] }
+dd_statechart = { path = "../dd_statechart", version = "^0.3"}
 ggez = "0.5.1"
 mt_logger = "^3"
 rand = "0.7.3"

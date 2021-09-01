@@ -41,19 +41,19 @@ pub struct MetricsSender {
 impl MetricsSender {
     /// Fully-qualified constructor
     pub fn new(metrics_tx: mpsc::Sender<profiler::MetricContainer>) -> Self {
-        Self {metrics_tx}
+        Self { metrics_tx }
     }
 
 
     /*  *  *  *  *  *  *  *
      *  Utility Methods   *
      *  *  *  *  *  *  *  */
-    
+
     /// Sends a metric to be recorded by the receiver
-    pub fn send_metric(&self, metric: profiler::MetricContainer) -> Result<(), mpsc::SendError<profiler::MetricContainer>> {
+    pub fn send_metric(
+        &self,
+        metric: profiler::MetricContainer,
+    ) -> Result<(), mpsc::SendError<profiler::MetricContainer>> {
         self.metrics_tx.send(metric)
     }
 }
-
-
-

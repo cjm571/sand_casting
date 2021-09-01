@@ -19,17 +19,9 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use cast_iron::{
-    context::Context as CastIronContext,
-    Plottable,
-    Randomizable,
-    coords,
-};
+use cast_iron::{context::Context as CastIronContext, coords, Plottable, Randomizable};
 
-use ggez::{
-    Context as GgEzContext,
-    graphics as ggez_gfx,
-};
+use ggez::{graphics as ggez_gfx, Context as GgEzContext};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -61,7 +53,6 @@ pub enum DrawableError {
 //OPT: *DESIGN* This may be abuse of the trait system... there's no guarantee that the implementor will do their shit correctly
 //OPT: *DESIGN* Also, this probably doesn't need to include the rand stuff
 pub trait DrawableMechanic {
-
     /*  *  *  *  *  *  *  *  *\
      *  Implementor-Defined  *
     \*  *  *  *  *  *  *  *  */
@@ -90,15 +81,20 @@ pub trait DrawableMechanic {
     fn add_instance_to_mesh_builder(
         instance: &Self::Instance,
         mesh_builder: &mut ggez_gfx::MeshBuilder,
-        ggez_ctx: &mut GgEzContext) -> Result<(),Self::ErrorType>;
+        ggez_ctx: &mut GgEzContext,
+    ) -> Result<(), Self::ErrorType>;
 
-    
+
     /*  *  *  *  *  *  *  *  *\
      *  Defined by Default   *
     \*  *  *  *  *  *  *  *  */
 
     /// Adds the given instance to the manager
-    fn add_instance(&mut self, new_instance: Self::Instance, ggez_ctx: &mut GgEzContext) -> Result<(), DrawableError> {
+    fn add_instance(
+        &mut self,
+        new_instance: Self::Instance,
+        ggez_ctx: &mut GgEzContext,
+    ) -> Result<(), DrawableError> {
         // Verify that no instance already exists in the same location
         for existing_instance in self.instances() {
             if new_instance.origin() == existing_instance.origin() {
@@ -115,13 +111,17 @@ pub trait DrawableMechanic {
         Ok(())
     }
 
-    fn add_rand_instance(&mut self, ci_ctx: &CastIronContext, ggez_ctx: &mut GgEzContext) -> Result<(), DrawableError> {
+    fn add_rand_instance(
+        &mut self,
+        ci_ctx: &CastIronContext,
+        ggez_ctx: &mut GgEzContext,
+    ) -> Result<(), DrawableError> {
         // Create a random instance and attempt to add them until we succeed (or fail too many times)
         for _ in 0..ci_ctx.max_rand_attempts() {
             let rand_instance = Self::Instance::rand(ci_ctx);
             if self.add_instance(rand_instance, ggez_ctx).is_ok() {
                 // Successfully added instance
-                return Ok(())
+                return Ok(());
             }
         }
 
@@ -135,7 +135,7 @@ pub trait DrawableMechanic {
     }
 
     /// Updates the mechanic mesh with current instances
-    fn update_mesh(&mut self, ggez_ctx: &mut GgEzContext) {        
+    fn update_mesh(&mut self, ggez_ctx: &mut GgEzContext) {
         // Short-circuit if there are no instances
         if self.instances().is_empty() {
             return;

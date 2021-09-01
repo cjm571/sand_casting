@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       name="default"
+       version="1.0"
+       datamodel="ecmascript"
+       initial="idle">
+
+    <datamodel>
+        <data id="in_combat" expr="false"/>
+    </datamodel>
+
+    <!-- IDLE State, Player is not in combat-->
+    <state id="idle">
+        <!-- Transition to COMBAT when the 'combat.enter' Event arrives -->
+        <transition event="combat.enter" target="combat">
+            <assign location="in_combat" expr="true"/>
+        </transition>
+    </state>
+
+    <!-- COMBAT State -->
+    <state id="combat">
+        <!-- Transition to IDLE when the 'combat.exit' Event arrives -->
+        <transition event="combat.exit" target="idle">
+            <assign location="in_combat" expr="false"/>
+        </transition>
+    </state>
+
+</scxml>

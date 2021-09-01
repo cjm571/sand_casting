@@ -20,28 +20,14 @@ Purpose:
 
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-use cast_iron::{
-    element::Elemental,
-    mechanics::resource::Resource,
-    Plottable,
-};
+use cast_iron::{element::Elemental, mechanics::resource::Resource, Plottable};
 
-use ggez::{
-    Context as GgEzContext,
-    graphics as ggez_gfx,
-    mint as ggez_mint,
-};
+use ggez::{graphics as ggez_gfx, mint as ggez_mint, Context as GgEzContext};
 
-use mt_logger::{
-    mt_log,
-    Level,
-};
+use mt_logger::{mt_log, Level};
 
 use crate::{
-    game_assets::{
-        colors,
-        hex_grid_cell::HexGridCell,
-    },
+    game_assets::{colors, hex_grid_cell::HexGridCell},
     game_managers::DrawableMechanic,
 };
 
@@ -51,8 +37,8 @@ use crate::{
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct ResourceManager {
-    resources:      Vec<Resource>,
-    resource_mesh:  ggez_gfx::Mesh,
+    resources: Vec<Resource>,
+    resource_mesh: ggez_gfx::Mesh,
 }
 
 #[derive(Debug)]
@@ -67,13 +53,17 @@ impl ResourceManager {
     /// Generic Constructor - creates an empty instance
     pub fn new(ctx: &mut GgEzContext) -> Self {
         ResourceManager {
-            resources:      Vec::new(),
-            resource_mesh:  ggez_gfx::Mesh::new_line(
-                            ctx,
-                            &[ggez_mint::Point2 {x: 0.0, y: 0.0}, ggez_mint::Point2 {x: 10.0, y: 10.0}],
-                           crate::DEFAULT_LINE_WIDTH,
-                           crate::DEFAULT_LINE_COLOR)
-                            .unwrap(),
+            resources: Vec::new(),
+            resource_mesh: ggez_gfx::Mesh::new_line(
+                ctx,
+                &[
+                    ggez_mint::Point2 { x: 0.0, y: 0.0 },
+                    ggez_mint::Point2 { x: 10.0, y: 10.0 },
+                ],
+                crate::DEFAULT_LINE_WIDTH,
+                crate::DEFAULT_LINE_COLOR,
+            )
+            .unwrap(),
         }
     }
 }
@@ -92,10 +82,12 @@ impl DrawableMechanic for ResourceManager {
     }
 
     fn push_instance(&mut self, instance: Self::Instance) {
-        mt_log!(Level::Debug,
+        mt_log!(
+            Level::Debug,
             "Adding {} resource starting at {} to mesh.",
             String::from(instance.element()),
-            instance.origin());
+            instance.origin()
+        );
 
         self.resources.push(instance);
     }
@@ -108,11 +100,14 @@ impl DrawableMechanic for ResourceManager {
         self.resource_mesh = mesh;
     }
 
-    fn add_instance_to_mesh_builder(instance: &Self::Instance,
-                                    mesh_builder: &mut ggez_gfx::MeshBuilder,
-                                    ggez_ctx: &mut GgEzContext) -> Result<(), Self::ErrorType> {
+    fn add_instance_to_mesh_builder(
+        instance: &Self::Instance,
+        mesh_builder: &mut ggez_gfx::MeshBuilder,
+        ggez_ctx: &mut GgEzContext,
+    ) -> Result<(), Self::ErrorType> {
         // Create a HexGridCell object and add it to the mesh builder
-        let cur_hex = HexGridCell::new_from_hex_coords(instance.origin(),crate::HEX_RADIUS_VERTEX, ggez_ctx);
+        let cur_hex =
+            HexGridCell::new_from_hex_coords(instance.origin(), crate::HEX_RADIUS_VERTEX, ggez_ctx);
         cur_hex.add_to_mesh(colors::from_resource(instance), colors::WHITE, mesh_builder);
 
         // Create radial HexGridCells as necessary
@@ -121,7 +116,8 @@ impl DrawableMechanic for ResourceManager {
             colors::WHITE,
             instance.radius(),
             true,
-            mesh_builder);
+            mesh_builder,
+        );
 
         Ok(())
     }
