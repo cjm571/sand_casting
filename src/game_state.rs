@@ -24,6 +24,7 @@ Purpose:
 use std::{
     error::Error,
     fmt,
+    io::Write,
 };
 
 use cast_iron::{
@@ -177,7 +178,16 @@ impl SandCastingGameState {
 
     pub fn process_event(&mut self, event: &Event) -> Result<(), GameStateError> {
         // Pass the event to the StateChart
-        self.statechart.process_external_event(event).map_err(GameStateError::StateChartError)
+        let process_result = self.statechart.process_external_event(event).map_err(GameStateError::StateChartError);
+
+        if process_result.is_ok() {
+            mt_log!(Level::Info, "Event '{}' processed. Current Active State(s) '{:?}'", event, self.active_state_ids());
+        }
+        else {
+            mt_log!(Level::Error, "Failed to process Event '{}'. Current Active State(s) '{:?}'", event, self.active_state_ids());
+        }
+
+        process_result
     }
 
 
@@ -255,7 +265,13 @@ impl ggez_event::EventHandler for SandCastingGameState {
         let start_time = ggez_timer::time_since_start(ctx);
         let mut draw_timings = Vec::new();
 
-        ggez_gfx::clear(ctx, colors::BLACK);
+        // Change background color based on game state
+        if self.active_state_ids().contains(&"combat") {
+            ggez_gfx::clear(ctx, colors::RED);
+        }
+        else {
+            ggez_gfx::clear(ctx, colors::BLACK);
+        }
         draw_timings.push(profiler::StackedTime{label: String::from("Clear"), time: ggez_timer::time_since_start(ctx)});
         
         // Draw the weather HUD
@@ -339,6 +355,27 @@ impl ggez_event::EventHandler for SandCastingGameState {
                     mt_log!(Level::Debug, "Debug display enabled");
                 }
             },
+            // Prompt for an Event ID
+            (ggez_kb::KeyMods::NONE, ggez_kb::KeyCode::E) => {
+                let mut user_event_id = String::new();
+
+                // Get Event ID from user
+                print!("Enter valid Event ID: ");
+                if let Err(e) = std::io::stdout().flush() {
+                    mt_log!(Level::Error, "Error '{}' while flushing StdOut", e);
+                    return;
+                }
+                if let Err(e) = std::io::stdin().read_line(&mut user_event_id) {
+                    mt_log!(Level::Error, "Error '{}' while reading line from StdIn", e);
+                    return;
+                }
+
+                // Parse into Event and process
+                match dd_statechart::event::Event::from(user_event_id.trim_end()) {
+                    Ok(user_event) => self.process_event(&user_event).unwrap_or_else(|e| mt_log!(Level::Error, "Error '{}' while processing event '{}'", e, user_event)),
+                    Err(e) => mt_log!(Level::Error, "Error '{}' while parsing Event ID '{}'", e, user_event_id)
+                }
+            }
             _ => {
                 mt_log!(Level::Warning, "Keyboard Event ({:?} + {:?}) unimplemented!", keymods, keycode);
             }
