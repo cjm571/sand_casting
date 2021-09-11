@@ -54,8 +54,8 @@ pub mod profiler;
 ///////////////////////////////////////////////////////////////////////////////
 
 /* Window Appearance */
-const DEFAULT_WINDOW_SIZE_X: f32 = 1000.0;
-const DEFAULT_WINDOW_SIZE_Y: f32 = 1000.0;
+const DEFAULT_WINDOW_SIZE_X: f32 = 1920.0;
+const DEFAULT_WINDOW_SIZE_Y: f32 = 1080.0;
 const DESIRED_FPS: u32 = 60;
 
 const DEFAULT_TEXT_SIZE: f32 = 16.0;

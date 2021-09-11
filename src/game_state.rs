@@ -64,6 +64,7 @@ const DEBUG_POS_STATE: ggez_mint::Point2<f32> = ggez_mint::Point2 { x: 0.0, y: 8
 pub struct SandCastingGameState {
     initialized: bool,                 // Flag indicating if game has been initialized
     debug_display: bool,               // Flag indicating if debug info should be displayed
+    action_display: bool,              // Flag indicating if Action Menu should be displayed
     ci_ctx: CastIronContext,           // CastIron engine context
     profiler: profiler::Instance,      // Instance of SandCasting performance profiler
     actor_manager: ActorManager,       // Actor Manager instance
@@ -103,6 +104,7 @@ impl SandCastingGameState {
         SandCastingGameState {
             initialized: false,
             debug_display: false,
+            action_display: false,
             ci_ctx: ctx_clone,
             profiler: profiler_clone,
             actor_manager: ActorManager::new(ggez_ctx),
@@ -229,6 +231,34 @@ impl SandCastingGameState {
         )
         .unwrap(); //FIXME: NOOOOOO UNWRAP
     }
+
+    fn draw_action_menu(&self, ggez_ctx: &mut GgEzContext) {
+        // Grab window dimensions so we can place the menu appropriately
+        let (window_x, window_y) = ggez_gfx::size(ggez_ctx);
+
+        let calc_frame_pos = ggez_mint::Point2 {
+            x: 3.0 * window_x / 4.0,
+            y: 13.0 * window_y / 16.0,
+        };
+        let calc_frame_size = ggez_mint::Point2 {
+            x: window_x / 20.0,
+            y: window_y / 10.0,
+        };
+
+        // Draw border
+        let menu_border = ggez_gfx::Rect::new(
+            calc_frame_pos.x,
+            calc_frame_pos.y,
+            calc_frame_size.x,
+            calc_frame_size. y,
+        );
+        //FIXME: MAGIC NUMBER, UNWRAP
+        let content_mesh = ggez_gfx::Mesh::new_rectangle(ggez_ctx, ggez_gfx::DrawMode::fill(), menu_border, colors::BLACK).unwrap();
+        let border_mesh = ggez_gfx::Mesh::new_rectangle(ggez_ctx, ggez_gfx::DrawMode::stroke(3.0), menu_border, colors::WHITE).unwrap();
+        
+        ggez_gfx::draw(ggez_ctx, &content_mesh, ggez_gfx::DrawParam::default()).unwrap();
+        ggez_gfx::draw(ggez_ctx, &border_mesh, ggez_gfx::DrawParam::default()).unwrap();
+    }
 }
 
 
@@ -316,6 +346,11 @@ impl ggez_event::EventHandler for SandCastingGameState {
             time: ggez_timer::time_since_start(ctx),
         });
 
+        if self.action_display {
+            // Draw action menu
+            self.draw_action_menu(ctx);
+        }
+
         if self.debug_display {
             // Draw performance stats
             self.profiler.draw_fps_stats(ctx);
@@ -373,6 +408,14 @@ impl ggez_event::EventHandler for SandCastingGameState {
                     self.world_grid_manager
                         .toggle_cell_highlight(&event_hex_pos, ggez_ctx)
                         .unwrap();
+                        
+                    if self.action_display {
+                        self.action_display = false;
+                        mt_log!(Level::Debug, "Action Menu display disabled");
+                    } else {
+                        self.action_display = true;
+                        mt_log!(Level::Debug, "Action Menu display enabled");
+                    }
                 } else {
                     mt_log!(
                         Level::Debug,
