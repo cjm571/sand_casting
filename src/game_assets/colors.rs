@@ -32,8 +32,8 @@ use ggez::graphics as ggez_gfx;
 ///////////////////////////////////////////////////////////////////////////////
 
 /* Greyscale */
-pub const BLACK: ggez_gfx::Color = ggez_gfx::BLACK;
-pub const WHITE: ggez_gfx::Color = ggez_gfx::WHITE;
+pub const BLACK: ggez_gfx::Color = ggez_gfx::Color::BLACK;
+pub const WHITE: ggez_gfx::Color = ggez_gfx::Color::WHITE;
 pub const GREY: ggez_gfx::Color = ggez_gfx::Color {
     r: 0.500,
     g: 0.500,

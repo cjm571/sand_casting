@@ -33,7 +33,7 @@ use ggez::{
     ContextBuilder as GgEzContextBuilder,
 };
 
-use mt_logger::{mt_flush, mt_log, mt_new, Level, OutputStream};
+use mt_logger::{mt_log, mt_new, Level, OutputStream};
 
 ///
 // Module Declarations
@@ -151,46 +151,24 @@ fn main() {
     player_one.add_ability(null_abil);
 
     // Create a GGEZ Context and EventLoop
-    let (mut ggez_ctx, mut ggez_event_loop) =
-        GgEzContextBuilder::new("sand_casting", "CJ McAllister")
-            .window_setup(
-                ggez_conf::WindowSetup::default()
-                    .title("Sand Casting - A CastIron Sandbox Game")
-                    .vsync(false),
-            )
-            .window_mode(
-                ggez_conf::WindowMode::default()
-                    .dimensions(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_Y),
-            )
-            .build()
-            .unwrap();
+    let (mut ggez_ctx, ggez_event_loop) = GgEzContextBuilder::new("sand_casting", "CJ McAllister")
+        .window_setup(
+            ggez_conf::WindowSetup::default()
+                .title("Sand Casting - A CastIron Sandbox Game")
+                .vsync(false),
+        )
+        .window_mode(
+            ggez_conf::WindowMode::default()
+                .dimensions(DEFAULT_WINDOW_SIZE_X, DEFAULT_WINDOW_SIZE_Y),
+        )
+        .build()
+        .unwrap();
     mt_log!(Level::Info, "ggez context, event loop created.");
 
     // Use built context to create a GGEZ Event Handler instance
-    let mut sand_casting_game_state =
+    let sand_casting_game_state =
         SandCastingGameState::new(&profiler_original, &ci_ctx, &mut ggez_ctx);
 
     // Run the game!
-    match ggez_event::run(
-        &mut ggez_ctx,
-        &mut ggez_event_loop,
-        &mut sand_casting_game_state,
-    ) {
-        Ok(_) => mt_log!(Level::Info, "Exited cleanly."),
-        Err(e) => mt_log!(Level::Error, "Error occurred: {}", e),
-    }
-
-    // Flush all log messages before shutting down
-    match mt_flush!() {
-        // Ignore success case, and uninitialized logger
-        Ok(_) => {}
-        Err(mt_logger::MtLoggerError::LoggerNotInitialized) => {}
-
-        Err(e) => {
-            eprintln!(
-                "Error '{}' encountered when attempting to flush mt_logger commands/messages",
-                e
-            );
-        }
-    }
+    ggez_event::run(ggez_ctx, ggez_event_loop, sand_casting_game_state);
 }

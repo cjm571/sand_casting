@@ -294,8 +294,9 @@ impl HudElements {
         )
         .unwrap();
 
+        //FIXME: Deprecated call, new workaround needed
         // WORKAROUND - avoid flickering on intel graphics
-        ggez::graphics::apply_transformations(ggez_ctx).unwrap();
+        // ggez::graphics::apply_transformations(ggez_ctx).unwrap();
 
         // Draw content mesh behind frame mesh
         ggez_gfx::draw(ggez_ctx, &self.content_mesh, ggez_gfx::DrawParam::default()).unwrap();

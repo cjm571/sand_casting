@@ -109,14 +109,17 @@ impl DrawableMechanic for ActorManager {
         let actor_hex =
             HexGridCell::new_from_hex_coords(instance.origin(), crate::HEX_RADIUS_VERTEX, ggez_ctx);
 
+        //FIXME: UNWRAP
         // Draw green circle to represent the actor
-        mesh_builder.circle(
-            ggez_gfx::DrawMode::fill(),
-            actor_hex.center(),
-            crate::HEX_RADIUS_VERTEX / 2.0,
-            1.0,
-            colors::GREEN,
-        );
+        mesh_builder
+            .circle(
+                ggez_gfx::DrawMode::fill(),
+                actor_hex.center(),
+                crate::HEX_RADIUS_VERTEX / 2.0,
+                1.0,
+                colors::GREEN,
+            )
+            .unwrap();
 
         Ok(())
     }
