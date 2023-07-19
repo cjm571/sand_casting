@@ -106,12 +106,11 @@ fn main() -> ! {
     }
 
     // Create profiler instance, or disable if required
-    let profiler_original;
-    if args.contains(&String::from("-profile")) {
-        profiler_original = profiler::Instance::default();
+    let profiler_original = if args.contains(&String::from("-profile")) {
+        profiler::Instance::default()
     } else {
-        profiler_original = profiler::Instance::disabled();
-    }
+        profiler::Instance::disabled()
+    };
 
     // Create CastIron game context
     let ci_ctx = CastIronContextBuilder::default()
