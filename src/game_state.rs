@@ -61,7 +61,7 @@ const DEBUG_POS_STATE: ggez_mint::Point2<f32> = ggez_mint::Point2 { x: 0.0, y: 8
 
 //TODO: Rename and refactor this - very likely does not need to keep clones of the logger and profiler
 /// Primary Game Struct
-pub struct SandCastingGameState {
+pub struct SandCastingGameState<W: Write> {
     initialized: bool,                 // Flag indicating if game has been initialized
     debug_display: bool,               // Flag indicating if debug info should be displayed
     ci_ctx: CastIronContext,           // CastIron engine context
@@ -69,7 +69,7 @@ pub struct SandCastingGameState {
     actor_manager: ActorManager,       // Actor Manager instance
     obstacle_manager: ObstacleManager, // Obstacle Manager instance
     resource_manager: ResourceManager, // Resource Manager instance
-    statechart: StateChart,            // StateChart covering all game states
+    statechart: StateChart<W>,     // StateChart covering all game states
     weather_manager: WeatherManager,   // Weather Manager instance
     world_grid_manager: WorldGridManager, // World Grid Manager instance
 }
@@ -86,11 +86,12 @@ pub enum GameStateError {
 ///////////////////////////////////////////////////////////////////////////////
 
 /// Constructor
-impl SandCastingGameState {
+impl<W: Write> SandCastingGameState<W> {
     pub fn new(
         profiler_original: &profiler::Instance,
         ci_ctx: &CastIronContext,
         ggez_ctx: &mut GgEzContext,
+        writer: W,
     ) -> Self {
         //NOTE: Load/create resources here: images, fonts, sounds, etc.
 
@@ -108,7 +109,7 @@ impl SandCastingGameState {
             actor_manager: ActorManager::new(ggez_ctx),
             obstacle_manager: ObstacleManager::new(ggez_ctx),
             resource_manager: ResourceManager::new(ggez_ctx),
-            statechart: StateChart::from("./res/default.scxml").unwrap(),
+            statechart: StateChart::from("./res/default.scxml", writer).unwrap(),
             weather_manager: WeatherManager::default(profiler_original, ci_ctx, ggez_ctx),
             world_grid_manager: WorldGridManager::new(crate::DEFAULT_GRID_RADIUS, ci_ctx, ggez_ctx),
         }
@@ -240,7 +241,7 @@ impl SandCastingGameState {
  *   SandCastingGameState   *
 \*  *  *  *  *  *  *  *  *  */
 
-impl ggez_event::EventHandler<ggez::error::GameError> for SandCastingGameState {
+impl<W: Write> ggez_event::EventHandler<ggez::error::GameError> for SandCastingGameState<W> {
     fn update(&mut self, ggez_ctx: &mut GgEzContext) -> GgEzGameResult<()> {
         // Check if first-frame initialization is required
         if !self.initialized() {

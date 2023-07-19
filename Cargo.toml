@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 cast_iron = { path = "../cast_iron", version = "^0.9" }
 chrono = { version = "0.4", features = ["serde"] }
-dd_statechart = { path = "../dd_statechart", version = "^0.3"}
+dd_statechart = { path = "../dd_statechart" }
 ggez = "0.7"
 mt_logger = "^3"
 rand = "0.7.3"

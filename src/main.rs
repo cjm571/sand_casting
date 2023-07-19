@@ -91,7 +91,7 @@ const DEFAULT_MAX_WEATHER_INTENSITY: f64 = 256.0;
 const DEFAULT_MAX_WEATHER_DURATION: f64 = 10.0;
 
 
-fn main() {
+fn main() -> ! {
     //OPT: *DESIGN* Replace this with pattern from once_cell example
     // Parse command line arguments
     let args: Vec<String> = env::args().collect();
@@ -167,7 +167,7 @@ fn main() {
 
     // Use built context to create a GGEZ Event Handler instance
     let sand_casting_game_state =
-        SandCastingGameState::new(&profiler_original, &ci_ctx, &mut ggez_ctx);
+        SandCastingGameState::new(&profiler_original, &ci_ctx, &mut ggez_ctx, std::io::stdout().lock());
 
     // Run the game!
     ggez_event::run(ggez_ctx, ggez_event_loop, sand_casting_game_state);

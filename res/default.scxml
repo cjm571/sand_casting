@@ -14,6 +14,7 @@
         <!-- Transition to COMBAT when the 'combat.enter' Event arrives -->
         <transition event="combat.enter" target="combat">
             <assign location="in_combat" expr="true"/>
+            <log label="EVENT" expr="'Entering Combat'"/>
         </transition>
     </state>
 
